@@ -83,7 +83,7 @@ pipeline {
                     steps { 
                         clean()
                         runTests("test/prob")
-                        junit 'test/**/*.xml'
+                        junit 'test/**/*.xml' // this might not work for these
                     }
                     post { always { cleanWs() } }
                 }

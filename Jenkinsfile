@@ -41,6 +41,7 @@ pipeline {
                     )
                 }
             }
+            post { always { deleteDir() } }
         }
         stage('Tests') {
             failFast true
@@ -52,6 +53,7 @@ pipeline {
                         sh "echo 'CXXFLAGS += -Werror' >> make/local"
                         sh "make -j${env.PARALLEL} test-headers"
                     }
+                    post { always { deleteDir() } }
                 }
                 stage('Unit') {
                     agent any
@@ -61,6 +63,7 @@ pipeline {
                         runTests("test/unit")
                         junit 'test/**/*.xml'
                     }
+                    post { always { deleteDir() } }
                 }
                 stage('CmdStan Upstream Tests') {
                     when { expression { env.BRANCH_NAME ==~ /PR-\d+/ } }
@@ -85,7 +88,7 @@ pipeline {
                         runTests("test/prob")
                         junit 'test/**/*.xml' // this might not work for these
                     }
-                    post { always { cleanWs() } }
+                    post { always { deleteDir() } }
                 }
             }
         }

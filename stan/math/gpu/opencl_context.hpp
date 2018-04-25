@@ -111,6 +111,10 @@ class opencl_context_base {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
         false, "timing", "__kernel void dummy2(__global const int* foo) { };"};
+	kernel_info["copy"] = {
+        false, "basic_matrix", 
+		#include <stan/math/gpu/kernels/copy.cl>
+		};
   }
 
  protected:
@@ -181,25 +185,25 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
-
+	
     try {
+	
       cl::Program::Sources source(
           1,
           std::make_pair(kernel_source.c_str(), strlen(kernel_source.c_str())));
       cl::Program program_ = cl::Program(context(), source);
-      program_.build({device()}, temp);
-
       cl_int err = CL_SUCCESS;
+	  program_.build({device()}, temp);	  
       // Iterate over the kernel list and get all the kernels from this group
       // and mark them as compiled.
       for (auto kern : kernel_info()) {
         if (strcmp(kern.second.group, kernel_group) == 0) {
-          kernels()[(kern.first)] = cl::Kernel(program_, kern.first, &err);
-          kern.second.exists = true;
+          opencl_context_base::getInstance().kernels[(kern.first)] = cl::Kernel(program_, kern.first, &err);
+		  kern.second.exists = true;
         }
       }
     } catch (const cl::Error& e) {
-      check_opencl_error("Kernel Compilation", e);
+      check_opencl_error("Kernel Compilation", e);	  
     }
   }
 
@@ -231,7 +235,7 @@ class opencl_context {
     if (!kernel_info()[kernel_name].exists) {
       compile_kernel_group(kernel_name);
     }
-    return kernels()[kernel_name];
+    return opencl_context_base::getInstance().kernels[kernel_name];
   }
 
   /**

@@ -1,5 +1,5 @@
-#ifndef STAN_MATH_PRIM_ARR_MATRIX_GPU_HPP
-#define STAN_MATH_PRIM_ARR_MATRIX_GPU_HPP
+#ifndef STAN_MATH_GPU_MATRIX_GPU_HPP
+#define STAN_MATH_GPU_MATRIX_GPU_HPP
 
 #include <stan/math/gpu/opencl_context.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>

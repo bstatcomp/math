@@ -13,6 +13,8 @@
 #include <vector>
 #include <cerrno>
 
+#include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
+
 #define DEVICE_FILTER CL_DEVICE_TYPE_GPU
 #ifndef OPENCL_DEVICE_ID
 #error OPENCL_DEVICE_ID_NOT_SET
@@ -112,9 +114,23 @@ class opencl_context_base {
     kernel_info["dummy2"] = {
         false, "timing", "__kernel void dummy2(__global const int* foo) { };"};
 	kernel_info["copy"] = {
-        false, "basic_matrix", 
-		#include <stan/math/gpu/kernels/copy.cl>
-		};
+        false, "basic_matrix", copy_matrix_kernel.c_str() };
+	kernel_info["transpose"] = {
+        false, "basic_matrix", transpose_matrix_kernel.c_str() };
+	kernel_info["zeros"] = {
+        false, "basic_matrix", zeros_matrix_kernel.c_str() };
+	kernel_info["identity"] = {
+        false, "basic_matrix", identity_matrix_kernel.c_str() };
+	kernel_info["copy_triangular"] = {
+        false, "basic_matrix", copy_triangular_matrix_kernel.c_str() };
+	kernel_info["copy_triangular_transposed"] = {
+        false, "basic_matrix", copy_triangular_transposed_matrix_kernel.c_str() };
+	kernel_info["add"] = {
+        false, "basic_matrix", add_matrix_kernel.c_str() };
+	kernel_info["subtract"] = {
+        false, "basic_matrix", subtract_matrix_kernel.c_str() };
+	kernel_info["copy_submatrix"] = {
+        false, "basic_matrix", copy_submatrix_kernel.c_str() };
   }
 
  protected:
@@ -193,7 +209,13 @@ class opencl_context {
           std::make_pair(kernel_source.c_str(), strlen(kernel_source.c_str())));
       cl::Program program_ = cl::Program(context(), source);
       cl_int err = CL_SUCCESS;
-	  program_.build({device()}, temp);	  
+	  try {
+		program_.build({device()}, temp);	 
+	  } catch (const cl::Error& e) {
+		std::cout << "Building failed, " << e.what() << "(" << e.err()
+		 << ")" << "\nRetrieving build log\n" <<
+		 program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device()[0]);
+	  }	  
       // Iterate over the kernel list and get all the kernels from this group
       // and mark them as compiled.
       for (auto kern : kernel_info()) {

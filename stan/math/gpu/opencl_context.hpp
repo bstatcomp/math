@@ -14,6 +14,7 @@
 #include <cerrno>
 
 #include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
+#include <stan/math/gpu/kernels/check_gpu_kernels.hpp>
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_GPU
 #ifndef OPENCL_DEVICE_ID
@@ -113,6 +114,12 @@ class opencl_context_base {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
         false, "timing", "__kernel void dummy2(__global const int* foo) { };"};
+	kernel_info["check_nan"] = {
+        false, "checks", check_nan_kernel.c_str() };
+	kernel_info["check_diagonal_zeros"] = {
+        false, "checks", check_diagonal_zeros_kernel.c_str() };
+	kernel_info["check_symmetric"] = {
+        false, "checks", check_symmetric_kernel.c_str() };
 	kernel_info["copy"] = {
         false, "basic_matrix", copy_matrix_kernel.c_str() };
 	kernel_info["transpose"] = {

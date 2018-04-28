@@ -15,6 +15,7 @@
 
 #include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
 #include <stan/math/gpu/kernels/check_gpu_kernels.hpp>
+#include <stan/math/gpu/kernels/multiply_matrix_kernels.hpp>
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_GPU
 #ifndef OPENCL_DEVICE_ID
@@ -138,6 +139,21 @@ class opencl_context_base {
         false, "basic_matrix", subtract_matrix_kernel.c_str() };
 	kernel_info["copy_submatrix"] = {
         false, "basic_matrix", copy_submatrix_kernel.c_str() };
+	kernel_info["scalar_mul_diagonal"] = {
+        false, "multiply_matrix", scalar_mul_diagonal_kernel.c_str() };
+	kernel_info["scalar_mul"] = {
+        false, "multiply_matrix", scalar_mul_kernel.c_str() };
+	kernel_info["basic_multiply"] = {
+        false, "multiply_matrix", basic_multiply_kernel.c_str() };
+	kernel_info["multiply_self_transposed"] = {
+        false, "multiply_matrix", multiply_self_transposed_kernel.c_str() };
+	kernel_info["multiply_self_transposed2"] = {
+        false, "multiply_matrix", multiply_self_transposed2_kernel.c_str() };
+		
+
+
+
+
   }
 
  protected:

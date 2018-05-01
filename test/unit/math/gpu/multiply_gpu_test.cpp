@@ -361,3 +361,72 @@ TEST(AgradRevMatrix, multiply_self_transposed_big) {
 	for(int j=0;j<size;j++)
 		EXPECT_NEAR(m2(i,j),m2_gpu(i,j),1e-10);
 }
+
+TEST(AgradRevMatrix, lower_triangular_multiply_small) {
+  using stan::math::multiply;
+  stan::math::matrix_d m1, m2, m3, m3_gpu;
+  
+  m1.resize(3, 3);
+  m2.resize(3, 3);
+  m3.resize(3, 3);
+  m3_gpu.resize(3, 3);
+  
+  m1 << 1, 2, 3,
+		0, 5, 6,
+		0, 0, 9;
+
+  m2 << 1, 2, 3,
+		2, 5, 6,
+		3, 6, 9;
+  
+  stan::math::matrix_gpu m11(m1);
+  stan::math::matrix_gpu m22(m2);
+  stan::math::matrix_gpu m33(m3);
+  
+  m3 = m1*m2;
+  
+  m33 = stan::math::multiply_lower_triangular(m11,m22);
+  
+  stan::math::copy(m33,m3_gpu);
+  
+  for(int i=0;i<3;i++)
+	for(int j=0;j<=i;j++)
+		EXPECT_NEAR(m3(i,j),m3_gpu(i,j),1e-10);	
+}
+
+TEST(AgradRevMatrix, lower_triangular_multiply_big) {
+	
+  boost::random::mt19937 rng;
+  using stan::math::multiply;
+  stan::math::matrix_d m1, m2, m3, m3_gpu;
+  
+  int size = 512;
+  m1.resize(size, size);
+  m2.resize(size, size);
+  m3.resize(size, size);
+  m3_gpu.resize(size, size);
+  
+  for(int i=0;i<size;i++)
+	for(int j=0;j<size;j++){
+		if(j>=i)
+			m1(i,j) = stan::math::normal_rng(0.0, 1.0, rng);
+		if(i<=j){
+			m2(i,j) = stan::math::normal_rng(0.0, 1.0, rng);
+			m2(j,i) = m2(i,j);
+		}
+	}
+  
+  stan::math::matrix_gpu m11(m1);
+  stan::math::matrix_gpu m22(m2);
+  stan::math::matrix_gpu m33(m3);
+  
+  m3 = m1*m2;
+  
+  m33 = stan::math::multiply_lower_triangular(m11,m22);
+  
+  stan::math::copy(m33,m3_gpu);
+  
+  for(int i=0;i<size;i++)
+	for(int j=0;j<=i;j++)
+		EXPECT_NEAR(m3(i,j),m3_gpu(i,j),1e-10);
+}

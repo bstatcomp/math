@@ -147,8 +147,8 @@ class opencl_context_base {
         false, "multiply_matrix", basic_multiply_kernel.c_str() };
 	kernel_info["multiply_self_transposed"] = {
         false, "multiply_matrix", multiply_self_transposed_kernel.c_str() };
-	kernel_info["multiply_self_transposed2"] = {
-        false, "multiply_matrix", multiply_self_transposed2_kernel.c_str() };
+	kernel_info["multiply_lower_triangular"] = {
+        false, "multiply_matrix", multiply_lower_triangular_kernel.c_str() };
 		
 
 

@@ -177,10 +177,10 @@ namespace stan {
 	"	} \n"
 	"} \n";
 
-	std::string multiply_self_transposed2_kernel = 
+	std::string multiply_lower_triangular_kernel = 
 	"#define WPT1 4 \n"
 	"#define RTS1 TS1/WPT1 \n"
-	"__kernel void multiply_self_transposed2(const int M, const int N, const int K, \n"
+	"__kernel void multiply_lower_triangular(const int M, const int N, const int K, \n"
 	"					  const __global double* A, \n"
 	"					  const __global double* B, \n"
 	"					  __global double* C) { \n"

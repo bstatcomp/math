@@ -91,10 +91,10 @@ namespace stan {
     }
 
     /**
-     * Computes the product of the first two specified GPU matrices.  The number of
+     * Computes the product of the two specified GPU matrices.  The number of
      * columns in the first matrix must be the same as the number of rows
      * in the second matrix. The number of rows of the resulting matrix must be the
-     * same as the number of rows in the first matrix and the number of columnds
+     * same as the number of rows in the first matrix and the number of columns
      * of the resulting matrix must be the same as the number of columns of the 
      * second matrix. 
      * 
@@ -144,12 +144,9 @@ namespace stan {
       return temp;
     }
     /**
-     * Computes the product of the first two specified GPU matrices.  The number of
-     * columns in the first matrix must be the same as the number of rows
-     * in the second matrix. The number of rows of the resulting matrix must be the
-     * same as the number of rows in the first matrix and the number of columnds
-     * of the resulting matrix must be the same as the number of columns of the 
-     * second matrix. 
+     * Computes the product of the specified GPU matrix with its transpose. 
+	 * The input matrix must me squared and the output matrix must be the
+	 * same size as the input matrix.
      * 
      * Computes the matrix multiplication C = A x A^T
      * 
@@ -195,11 +192,30 @@ namespace stan {
       return temp;
     }
     
-    inline matrix_gpu multiply2(matrix_gpu & A, matrix_gpu & AT) {
+	/**
+     * Computes the lower triangular part of the product of the two specified
+     * GPU matrices, where the first matrix is lower triangular. The number of
+     * columns in the first matrix must be the same as the number of rows
+     * in the second matrix. The number of rows of the resulting matrix must be the
+     * same as the number of rows in the first matrix and the number of columns
+     * of the resulting matrix must be the same as the number of columns of the 
+     * second matrix. 
+     * 
+     * Computes the matrix multiplication L_out = L x B
+     * 
+     * @param L first matrix, which is lower triangular
+     * @param B second matrix
+     * 
+     * @return lower triangular part of the product of the first and second matrix
+     * 
+     * @throw <code>std::invalid_argument</code> if the 
+     *   number of columns in A and rows in B do not match
+     */
+    inline matrix_gpu multiply_lower_triangular(matrix_gpu & L, matrix_gpu & B) {
       matrix_gpu temp(A.rows(), A.rows());
       if (temp.size() == 0)
         return temp;
-      cl::Kernel kernel = opencl_context.get_kernel("multiply_self_transposed2");
+      cl::Kernel kernel = opencl_context.get_kernel("multiply_lower_triangular");
       cl::CommandQueue& cmdQueue = opencl_context.queue();
       int local = 32;
       int gpu_local_max = sqrt(opencl_context.max_workgroup_size());
@@ -208,13 +224,13 @@ namespace stan {
       }
       int wpt = 4;
       int Mpad = ((A.rows() + local-1)/local)*local;
-      int Npad = ((AT.cols() + local-1)/local)*local;
+      int Npad = ((B.cols() + local-1)/local)*local;
       try {
         kernel.setArg(0, A.rows());
-        kernel.setArg(1, AT.cols());
-        kernel.setArg(2, AT.rows());
+        kernel.setArg(1, B.cols());
+        kernel.setArg(2, B.rows());
         kernel.setArg(3, A.buffer());
-        kernel.setArg(4, AT.buffer());
+        kernel.setArg(4, B.buffer());
         kernel.setArg(5, temp.buffer());
         cmdQueue.enqueueNDRangeKernel(
           kernel,

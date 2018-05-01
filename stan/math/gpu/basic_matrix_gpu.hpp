@@ -7,10 +7,10 @@
 #include <stan/math/gpu/err/check_matrix_gpu.hpp>
 #include <stan/math/prim/mat/err/check_matching_dims.hpp>
 #include <stan/math/prim/arr/fun/value_of.hpp>
+#include <CL/cl.hpp>
 #include <iostream>
 #include <string>
 #include <map>
-#include <CL/cl.hpp>
 
 /** @file stan/math/gpu/basic_matrix_gpu.hpp
 *    @brief basic_matrix_gpu - basic matrix operations:
@@ -140,10 +140,10 @@ namespace stan {
      */
     inline matrix_gpu copy_triangular(matrix_gpu & src,
      triangularity lower_upper) {
-	  if (src.size() == 0) {
+      if (src.size() == 0) {
         return src;
       }
-	  if (src.size() == 1) {
+      if (src.size() == 1) {
         return src;
       }
       matrix_gpu dst(src.rows(), src.cols());
@@ -256,14 +256,15 @@ namespace stan {
      */
     inline void copy_triangular_transposed(matrix_gpu & A,
      copy_transposed_triangular lower_upper) {
-	  if (A.size() == 0) {
+      if (A.size() == 0) {
         return;
       }
-	  if (A.size() == 1) {
+      if (A.size() == 1) {
         return;
       }
       check_square("copy_triangular_transposed (GPU)", "A", A);
-      cl::Kernel kernel = opencl_context.get_kernel("copy_triangular_transposed");
+      cl::Kernel kernel =
+        opencl_context.get_kernel("copy_triangular_transposed");
       cl::CommandQueue cmdQueue = opencl_context.queue();
       try {
         kernel.setArg(0, A.buffer());

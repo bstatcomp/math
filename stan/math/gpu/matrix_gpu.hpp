@@ -226,28 +226,27 @@ namespace stan {
      * 
      */
     inline void copy(matrix_gpu& src,  matrix_gpu& dst) { // NOLINT
-		
       check_size_match("copy (GPU -> GPU)",
         "src.rows()", src.rows(), "dst.rows()", dst.rows());
       check_size_match("copy (GPU -> GPU)",
         "src.cols()", src.cols(), "dst.cols()", dst.cols());
       if ( src.size() > 0 ) {
-        try {
-		  cl::CommandQueue& cmdQueue = opencl_context.queue();
-		  cl::Kernel kernel = opencl_context.get_kernel("copy");		
-		  kernel.setArg(0, src.buffer());
-          kernel.setArg(1, dst.buffer());
-          kernel.setArg(2, dst.rows());
-          kernel.setArg(3, dst.cols());
-          cmdQueue.enqueueNDRangeKernel(
-            kernel,
-            cl::NullRange,
-            cl::NDRange(dst.rows(), dst.cols()),
-            cl::NullRange,
-            NULL,
-            NULL);
+      try {
+        cl::CommandQueue& cmdQueue = opencl_context.queue();
+        cl::Kernel kernel = opencl_context.get_kernel("copy");
+        kernel.setArg(0, src.buffer());
+        kernel.setArg(1, dst.buffer());
+        kernel.setArg(2, dst.rows());
+        kernel.setArg(3, dst.cols());
+        cmdQueue.enqueueNDRangeKernel(
+          kernel,
+          cl::NullRange,
+          cl::NDRange(dst.rows(), dst.cols()),
+          cl::NullRange,
+          NULL,
+          NULL);
         } catch (const cl::Error& e) {
-			std::cout << e.err() << std::endl;
+          std::cout << e.err() << std::endl;
           check_opencl_error("copy GPU->GPU", e);
         }
       }

@@ -5,18 +5,18 @@
 
 #include <stan/math/prim/arr/err/check_opencl.hpp>
 #include <stan/math/prim/scal/err/system_error.hpp>
-#include <CL/cl.hpp>
-#include <string>
-#include <cmath>
-#include <fstream>
-#include <map>
-#include <vector>
-#include <cerrno>
-
 #include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
 #include <stan/math/gpu/kernels/check_gpu_kernels.hpp>
 #include <stan/math/gpu/kernels/multiply_matrix_kernels.hpp>
 #include <stan/math/gpu/kernels/inverse_gpu_kernels.hpp>
+
+#include <CL/cl.hpp>
+
+#include <string>
+#include <cmath>
+#include <map>
+#include <vector>
+#include <cerrno>
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_GPU
 #ifndef OPENCL_DEVICE_ID
@@ -116,46 +116,47 @@ class opencl_context_base {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
         false, "timing", "__kernel void dummy2(__global const int* foo) { };"};
-	kernel_info["check_nan"] = {
+  kernel_info["check_nan"] = {
         false, "checks", check_nan_kernel.c_str() };
-	kernel_info["check_diagonal_zeros"] = {
+  kernel_info["check_diagonal_zeros"] = {
         false, "checks", check_diagonal_zeros_kernel.c_str() };
-	kernel_info["check_symmetric"] = {
+  kernel_info["check_symmetric"] = {
         false, "checks", check_symmetric_kernel.c_str() };
-	kernel_info["copy"] = {
+  kernel_info["copy"] = {
         false, "basic_matrix", copy_matrix_kernel.c_str() };
-	kernel_info["transpose"] = {
+  kernel_info["transpose"] = {
         false, "basic_matrix", transpose_matrix_kernel.c_str() };
-	kernel_info["zeros"] = {
+  kernel_info["zeros"] = {
         false, "basic_matrix", zeros_matrix_kernel.c_str() };
-	kernel_info["identity"] = {
+  kernel_info["identity"] = {
         false, "basic_matrix", identity_matrix_kernel.c_str() };
-	kernel_info["copy_triangular"] = {
+  kernel_info["copy_triangular"] = {
         false, "basic_matrix", copy_triangular_matrix_kernel.c_str() };
-	kernel_info["copy_triangular_transposed"] = {
-        false, "basic_matrix", copy_triangular_transposed_matrix_kernel.c_str() };
-	kernel_info["add"] = {
+  kernel_info["copy_triangular_transposed"] = {
+        false, "basic_matrix",
+          copy_triangular_transposed_matrix_kernel.c_str() };
+  kernel_info["add"] = {
         false, "basic_matrix", add_matrix_kernel.c_str() };
-	kernel_info["subtract"] = {
+  kernel_info["subtract"] = {
         false, "basic_matrix", subtract_matrix_kernel.c_str() };
-	kernel_info["copy_submatrix"] = {
+  kernel_info["copy_submatrix"] = {
         false, "basic_matrix", copy_submatrix_kernel.c_str() };
-	kernel_info["scalar_mul_diagonal"] = {
+  kernel_info["scalar_mul_diagonal"] = {
         false, "multiply_matrix", scalar_mul_diagonal_kernel.c_str() };
-	kernel_info["scalar_mul"] = {
+  kernel_info["scalar_mul"] = {
         false, "multiply_matrix", scalar_mul_kernel.c_str() };
-	kernel_info["basic_multiply"] = {
+  kernel_info["basic_multiply"] = {
         false, "multiply_matrix", basic_multiply_kernel.c_str() };
-	kernel_info["multiply_self_transposed"] = {
+  kernel_info["multiply_self_transposed"] = {
         false, "multiply_matrix", multiply_self_transposed_kernel.c_str() };
-	kernel_info["multiply_lower_triangular"] = {
+  kernel_info["multiply_lower_triangular"] = {
         false, "multiply_matrix", multiply_lower_triangular_kernel.c_str() };
-	kernel_info["lower_tri_inverse_step1"] = {
+  kernel_info["lower_tri_inverse_step1"] = {
         false, "inverse_matrix", lower_tri_inverse_step1_kernel.c_str() };
-	kernel_info["lower_tri_inverse_step2"] = {
+  kernel_info["lower_tri_inverse_step2"] = {
         false, "inverse_matrix", lower_tri_inverse_step2_kernel.c_str() };
-	kernel_info["lower_tri_inverse_step3"] = {
-        false, "inverse_matrix", lower_tri_inverse_step3_kernel.c_str() };		
+  kernel_info["lower_tri_inverse_step3"] = {
+        false, "inverse_matrix", lower_tri_inverse_step3_kernel.c_str() };
   }
 
  protected:
@@ -226,21 +227,14 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
-	
     try {
-	
       cl::Program::Sources source(
-          1,
-          std::make_pair(kernel_source.c_str(), strlen(kernel_source.c_str())));
+            1,
+            std::make_pair(kernel_source.c_str(),
+              strlen(kernel_source.c_str())));
       cl::Program program_ = cl::Program(context(), source);
       cl_int err = CL_SUCCESS;
-	  try {
-		program_.build({device()}, temp);	 
-	  } catch (const cl::Error& e) {
-		std::cout << "Building failed, " << e.what() << "(" << e.err()
-		 << ")" << "\nRetrieving build log\n" <<
-		 program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device()[0]);
-	  }	  
+      program_.build({device()}, temp);
       // Iterate over the kernel list and get all the kernels from this group
       // and mark them as compiled.
       for (auto kern : kernel_info()) {
@@ -251,7 +245,7 @@ class opencl_context {
         }
       }
     } catch (const cl::Error& e) {
-      check_opencl_error("Kernel Compilation", e);	  
+      check_opencl_error("Kernel Compilation", e);
     }
   }
 

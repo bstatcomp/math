@@ -2,6 +2,7 @@
 #include <stan/math/gpu/basic_matrix_gpu.hpp>
 #include <stan/math/gpu/err/check_matrix_gpu.hpp>
 #include <gtest/gtest.h>
+#include <limits>
 
 using stan::math::check_nan;
 

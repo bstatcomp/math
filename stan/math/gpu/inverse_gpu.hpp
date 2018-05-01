@@ -29,9 +29,12 @@ namespace stan {
     inline matrix_gpu lower_triangular_inverse(matrix_gpu & A) {
       check_square("lower_triangular_inverse (GPU)", "A", A);
       matrix_gpu inv(A);
-      cl::Kernel kernel_step1 = opencl_context.get_kernel("lower_tri_inverse_step1");
-      cl::Kernel kernel_step2 = opencl_context.get_kernel("lower_tri_inverse_step2");
-      cl::Kernel kernel_step3 = opencl_context.get_kernel("lower_tri_inverse_step3");
+      cl::Kernel kernel_step1 =
+        opencl_context.get_kernel("lower_tri_inverse_step1");
+      cl::Kernel kernel_step2 =
+        opencl_context.get_kernel("lower_tri_inverse_step2");
+      cl::Kernel kernel_step3 =
+        opencl_context.get_kernel("lower_tri_inverse_step3");
       cl::CommandQueue cmdQueue = opencl_context.queue();
       int parts = 32;
       if (inv.rows() < 65)

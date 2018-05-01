@@ -140,7 +140,7 @@ namespace stan {
           NULL);
       } catch (cl::Error& e) {
         check_opencl_error("multiply", e);
-      }      
+      }
       return temp;
     }
     /**
@@ -156,7 +156,7 @@ namespace stan {
      * 
      */
     inline matrix_gpu multiply_with_self_transposed(matrix_gpu & A) {
-	  // TODO(Rok): added a check if A is square
+      // TODO(Rok): added a check if A is square
       matrix_gpu temp(A.rows(), A.rows());
       if (temp.size() == 0)
         return temp;
@@ -190,7 +190,6 @@ namespace stan {
       }
       return temp;
     }
-    
 	/**
      * Computes the lower triangular part of the product of the two specified
      * GPU matrices, where the first matrix is lower triangular. The number of
@@ -210,13 +209,15 @@ namespace stan {
      * @throw <code>std::invalid_argument</code> if the 
      *   number of columns in L and rows in B do not match
      */
-    inline matrix_gpu multiply_lower_triangular(matrix_gpu & L, matrix_gpu & B) {
-	  check_size_match("lower triangular multiply (GPU)", "L.cols()", L.cols(),
-       "B.rows()", B.rows());
+    inline matrix_gpu multiply_lower_triangular(matrix_gpu & L,
+        matrix_gpu & B) {
+      check_size_match("lower triangular multiply (GPU)",
+          "L.cols()", L.cols(), "B.rows()", B.rows());
       matrix_gpu temp(L.rows(), L.rows());
       if (temp.size() == 0)
         return temp;
-      cl::Kernel kernel = opencl_context.get_kernel("multiply_lower_triangular");
+      cl::Kernel kernel =
+        opencl_context.get_kernel("multiply_lower_triangular");
       cl::CommandQueue& cmdQueue = opencl_context.queue();
       int local = 32;
       int gpu_local_max = sqrt(opencl_context.max_workgroup_size());

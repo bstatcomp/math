@@ -154,10 +154,9 @@ namespace stan {
      * 
      * @return the product of the matrix and its transpose
      * 
-     * @throw <code>std::invalid_argument</code> if the 
-     *   number of columns in A and rows in B do not match
      */
     inline matrix_gpu multiply_with_self_transposed(matrix_gpu & A) {
+	  // TODO(Rok): added a check if A is square
       matrix_gpu temp(A.rows(), A.rows());
       if (temp.size() == 0)
         return temp;
@@ -187,7 +186,7 @@ namespace stan {
           NULL,
           NULL);
       } catch (cl::Error& e) {
-        check_opencl_error("multiply", e);
+        check_opencl_error("multiply with self transposed", e);
       }
       return temp;
     }
@@ -209,10 +208,12 @@ namespace stan {
      * @return lower triangular part of the product of the first and second matrix
      * 
      * @throw <code>std::invalid_argument</code> if the 
-     *   number of columns in A and rows in B do not match
+     *   number of columns in L and rows in B do not match
      */
     inline matrix_gpu multiply_lower_triangular(matrix_gpu & L, matrix_gpu & B) {
-      matrix_gpu temp(A.rows(), A.rows());
+	  check_size_match("lower triangular multiply (GPU)", "L.cols()", L.cols(),
+       "B.rows()", B.rows());
+      matrix_gpu temp(L.rows(), L.rows());
       if (temp.size() == 0)
         return temp;
       cl::Kernel kernel = opencl_context.get_kernel("multiply_lower_triangular");
@@ -223,13 +224,13 @@ namespace stan {
         local = gpu_local_max;
       }
       int wpt = 4;
-      int Mpad = ((A.rows() + local-1)/local)*local;
+      int Mpad = ((L.rows() + local-1)/local)*local;
       int Npad = ((B.cols() + local-1)/local)*local;
       try {
-        kernel.setArg(0, A.rows());
+        kernel.setArg(0, L.rows());
         kernel.setArg(1, B.cols());
         kernel.setArg(2, B.rows());
-        kernel.setArg(3, A.buffer());
+        kernel.setArg(3, L.buffer());
         kernel.setArg(4, B.buffer());
         kernel.setArg(5, temp.buffer());
         cmdQueue.enqueueNDRangeKernel(
@@ -240,7 +241,7 @@ namespace stan {
           NULL,
           NULL);
       } catch (cl::Error& e) {
-        check_opencl_error("multiply", e);
+        check_opencl_error("lower triangular multiply", e);
       }
       return temp;
     }

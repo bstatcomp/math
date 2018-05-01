@@ -16,6 +16,7 @@
 #include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
 #include <stan/math/gpu/kernels/check_gpu_kernels.hpp>
 #include <stan/math/gpu/kernels/multiply_matrix_kernels.hpp>
+#include <stan/math/gpu/kernels/inverse_gpu_kernels.hpp>
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_GPU
 #ifndef OPENCL_DEVICE_ID
@@ -149,11 +150,12 @@ class opencl_context_base {
         false, "multiply_matrix", multiply_self_transposed_kernel.c_str() };
 	kernel_info["multiply_lower_triangular"] = {
         false, "multiply_matrix", multiply_lower_triangular_kernel.c_str() };
-		
-
-
-
-
+	kernel_info["lower_tri_inverse_step1"] = {
+        false, "inverse_matrix", lower_tri_inverse_step1_kernel.c_str() };
+	kernel_info["lower_tri_inverse_step2"] = {
+        false, "inverse_matrix", lower_tri_inverse_step2_kernel.c_str() };
+	kernel_info["lower_tri_inverse_step3"] = {
+        false, "inverse_matrix", lower_tri_inverse_step3_kernel.c_str() };		
   }
 
  protected:

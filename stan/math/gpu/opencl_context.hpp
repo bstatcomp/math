@@ -5,15 +5,10 @@
 
 #include <stan/math/prim/arr/err/check_opencl.hpp>
 #include <stan/math/prim/scal/err/system_error.hpp>
-#include <stan/math/gpu/kernels/basic_matrix_kernels.hpp>
-#include <stan/math/gpu/kernels/check_gpu_kernels.hpp>
-#include <stan/math/gpu/kernels/multiply_matrix_kernels.hpp>
-#include <stan/math/gpu/kernels/inverse_gpu_kernels.hpp>
-
 #include <CL/cl.hpp>
-
 #include <string>
 #include <cmath>
+#include <fstream>
 #include <map>
 #include <vector>
 #include <cerrno>
@@ -116,47 +111,6 @@ class opencl_context_base {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
         false, "timing", "__kernel void dummy2(__global const int* foo) { };"};
-  kernel_info["check_nan"] = {
-        false, "checks", check_nan_kernel.c_str() };
-  kernel_info["check_diagonal_zeros"] = {
-        false, "checks", check_diagonal_zeros_kernel.c_str() };
-  kernel_info["check_symmetric"] = {
-        false, "checks", check_symmetric_kernel.c_str() };
-  kernel_info["copy"] = {
-        false, "basic_matrix", copy_matrix_kernel.c_str() };
-  kernel_info["transpose"] = {
-        false, "basic_matrix", transpose_matrix_kernel.c_str() };
-  kernel_info["zeros"] = {
-        false, "basic_matrix", zeros_matrix_kernel.c_str() };
-  kernel_info["identity"] = {
-        false, "basic_matrix", identity_matrix_kernel.c_str() };
-  kernel_info["copy_triangular"] = {
-        false, "basic_matrix", copy_triangular_matrix_kernel.c_str() };
-  kernel_info["copy_triangular_transposed"] = {
-        false, "basic_matrix",
-          copy_triangular_transposed_matrix_kernel.c_str() };
-  kernel_info["add"] = {
-        false, "basic_matrix", add_matrix_kernel.c_str() };
-  kernel_info["subtract"] = {
-        false, "basic_matrix", subtract_matrix_kernel.c_str() };
-  kernel_info["copy_submatrix"] = {
-        false, "basic_matrix", copy_submatrix_kernel.c_str() };
-  kernel_info["scalar_mul_diagonal"] = {
-        false, "multiply_matrix", scalar_mul_diagonal_kernel.c_str() };
-  kernel_info["scalar_mul"] = {
-        false, "multiply_matrix", scalar_mul_kernel.c_str() };
-  kernel_info["basic_multiply"] = {
-        false, "multiply_matrix", basic_multiply_kernel.c_str() };
-  kernel_info["multiply_self_transposed"] = {
-        false, "multiply_matrix", multiply_self_transposed_kernel.c_str() };
-  kernel_info["multiply_lower_triangular"] = {
-        false, "multiply_matrix", multiply_lower_triangular_kernel.c_str() };
-  kernel_info["lower_tri_inverse_step1"] = {
-        false, "inverse_matrix", lower_tri_inverse_step1_kernel.c_str() };
-  kernel_info["lower_tri_inverse_step2"] = {
-        false, "inverse_matrix", lower_tri_inverse_step2_kernel.c_str() };
-  kernel_info["lower_tri_inverse_step3"] = {
-        false, "inverse_matrix", lower_tri_inverse_step3_kernel.c_str() };
   }
 
  protected:
@@ -227,14 +181,15 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
+
     try {
       cl::Program::Sources source(
-            1,
-            std::make_pair(kernel_source.c_str(),
-              strlen(kernel_source.c_str())));
+          1,
+          std::make_pair(kernel_source.c_str(), strlen(kernel_source.c_str())));
       cl::Program program_ = cl::Program(context(), source);
-      cl_int err = CL_SUCCESS;
       program_.build({device()}, temp);
+
+      cl_int err = CL_SUCCESS;
       // Iterate over the kernel list and get all the kernels from this group
       // and mark them as compiled.
       for (auto kern : kernel_info()) {
@@ -277,7 +232,7 @@ class opencl_context {
     if (!kernel_info()[kernel_name].exists) {
       compile_kernel_group(kernel_name);
     }
-    return opencl_context_base::getInstance().kernels[kernel_name];
+    return kernels()[kernel_name];
   }
 
   /**

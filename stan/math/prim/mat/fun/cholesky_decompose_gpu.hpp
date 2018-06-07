@@ -66,7 +66,7 @@ namespace stan {
         } catch (const cl::Error& e) {
           check_opencl_error("cholesky_decompose", e);
         }
-        copy(V, D);
+        copy(D, V);
         copy_submatrix(V, A, 0, 0, offset, offset, block, block);
 
         V = lower_triangular_inverse(D);
@@ -142,7 +142,7 @@ namespace stan {
       int max_workgroup_size = opencl_context.max_workgroup_size();
       if(m.cols()<=512){
         A = cholesky_decompose_gpu(A, std::min(100, max_workgroup_size));
-        copy(A, m_tmp); // NOLINT             
+        copy(m_tmp, A); // NOLINT             
         return m_tmp;
       }
       
@@ -164,7 +164,7 @@ namespace stan {
         zeros(V);
         int block_level2 = std::min(100, max_workgroup_size);        
         V = cholesky_decompose_gpu(D, block_level2);
-        copy(V, D);
+        copy(D, V);
         copy_submatrix(V, A, 0, 0, offset, offset, block, block);
 
         V = lower_triangular_inverse(D);
@@ -201,7 +201,7 @@ namespace stan {
       check_diagonal_zeros("cholesky_decompose_gpu",
         "Matrix m", A);
       zeros(A, UPPER);
-      copy(A, m_tmp); // NOLINT
+      copy(m_tmp, A); // NOLINT
 
       return m_tmp;
     }

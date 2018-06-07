@@ -13,6 +13,9 @@
 #include <stan/math/rev/arr.hpp>
 
 #include <stan/math/rev/mat/fun/cholesky_decompose.hpp>
+#ifdef STAN_OPENCL
+#include <stan/math/rev/mat/fun/cholesky_decompose_gpu.hpp>
+#endif
 #include <stan/math/rev/mat/fun/columns_dot_product.hpp>
 #include <stan/math/rev/mat/fun/columns_dot_self.hpp>
 #include <stan/math/rev/mat/fun/cov_exp_quad.hpp>

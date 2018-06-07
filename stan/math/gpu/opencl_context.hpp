@@ -170,6 +170,9 @@ class opencl_context_base {
     const char* lower_tri_inverse_step3_kernel =
 #include <stan/math/gpu/kernels/lower_tri_inverse_step3_kernel.cl>
         ;  // NOLINT
+    const char* cholesky_decomposition_kernel =
+#include <stan/math/gpu/kernels/cholesky_decomposition_kernel.cl>
+        ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -195,6 +198,7 @@ class opencl_context_base {
     kernel_info["lower_tri_inverse_step1"] = {false, "inverse", lower_tri_inverse_step1_kernel};
     kernel_info["lower_tri_inverse_step2"] = {false, "inverse", lower_tri_inverse_step2_kernel};
     kernel_info["lower_tri_inverse_step3"] = {false, "inverse", lower_tri_inverse_step3_kernel};
+    kernel_info["cholesky_block"] = {false, "cholesky_decompose", cholesky_decomposition_kernel};
   }
 
  protected:

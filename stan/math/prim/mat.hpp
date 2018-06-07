@@ -76,6 +76,11 @@
 #include <stan/math/prim/mat/fun/cholesky_corr_constrain.hpp>
 #include <stan/math/prim/mat/fun/cholesky_corr_free.hpp>
 #include <stan/math/prim/mat/fun/cholesky_decompose.hpp>
+
+#ifdef STAN_OPENCL
+#include <stan/math/prim/mat/fun/cholesky_decompose_gpu.hpp>
+#endif
+
 #include <stan/math/prim/mat/fun/cholesky_factor_constrain.hpp>
 #include <stan/math/prim/mat/fun/cholesky_factor_free.hpp>
 #include <stan/math/prim/mat/fun/col.hpp>

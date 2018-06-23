@@ -6,7 +6,9 @@
 #include <stan/math/gpu/multiply_matrix_gpu.hpp>
 #include <stan/math/gpu/basic_matrix_gpu.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>
-#include <stan/math/gpu/err/check_matrix_gpu.hpp>
+#include <stan/math/gpu/err/check_diagonal_zeros.hpp>
+#include <stan/math/gpu/err/check_nan.hpp>
+#include <stan/math/gpu/err/check_symmetric.hpp>
 #include <stan/math/prim/mat/err/check_symmetric.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/rev/scal/fun/value_of_rec.hpp>

@@ -3,8 +3,12 @@
 #ifdef STAN_OPENCL
 #include <stan/math/gpu/opencl_context.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/copy_submatrix.hpp>
+#include <stan/math/gpu/zeros.hpp>
+#include <stan/math/gpu/subtract.hpp>
+#include <stan/math/gpu/zeros.hpp>
+#include <stan/math/gpu/copy_triangular_transposed.hpp>
 #include <stan/math/gpu/multiply_matrix_gpu.hpp>
-#include <stan/math/gpu/basic_matrix_gpu.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>
 #include <stan/math/gpu/err/check_diagonal_zeros.hpp>
 #include <stan/math/gpu/err/check_nan.hpp>

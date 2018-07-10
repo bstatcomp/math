@@ -3,7 +3,6 @@
 #ifdef STAN_OPENCL
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
-#include <stan/math/gpu/basic_matrix_gpu.hpp>
 #include <stan/math/prim/mat/fun/cholesky_decompose_gpu.hpp>
 #include <stan/math/gpu/multiply_matrix_gpu.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>

@@ -18,7 +18,6 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include <iostream>
 #include <fstream>
 
 /*   @file stanmathcl/matrix_inverse.hpp
@@ -46,7 +45,8 @@ namespace stan {
      *  positive definite (if m has more than 0 elements)
      */    
     inline matrix_gpu cholesky_decompose_gpu(matrix_gpu& A, int block) {
-      cl::Kernel kernel_chol_block = opencl_context.get_kernel("cholesky_block");
+      cl::Kernel kernel_chol_block
+         = opencl_context.get_kernel("cholesky_block");
       cl::CommandQueue cmd_queue = opencl_context.queue();
       // Will be managed by the library core system
       int offset = 0;
@@ -142,15 +142,14 @@ namespace stan {
       Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
        m_tmp(m.rows(), m.cols());
       int max_workgroup_size = opencl_context.max_workgroup_size();
-      if(m.cols()<=512){
+      if (m.cols() <= 512) {
         A = cholesky_decompose_gpu(A, std::min(100, max_workgroup_size));
-        copy(m_tmp, A); // NOLINT             
+        copy(m_tmp, A); // NOLINT
         return m_tmp;
       }
-      
       cl::CommandQueue cmd_queue = opencl_context.queue();
-      cl::Kernel kernel_chol_block = opencl_context.get_kernel("cholesky_block");
-     
+      cl::Kernel kernel_chol_block
+          = opencl_context.get_kernel("cholesky_block");
       // Will be managed by the library core system
       int block = std::min(400, max_workgroup_size);
       int offset = 0;
@@ -164,7 +163,7 @@ namespace stan {
 
         copy_submatrix(A, D, offset, offset, 0, 0, block, block);
         zeros(V);
-        int block_level2 = std::min(100, max_workgroup_size);        
+        int block_level2 = std::min(100, max_workgroup_size);
         V = cholesky_decompose_gpu(D, block_level2);
         copy(D, V);
         copy_submatrix(V, A, 0, 0, offset, offset, block, block);

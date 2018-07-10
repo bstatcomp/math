@@ -87,20 +87,19 @@ namespace stan {
             ++pos;
           }
         }
-        
         matrix_gpu L_gpu(L);
         matrix_gpu Lbar_gpu(Lbar);
         int M = M_;
         int block_size_ = 128;
         block_size_ = std::max((M / 8 / 16) * 16, 8);
         block_size_ = std::min(block_size_, 512);
-        if(M<=256){
+        if (M <= 256) {
           block_size_ = M;
-        }else if(M<=1024){
+        } else if (M <= 1024) {
           block_size_ = 256;
-        }else if(M<=4096){
+        } else if (M <= 4096) {
           block_size_ = 352;
-        }else if(M<=8192){
+        } else if (M <= 8192) {
           block_size_ = 320;
         }
         for (int k = M; k > 0; k -= block_size_) {
@@ -187,7 +186,6 @@ namespace stan {
           for (size_type i = j; i < M_; ++i)
             variRefA_[pos++]->adj_ += Lbar.coeffRef(i, j);
       }
-      
     };
     /**
      * Reverse mode specialization of cholesky decomposition on a GPU
@@ -206,9 +204,9 @@ namespace stan {
       L_A = cholesky_decompose_gpu(L_A);
       // Memory allocated in arena.
       vari* dummy = new vari(0.0, false);
-      Eigen::Matrix<var, -1, -1> L(A.rows(), A.cols());      
+      Eigen::Matrix<var, -1, -1> L(A.rows(), A.cols());
       cholesky_gpu *baseVari = new cholesky_gpu(A, L_A);
-      
+
       size_t pos = 0;
       for (size_type j = 0; j < L.cols(); ++j) {
         for (size_type i = j; i < L.cols(); ++i) {
@@ -216,7 +214,7 @@ namespace stan {
         }
         for (size_type k = 0; k < j; ++k)
           L.coeffRef(k, j).vi_ = dummy;
-      }      
+      }
       return L;
     }
   }

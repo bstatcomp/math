@@ -3,11 +3,16 @@
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
+#include <stan/math/gpu/copy_submatrix.hpp>
+#include <stan/math/gpu/copy_triangular.hpp>
+#include <stan/math/gpu/zeros.hpp>
+#include <stan/math/gpu/subtract.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <stan/math/prim/mat/err/check_square.hpp>
 #include <stan/math/rev/core.hpp>
 #include <stan/math/rev/mat/fun/typedefs.hpp>
 #include <vector>
+#include <algorithm>
 
 namespace stan {
 namespace math {
@@ -276,9 +281,11 @@ class mdivide_left_tri_vd_vari : public vari {
   }
 
   virtual void chain() {
-    using Eigen::Map;
     using Eigen::Matrix;
+    using Eigen::MatrixXd;
+    using Eigen::Map;
     Matrix<double, R1, C1> adjA(M_, M_);
+    Matrix<double, R1, C1> adjA1(M_, M_);
     Matrix<double, R1, C2> adjC(M_, N_);
 
     size_t pos = 0;
@@ -286,13 +293,40 @@ class mdivide_left_tri_vd_vari : public vari {
       for (size_type i = 0; i < adjC.rows(); i++)
         adjC(i, j) = variRefC_[pos++]->adj_;
 
-    adjA.noalias()
+    if (TriView == Eigen::Lower) {
+      Matrix<double, R1, C2> temp(M_, N_);
+      Matrix<double, R1, C1> temp2(M_, M_);
+      Matrix<double, R1, C1> temp1(M_, M_);
+      Matrix<double, R1, C1> temp3(M_, M_);
+      Matrix<double, R1, C1> temp4(M_, M_);
+      Matrix<double, R1, C1> temp5(M_, M_);
+      temp = Map<Matrix<double, R1, C2> >(C_, M_, N_);
+      temp1 = Map<Matrix<double, R1, C1> >(A_, M_, M_);
+
+      stan::math::matrix_gpu A4_gpu(adjC);
+      stan::math::matrix_gpu A2_gpu(temp);
+      stan::math::matrix_gpu A2t_gpu(N_, M_);
+      stan::math::matrix_gpu AA_gpu(M_, M_);
+      stan::math::matrix_gpu A3_gpu(M_, M_);
+      stan::math::matrix_gpu A3a_gpu(M_, M_);
+
+      A2t_gpu = stan::math::transpose(A2_gpu);
+      AA_gpu = stan::math::multiply(A4_gpu, A2t_gpu);
+      stan::math::matrix_gpu A1_gpu(temp1);
+      A1_gpu = stan::math::copy_triangular(A1_gpu, stan::math::LOWER);
+      A1_gpu = stan::math::lower_triangular_inverse(A1_gpu);
+      A1_gpu = stan::math::transpose(A1_gpu);
+      A3a_gpu = stan::math::multiply(A1_gpu, AA_gpu);
+      A3a_gpu = stan::math::multiply(A3a_gpu, -1.0);
+      stan::math::copy(adjA, A3a_gpu);
+    } else {
+      adjA.noalias()
         = -Map<Matrix<double, R1, C1> >(A_, M_, M_)
                .template triangularView<TriView>()
                .transpose()
                .solve(adjC
                       * Map<Matrix<double, R1, C2> >(C_, M_, N_).transpose());
-
+    }
     pos = 0;
     if (TriView == Eigen::Lower) {
       for (size_type j = 0; j < adjA.cols(); j++)

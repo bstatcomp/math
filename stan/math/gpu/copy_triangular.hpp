@@ -6,8 +6,6 @@
 
 namespace stan {
 namespace math {
-enum triangularity { LOWER = 0, UPPER = 1, NONE = 2 };
-
 /**
  * Copies the lower or upper
  * triangular of the source matrix to

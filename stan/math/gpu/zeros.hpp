@@ -6,7 +6,6 @@
 
 namespace stan {
 namespace math {
-enum triangularity { LOWER = 0, UPPER = 1, NONE = 2 };
 /**
  * Stores zeros in the matrix on the GPU.
  * Supports writing zeroes to the lower and upper triangular or

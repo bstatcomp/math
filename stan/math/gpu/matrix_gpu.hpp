@@ -16,7 +16,7 @@
  */
 namespace stan {
 namespace math {
-
+enum triangularity { LOWER = 0, UPPER = 1, NONE = 2 };
 /**
  * This class represents a matrix on the GPU.
  *

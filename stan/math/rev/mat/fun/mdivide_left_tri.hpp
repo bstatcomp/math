@@ -294,6 +294,14 @@ class mdivide_left_tri_vd_vari : public vari {
         adjC(i, j) = variRefC_[pos++]->adj_;
 
     if (TriView == Eigen::Lower) {
+#ifndef STAN_OPENCL
+      adjA.noalias()
+        = -Map<Matrix<double, R1, C1> >(A_, M_, M_)
+               .template triangularView<TriView>()
+               .transpose()
+               .solve(adjC
+                      * Map<Matrix<double, R1, C2> >(C_, M_, N_).transpose());
+#else
       Matrix<double, R1, C2> temp(M_, N_);
       Matrix<double, R1, C1> temp2(M_, M_);
       Matrix<double, R1, C1> temp1(M_, M_);
@@ -319,6 +327,7 @@ class mdivide_left_tri_vd_vari : public vari {
       A3a_gpu = stan::math::multiply(A1_gpu, AA_gpu);
       A3a_gpu = stan::math::multiply(A3a_gpu, -1.0);
       stan::math::copy(adjA, A3a_gpu);
+#endif
     } else {
       adjA.noalias()
         = -Map<Matrix<double, R1, C1> >(A_, M_, M_)

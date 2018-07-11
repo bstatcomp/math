@@ -303,11 +303,7 @@ class mdivide_left_tri_vd_vari : public vari {
                       * Map<Matrix<double, R1, C2> >(C_, M_, N_).transpose());
 #else
       Matrix<double, R1, C2> temp(M_, N_);
-      Matrix<double, R1, C1> temp2(M_, M_);
       Matrix<double, R1, C1> temp1(M_, M_);
-      Matrix<double, R1, C1> temp3(M_, M_);
-      Matrix<double, R1, C1> temp4(M_, M_);
-      Matrix<double, R1, C1> temp5(M_, M_);
       temp = Map<Matrix<double, R1, C2> >(C_, M_, N_);
       temp1 = Map<Matrix<double, R1, C1> >(A_, M_, M_);
 

@@ -173,6 +173,9 @@ class opencl_context_base {
     const char* cholesky_decomposition_kernel =
 #include <stan/math/gpu/kernels/cholesky_decomposition_kernel.cl>
         ;  // NOLINT
+    const char* cov_exp_quad_kernel =
+#include <stan/math/gpu/kernels/cov_exp_quad_kernel.cl>
+        ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -212,6 +215,9 @@ class opencl_context_base {
         = {false, "inverse", lower_tri_inverse_step3_kernel};
     kernel_info["cholesky_block"]
         = {false, "cholesky_decompose", cholesky_decomposition_kernel};
+    kernel_info["cov_exp_quad"]
+        = {false, "basic_matrix", cov_exp_quad_kernel};
+        
   }
 
  protected:
@@ -282,7 +288,7 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
-
+    std::cout << "compiling " << kernel_group << std::endl;
     try {
       cl::Program::Sources source(
           1,
@@ -297,7 +303,7 @@ class opencl_context {
         if (strcmp(kern.second.group, kernel_group) == 0) {
           opencl_context_base::getInstance().kernels[(kern.first)]
               = cl::Kernel(program_, kern.first, &err);
-          kern.second.exists = true;
+          opencl_context_base::getInstance().kernel_info[kern.first].exists = true;
         }
       }
     } catch (const cl::Error& e) {
@@ -330,7 +336,7 @@ class opencl_context {
    */
   inline cl::Kernel get_kernel(const char* kernel_name) {
     // Compile the kernel group and return the kernel
-    if (!kernel_info()[kernel_name].exists) {
+    if (!opencl_context_base::getInstance().kernel_info[kernel_name].exists) {
       compile_kernel_group(kernel_name);
     }
     return kernels()[kernel_name];

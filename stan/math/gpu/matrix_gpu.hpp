@@ -89,6 +89,30 @@ class matrix_gpu {
       check_opencl_error("copy GPU->GPU", e);
     }
   }
+  matrix_gpu(const std::vector<double>& A) : rows_(1), cols_(A.size()) {
+    if (size() > 0) {
+      cl::Context& ctx = opencl_context.context();
+      cl::CommandQueue& queue = opencl_context.queue();
+      try {
+        // creates the OpenCL buffer to copy the Eigen
+        // matrix to the OpenCL device
+        oclBuffer_
+            = cl::Buffer(ctx, CL_MEM_READ_WRITE, sizeof(double) * A.size());
+        /**
+         * Writes the contents of A to the OpenCL buffer
+         * starting at the offset 0.
+         * CL_TRUE denotes that the call is blocking as
+         * we do not want to execute any further kernels
+         * on the device until we are sure that the data
+         * is finished transfering)
+         */
+        queue.enqueueWriteBuffer(oclBuffer_, CL_TRUE, 0,
+                                 sizeof(double) * A.size(), A.data());
+      } catch (const cl::Error& e) {
+        check_opencl_error("matrix constructor", e);
+      }
+    }
+  }
   /**
    * Constructor for the matrix_gpu that
    * only allocates the buffer on the GPU.

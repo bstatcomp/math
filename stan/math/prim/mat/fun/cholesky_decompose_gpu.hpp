@@ -138,6 +138,7 @@ namespace stan {
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>::type
     cholesky_decompose_gpu(const Eigen::Matrix<T,
      Eigen::Dynamic, Eigen::Dynamic>& m) {
+      clock_t start_check = clock();
       if (m.size() == 0) return m;
       matrix_gpu A(m);
       check_symmetric("cholesky_decompose", "m", A);
@@ -206,7 +207,9 @@ namespace stan {
         "Matrix m", A);
       zeros(A, UPPER);
       copy(m_tmp, A); // NOLINT
-
+      clock_t end_check = clock();
+      double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+      std::cout << "chol prim: " << deltaT << std::endl;
       return m_tmp;
     }
   }

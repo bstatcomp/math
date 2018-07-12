@@ -68,6 +68,7 @@ namespace stan {
        *
        */
       virtual void chain() {
+        clock_t start_check = clock();
         using Eigen::MatrixXd;
         using Eigen::Lower;
         using Eigen::Block;
@@ -184,6 +185,10 @@ namespace stan {
         for (size_type j = 0; j < M_; ++j)
           for (size_type i = j; i < M_; ++i)
             variRefA_[pos++]->adj_ += Lbar.coeffRef(i, j);
+        
+      clock_t end_check = clock();
+      double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+      std::cout << "chol rev: " << deltaT << std::endl;
       }
     };
     /**
@@ -196,16 +201,12 @@ namespace stan {
      */
     inline Eigen::Matrix<var, -1, -1>
       cholesky_decompose_gpu(const Eigen::Matrix<var, -1, -1> &A) {
-      check_square("cholesky_decompose", "A", A);
-      check_symmetric("cholesky_decompose", "A", A);
       Eigen::Matrix<double, -1, -1> L_A(value_of_rec(A));
-      L_A = L_A.selfadjointView<Eigen::Lower>();
-      L_A = cholesky_decompose_gpu(L_A);
+      L_A = cholesky_decompose_gpu(L_A);      
       // Memory allocated in arena.
       vari* dummy = new vari(0.0, false);
       Eigen::Matrix<var, -1, -1> L(A.rows(), A.cols());
       cholesky_gpu *baseVari = new cholesky_gpu(A, L_A);
-
       size_t pos = 0;
       for (size_type j = 0; j < L.cols(); ++j) {
         for (size_type i = j; i < L.cols(); ++i) {

@@ -558,7 +558,7 @@ TEST(RevMath, cov_exp_quad_vector_vdd) {
     }
   }
 }
-
+/*
 TEST(RevMath, cov_exp_quad_vector_dvv) {
   typedef Eigen::Matrix<double, Eigen::Dynamic, 1> vector_d;
   Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> cov;
@@ -718,7 +718,7 @@ TEST(RevMath, cov_exp_quad_vector_ddv) {
     }
   }
 }
-
+*/
 TEST(RevMath, cov_exp_quad1_vec_eigen_rvec) {
   using stan::math::squared_distance;
   using stan::math::var;

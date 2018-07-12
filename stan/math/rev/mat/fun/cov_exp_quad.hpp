@@ -4,6 +4,10 @@
 #include <stan/math/rev/core.hpp>
 #include <stan/math/rev/scal/fun/value_of.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
+#ifdef STAN_OPENCL
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/cov_exp_quad.hpp>
+#endif
 #include <stan/math/prim/scal/err/check_not_nan.hpp>
 #include <stan/math/prim/scal/err/check_positive.hpp>
 #include <stan/math/prim/scal/fun/square.hpp>
@@ -80,8 +84,12 @@ class cov_exp_quad_vari : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari*>(size_)) {
+    
+    
+    
     double inv_half_sq_l_d = 0.5 / (l_d_ * l_d_);
-    size_t pos = 0;
+     size_t pos = 0;
+#ifndef STAN_OPENCL   
     for (size_t j = 0; j < size_ - 1; ++j) {
       for (size_t i = j + 1; i < size_; ++i) {
         double dist_sq = squared_distance(x[i], x[j]);
@@ -91,11 +99,49 @@ class cov_exp_quad_vari : public vari {
         ++pos;
       }
     }
+#else
+    clock_t start_check = clock();
+    Eigen::Matrix<double, -1, -1> ids(size_, size_);
+    Eigen::Matrix<double, -1, -1> cnst(2,1);
+    cnst(0) = sigma_sq_d_;
+    cnst(1) = inv_half_sq_l_d;
+    for (size_t j = 0; j < size_ - 1; ++j) {
+      for (size_t i = j + 1; i < size_; ++i) {
+        ids(i, j) = pos;
+        ++pos;
+      }
+    }
+    Eigen::Matrix<double, -1, -1> dist(1, size_ltri_);    
+    Eigen::Matrix<double, -1, -1> temp(1, size_ltri_);    
+    matrix_gpu X_gpu(x);
+    matrix_gpu pos_gpu(ids);
+    matrix_gpu cnst_gpu(cnst);
+    matrix_gpu dist_gpu(1,size_ltri_);
+    matrix_gpu temp_gpu(1,size_ltri_);
+    cov_exp_quad(X_gpu, pos_gpu, cnst_gpu, dist_gpu, temp_gpu);
+    copy(dist, dist_gpu);
+    copy(temp, temp_gpu);
+    pos = 0;
+    for (size_t j = 0; j < size_ - 1; ++j) {
+      for (size_t i = j + 1; i < size_; ++i) {
+        double dist_sq = squared_distance(x[i], x[j]);
+        dist_[pos] = dist_sq;
+        cov_lower_[pos] = new vari(
+            temp(pos), false);
+        ++pos;
+      }
+    }
+    clock_t end_check = clock();
+    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+    std::cout << "cov_exp_quad: " << deltaT << std::endl;
+#endif
+    
     for (size_t i = 0; i < size_; ++i)
       cov_diag_[i] = new vari(sigma_sq_d_, false);
   }
 
   virtual void chain() {
+    clock_t start_check = clock();
     double adjl = 0;
     double adjsigma = 0;
 
@@ -111,6 +157,9 @@ class cov_exp_quad_vari : public vari {
     }
     l_vari_->adj_ += adjl / (l_d_ * l_d_ * l_d_);
     sigma_vari_->adj_ += adjsigma * 2 / sigma_d_;
+    clock_t end_check = clock();
+    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+    std::cout << "cov_exp_quad chain: " << deltaT << std::endl;
   }
 };
 

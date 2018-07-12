@@ -6,6 +6,13 @@
 #include <stan/math/prim/mat/fun/promote_common.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <stan/math/prim/mat/err/check_square.hpp>
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/copy_submatrix.hpp>
+#include <stan/math/gpu/zeros.hpp>
+#include <stan/math/gpu/subtract.hpp>
+#include <stan/math/gpu/copy_triangular_transposed.hpp>
+#include <stan/math/gpu/multiply_matrix_gpu.hpp>
+#include <stan/math/gpu/inverse_gpu.hpp>
 
 namespace stan {
 namespace math {
@@ -44,12 +51,12 @@ mdivide_left_tri(const Eigen::Matrix<T1, R1, C1> &A,
 template <int TriView, typename T, int R1, int C1>
 inline Eigen::Matrix<T, R1, C1> mdivide_left_tri(
     const Eigen::Matrix<T, R1, C1> &A) {
-  check_square("mdivide_left_tri", "A", A);
+  matrix_gpu A_gpu(A);
+  A_gpu = lower_triangular_inverse(A_gpu);
   int n = A.rows();
-  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> b;
-  b.setIdentity(n, n);
-  A.template triangularView<TriView>().solveInPlace(b);
-  return b;
+  Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> c(n, n);
+  copy(c, A_gpu);
+  return c;
 }
 
 }  // namespace math

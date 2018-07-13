@@ -36,6 +36,7 @@ inline
                            Eigen::Dynamic, Eigen::Dynamic>
     cov_exp_quad(const std::vector<T_x>& x, const T_sigma& sigma,
                  const T_l& length_scale) {
+  clock_t start_check = clock();
   using std::exp;
   check_positive("cov_exp_quad", "marginal variance", sigma);
   check_positive("cov_exp_quad", "length-scale", length_scale);
@@ -62,6 +63,10 @@ inline
     }
   }
   cov(x_size - 1, x_size - 1) = sigma_sq;
+  
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "cov_exp_quad 1: " << deltaT << std::endl;
   return cov;
 }
 
@@ -87,7 +92,7 @@ inline
     cov_exp_quad(const std::vector<T_x>& x, const T_sigma& sigma,
                  const std::vector<T_l>& length_scale) {
   using std::exp;
-
+  clock_t start_check = clock();
   check_positive("cov_exp_quad", "marginal variance", sigma);
   for (size_t n = 0; n < x.size(); ++n) {
     check_not_nan("cov_exp_quad", "x", x[n]);
@@ -121,6 +126,10 @@ inline
     }
   }
   cov(x_size - 1, x_size - 1) = sigma_sq;
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "cov_exp_quad 2: " << deltaT << std::endl;   
+
   return cov;
 }
 
@@ -147,6 +156,7 @@ inline typename Eigen::Matrix<
 cov_exp_quad(const std::vector<T_x1>& x1, const std::vector<T_x2>& x2,
              const T_sigma& sigma, const T_l& length_scale) {
   using std::exp;
+  clock_t start_check = clock();
   check_positive("cov_exp_quad", "marginal variance", sigma);
   check_positive("cov_exp_quad", "length-scale", length_scale);
   for (size_t n = 0; n < x1.size(); ++n)
@@ -169,6 +179,9 @@ cov_exp_quad(const std::vector<T_x1>& x1, const std::vector<T_x2>& x2,
           = sigma_sq * exp(squared_distance(x1[i], x2[j]) * neg_half_inv_l_sq);
     }
   }
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "cov_exp_quad 3: " << deltaT << std::endl;
   return cov;
 }
 

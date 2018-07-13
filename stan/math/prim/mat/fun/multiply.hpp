@@ -2,6 +2,8 @@
 #define STAN_MATH_PRIM_MAT_FUN_MULTIPLY_HPP
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/multiply_matrix_gpu.hpp>
 #include <stan/math/prim/arr/err/check_matching_sizes.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
@@ -22,6 +24,7 @@ template <int R, int C, typename T>
 inline typename boost::enable_if_c<boost::is_arithmetic<T>::value,
                                    Eigen::Matrix<double, R, C> >::type
 multiply(const Eigen::Matrix<double, R, C>& m, T c) {
+  std::cout << "c1" << std::endl;
   return c * m;
 }
 
@@ -37,6 +40,7 @@ template <int R, int C, typename T>
 inline typename boost::enable_if_c<boost::is_arithmetic<T>::value,
                                    Eigen::Matrix<double, R, C> >::type
 multiply(T c, const Eigen::Matrix<double, R, C>& m) {
+  std::cout << "c2" << std::endl;
   return c * m;
 }
 
@@ -54,8 +58,18 @@ template <int R1, int C1, int R2, int C2>
 inline Eigen::Matrix<double, R1, C2> multiply(
     const Eigen::Matrix<double, R1, C1>& m1,
     const Eigen::Matrix<double, R2, C2>& m2) {
+  clock_t start_check = clock();
   check_multiplicable("multiply", "m1", m1, "m2", m2);
-  return m1 * m2;
+  matrix_gpu m1_gpu(m1);
+  matrix_gpu m2_gpu(m2);
+  matrix_gpu m3_gpu(m1.rows(),m2.cols());
+  Eigen::Matrix<double, R1, C2> a(m1.rows(),m2.cols());
+  m3_gpu = multiply(m1_gpu, m2_gpu);
+  copy(a, m3_gpu);
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "multiply: " << deltaT << std::endl;
+  return a;
 }
 
 /**
@@ -70,6 +84,7 @@ inline Eigen::Matrix<double, R1, C2> multiply(
 template <int C1, int R2>
 inline double multiply(const Eigen::Matrix<double, 1, C1>& rv,
                        const Eigen::Matrix<double, R2, 1>& v) {
+  
   check_matching_sizes("multiply", "rv", rv, "v", v);
   return rv.dot(v);
 }

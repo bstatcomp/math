@@ -27,13 +27,17 @@ inline Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
                      R1, C2>
 mdivide_right_tri(const Eigen::Matrix<T1, R1, C1> &b,
                   const Eigen::Matrix<T2, R2, C2> &A) {
+                      clock_t start_check = clock();
+
+  Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
+                     R1, C2> DD;
   check_square("mdivide_right_tri", "A", A);
   check_multiplicable("mdivide_right_tri", "b", b, "A", A);
   if (TriView != Eigen::Lower && TriView != Eigen::Upper)
     domain_error("mdivide_left_tri",
                  "triangular view must be Eigen::Lower or Eigen::Upper", "",
                  "");
-  return promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(
+  DD = promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(
              A)
       .template triangularView<TriView>()
       .transpose()
@@ -41,7 +45,11 @@ mdivide_right_tri(const Eigen::Matrix<T1, R1, C1> &b,
           promote_common<Eigen::Matrix<T1, R1, C1>, Eigen::Matrix<T2, R1, C1> >(
               b)
               .transpose())
-      .transpose();
+      .transpose();  
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "mdivide_right_tri 3: " << deltaT << std::endl;
+  return DD;
 }
 
 }  // namespace math

@@ -65,6 +65,8 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
 
   const int size_y = y_vec[0].size();
   const int size_mu = mu_vec[0].size();
+  clock_t end_check;
+  double deltaT;
   if (likely(size_vec > 1)) {
     // check size consistency of all random variables y
     int size_y_old = size_y;
@@ -93,7 +95,6 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
       size_mu_old = size_mu_new;
     }
   }
-
   check_size_match(function, "Size of random variable", size_y,
                    "size of location parameter", size_mu);
   check_size_match(function, "Size of random variable", size_y,
@@ -105,7 +106,6 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
     check_finite(function, "Location parameter", mu_vec[i]);
     check_not_nan(function, "Random variable", y_vec[i]);
   }
-
   if (unlikely(size_y == 0))
     return T_return(0.0);
 
@@ -114,22 +114,20 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
 
   if (include_summand<propto>::value)
     logp += NEG_LOG_SQRT_TWO_PI * size_y * size_vec;
-
-  const matrix_partials_t inv_L_dbl
+  matrix_partials_t inv_L_dbl
       = mdivide_left_tri<Eigen::Lower>(value_of(L));
-
   if (include_summand<propto, T_y, T_loc, T_covar_elem>::value) {
     for (size_t i = 0; i < size_vec; i++) {
       vector_partials_t y_minus_mu_dbl(size_y);
       for (int j = 0; j < size_y; j++)
         y_minus_mu_dbl(j) = value_of(y_vec[i](j)) - value_of(mu_vec[i](j));
-
       const row_vector_partials_t half
           = (inv_L_dbl.template triangularView<Eigen::Lower>() * y_minus_mu_dbl)
                 .transpose();
       const vector_partials_t scaled_diff
           = (half * inv_L_dbl.template triangularView<Eigen::Lower>())
                 .transpose();
+      
 
       logp -= 0.5 * dot_self(half);
 
@@ -142,19 +140,26 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
           ops_partials.edge2_.partials_vec_[i](j) += scaled_diff(j);
       }
       if (!is_constant_struct<T_covar>::value) {
-        ops_partials.edge3_.partials_ += scaled_diff * half;
+        ops_partials.edge3_.partials_ += scaled_diff * half;//
       }
     }
   }
-
   if (include_summand<propto, T_covar_elem>::value) {
     logp += inv_L_dbl.diagonal().array().log().sum() * size_vec;
     if (!is_constant_struct<T_covar>::value) {
+#ifdef STAN_OPENCL
+      matrix_gpu a(inv_L_dbl);
+      a = transpose(a);
+      copy(inv_L_dbl, a);
+      ops_partials.edge3_.partials_ -= size_vec * inv_L_dbl;      
+#else
       ops_partials.edge3_.partials_ -= size_vec * inv_L_dbl.transpose();
+#endif
+      
     }
   }
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  end_check = clock();
+  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   std::cout << "multi_normal_chol: " << deltaT << std::endl;
   return ops_partials.build(logp);
 }

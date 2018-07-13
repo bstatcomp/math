@@ -100,7 +100,7 @@ namespace stan {
         } else if (M <= 4096) {
           block_size_ = 352;
         } else if (M <= 8192) {
-          block_size_ = 320;
+          block_size_ = 352;
         }
         for (int k = M; k > 0; k -= block_size_) {
           int j = std::max(0, k - block_size_);

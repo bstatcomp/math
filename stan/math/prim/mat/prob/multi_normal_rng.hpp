@@ -35,7 +35,7 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
                                         const Eigen::MatrixXd& S, RNG& rng) {
   using boost::normal_distribution;
   using boost::variate_generator;
-
+  clock_t start_check = clock();
   static const char* function = "multi_normal_rng";
 
   check_positive(function, "Covariance matrix rows", S.rows());
@@ -53,7 +53,12 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
   for (int i = 0; i < S.cols(); i++)
     z(i) = std_normal_rng();
 
-  return mu + llt_of_S.matrixL() * z;
+  
+  Eigen::VectorXd a = mu + llt_of_S.matrixL() * z;
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "multi_normal_rng: " << deltaT << std::endl;
+  return a;
 }
 
 }  // namespace math

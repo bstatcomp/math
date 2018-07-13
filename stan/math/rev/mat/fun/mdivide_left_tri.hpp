@@ -101,7 +101,6 @@ class mdivide_left_tri_vv_vari : public vari {
     Matrix<double, R1, C1> adjA(M_, M_);
     Matrix<double, R2, C2> adjB(M_, N_);
     Matrix<double, R1, C2> adjC(M_, N_);
-    std::cout << "a1" << std::endl;
     size_t pos = 0;
     for (size_type j = 0; j < adjC.cols(); j++)
       for (size_type i = 0; i < adjC.rows(); i++)
@@ -204,7 +203,6 @@ class mdivide_left_tri_dv_vari : public vari {
     for (size_type j = 0; j < adjC.cols(); j++)
       for (size_type i = 0; i < adjC.rows(); i++)
         adjC(i, j) = variRefC_[pos++]->adj_;
-    std::cout << "AD" << std::endl;
 
     adjB = Map<Matrix<double, R1, C1> >(A_, M_, M_)
                .template triangularView<TriView>()

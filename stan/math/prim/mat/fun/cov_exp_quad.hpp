@@ -4,6 +4,8 @@
 #include <stan/math/prim/scal/meta/return_type.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/cov_exp_quad.hpp>
 #include <stan/math/prim/mat/fun/squared_distance.hpp>
 #include <stan/math/prim/scal/err/check_not_nan.hpp>
 #include <stan/math/prim/scal/err/check_positive.hpp>
@@ -46,14 +48,23 @@ inline
   Eigen::Matrix<typename stan::return_type<T_x, T_sigma, T_l>::type,
                 Eigen::Dynamic, Eigen::Dynamic>
       cov(x.size(), x.size());
-
   int x_size = x.size();
   if (x_size == 0)
     return cov;
 
   T_sigma sigma_sq = square(sigma);
   T_l neg_half_inv_l_sq = -0.5 / square(length_scale);
-
+#ifdef STAN_OPENCL
+  Eigen::Matrix<double, -1, -1> cnst(2,1);
+  cnst(0) = sigma_sq;
+  cnst(1) = neg_half_inv_l_sq;
+  matrix_gpu cnst_gpu(cnst);
+  matrix_gpu X_gpu(x);
+  matrix_gpu cov_gpu(cov.rows(), cov.cols());
+  cov_exp_quad2(X_gpu,cnst_gpu, cov_gpu);
+  copy(cov, cov_gpu);
+  cov(x_size - 1, x_size - 1) = sigma_sq;
+#else
   for (int j = 0; j < (x_size - 1); ++j) {
     cov(j, j) = sigma_sq;
     for (int i = j + 1; i < x_size; ++i) {
@@ -63,7 +74,7 @@ inline
     }
   }
   cov(x_size - 1, x_size - 1) = sigma_sq;
-  
+#endif
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   std::cout << "cov_exp_quad 1: " << deltaT << std::endl;
@@ -167,18 +178,32 @@ cov_exp_quad(const std::vector<T_x1>& x1, const std::vector<T_x2>& x2,
   Eigen::Matrix<typename stan::return_type<T_x1, T_x2, T_sigma, T_l>::type,
                 Eigen::Dynamic, Eigen::Dynamic>
       cov(x1.size(), x2.size());
+      Eigen::Matrix<typename stan::return_type<T_x1, T_x2, T_sigma, T_l>::type,
+                Eigen::Dynamic, Eigen::Dynamic>
+      cov1(x1.size(), x2.size());
   if (x1.size() == 0 || x2.size() == 0)
     return cov;
 
   T_sigma sigma_sq = square(sigma);
   T_l neg_half_inv_l_sq = -0.5 / square(length_scale);
-
+#ifdef STAN_OPENCL
+  Eigen::Matrix<double, -1, -1> cnst(2,1);
+  cnst(0) = sigma_sq;
+  cnst(1) = neg_half_inv_l_sq;
+  matrix_gpu cnst_gpu(cnst);
+  matrix_gpu X1_gpu(x1);
+  matrix_gpu X2_gpu(x2);
+  matrix_gpu cov_gpu(cov.rows(), cov.cols());
+  cov_exp_quad3(X1_gpu,X2_gpu,cnst_gpu, cov_gpu);
+  copy(cov, cov_gpu);
+#else
   for (size_t i = 0; i < x1.size(); ++i) {
     for (size_t j = 0; j < x2.size(); ++j) {
       cov(i, j)
           = sigma_sq * exp(squared_distance(x1[i], x2[j]) * neg_half_inv_l_sq);
     }
   }
+#endif  
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   std::cout << "cov_exp_quad 3: " << deltaT << std::endl;

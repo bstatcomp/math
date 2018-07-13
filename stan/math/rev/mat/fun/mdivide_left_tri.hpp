@@ -49,6 +49,7 @@ class mdivide_left_tri_vv_vari : public vari {
         variRefC_(reinterpret_cast<vari **>(
             ChainableStack::instance().memalloc_.alloc(sizeof(vari *) * B.rows()
                                                        * B.cols()))) {
+                          std::cout << "D23" << std::endl;
     using Eigen::Map;
     using Eigen::Matrix;
 
@@ -96,6 +97,7 @@ class mdivide_left_tri_vv_vari : public vari {
   }
 
   virtual void chain() {
+                          std::cout << "D2" << std::endl;
     using Eigen::Map;
     using Eigen::Matrix;
     Matrix<double, R1, C1> adjA(M_, M_);
@@ -158,6 +160,7 @@ class mdivide_left_tri_dv_vari : public vari {
         variRefC_(reinterpret_cast<vari **>(
             ChainableStack::instance().memalloc_.alloc(sizeof(vari *) * B.rows()
                                                        * B.cols()))) {
+                          std::cout << "D4" << std::endl;
     using Eigen::Map;
     using Eigen::Matrix;
 
@@ -194,6 +197,7 @@ class mdivide_left_tri_dv_vari : public vari {
   }
 
   virtual void chain() {
+                          std::cout << "D1" << std::endl;
     using Eigen::Map;
     using Eigen::Matrix;
     Matrix<double, R2, C2> adjB(M_, N_);
@@ -243,6 +247,7 @@ class mdivide_left_tri_vd_vari : public vari {
         variRefC_(reinterpret_cast<vari **>(
             ChainableStack::instance().memalloc_.alloc(sizeof(vari *) * B.rows()
                                                        * B.cols()))) {
+                          std::cout << "D45" << std::endl;
     using Eigen::Map;
     using Eigen::Matrix;
 
@@ -371,6 +376,7 @@ inline Eigen::Matrix<var, R1, C2> mdivide_left_tri(
     for (size_type i = 0; i < res.rows(); i++)
       res(i, j).vi_ = baseVari->variRefC_[pos++];
 
+                          std::cout << "D889" << std::endl;
   return res;
 }
 template <int TriView, int R1, int C1, int R2, int C2>
@@ -394,6 +400,7 @@ inline Eigen::Matrix<var, R1, C2> mdivide_left_tri(
     for (size_type i = 0; i < res.rows(); i++)
       res(i, j).vi_ = baseVari->variRefC_[pos++];
 
+                          std::cout << "D778" << std::endl;
   return res;
 }
 template <int TriView, int R1, int C1, int R2, int C2>
@@ -417,6 +424,7 @@ inline Eigen::Matrix<var, R1, C2> mdivide_left_tri(
     for (size_type i = 0; i < res.rows(); i++)
       res(i, j).vi_ = baseVari->variRefC_[pos++];
 
+                          std::cout << "D55" << std::endl;
   return res;
 }
 

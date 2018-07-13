@@ -11,6 +11,8 @@
 #include <stan/math/prim/mat/fun/log_determinant_ldlt.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <stan/math/gpu/matrix_gpu.hpp>
+
 
 namespace stan {
 namespace math {
@@ -33,15 +35,35 @@ namespace math {
 template <class RNG>
 inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
                                         const Eigen::MatrixXd& S, RNG& rng) {
+#ifdef STAN_OPENCL  
   using boost::normal_distribution;
   using boost::variate_generator;
   clock_t start_check = clock();
   static const char* function = "multi_normal_rng";
 
+  check_finite(function, "Location parameter", mu);
+  Eigen::MatrixXd L = cholesky_decompose_gpu(S);
+
+  variate_generator<RNG&, normal_distribution<> > std_normal_rng(
+      rng, normal_distribution<>(0, 1));
+
+  Eigen::VectorXd z(S.cols());
+  for (int i = 0; i < S.cols(); i++)
+    z(i) = std_normal_rng();
+  
+  Eigen::VectorXd a = mu + L * z;
+  clock_t end_check = clock();
+  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "multi_normal_rng: " << deltaT << std::endl;
+  return a;
+#else
+  using boost::normal_distribution;
+  using boost::variate_generator;
+  static const char* function = "multi_normal_rng";
+
   check_positive(function, "Covariance matrix rows", S.rows());
   check_symmetric(function, "Covariance matrix", S);
   check_finite(function, "Location parameter", mu);
-
   Eigen::LLT<Eigen::MatrixXd> llt_of_S = S.llt();
   check_pos_definite("multi_normal_rng", "covariance matrix argument",
                      llt_of_S);
@@ -55,10 +77,9 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
 
   
   Eigen::VectorXd a = mu + llt_of_S.matrixL() * z;
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "multi_normal_rng: " << deltaT << std::endl;
   return a;
+#endif
+  
 }
 
 }  // namespace math

@@ -155,7 +155,7 @@ namespace stan {
       cl::Kernel kernel_chol_block
           = opencl_context.get_kernel("cholesky_block");
       // Will be managed by the library core system
-      int block = std::min(400, max_workgroup_size);
+      int block = std::min(420, max_workgroup_size);
       int offset = 0;
       matrix_gpu V(block, block);
       matrix_gpu D(block, block);

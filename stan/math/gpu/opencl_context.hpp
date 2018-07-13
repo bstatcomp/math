@@ -176,6 +176,12 @@ class opencl_context_base {
     const char* cov_exp_quad_kernel =
 #include <stan/math/gpu/kernels/cov_exp_quad_kernel.cl>
         ;  // NOLINT
+    const char* cov_exp_quad2_kernel =
+#include <stan/math/gpu/kernels/cov_exp_quad2_kernel.cl>
+        ;  // NOLINT
+    const char* cov_exp_quad3_kernel =
+#include <stan/math/gpu/kernels/cov_exp_quad3_kernel.cl>
+        ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -217,6 +223,10 @@ class opencl_context_base {
         = {false, "cholesky_decompose", cholesky_decomposition_kernel};
     kernel_info["cov_exp_quad"]
         = {false, "basic_matrix", cov_exp_quad_kernel};
+    kernel_info["cov_exp_quad2"]
+        = {false, "basic_matrix", cov_exp_quad2_kernel};
+    kernel_info["cov_exp_quad3"]
+        = {false, "basic_matrix", cov_exp_quad3_kernel};
         
   }
 

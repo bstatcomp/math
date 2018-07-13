@@ -32,20 +32,31 @@ inline Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
 mdivide_left_tri(const Eigen::Matrix<T1, R1, C1> &A,
                  const Eigen::Matrix<T2, R2, C2> &b) {
 #ifdef STAN_OPENCL
-  check_square("mdivide_left_tri", "A", A);
-  check_multiplicable("mdivide_left_tri", "A", A, "b", b);
-  clock_t start_check = clock();
-  matrix_gpu A_gpu(A);
-  matrix_gpu b_gpu(b);
-  A_gpu = lower_triangular_inverse(A_gpu);
-  matrix_gpu c_gpu = multiply(A_gpu, b_gpu);
-  int n = A.rows();
-  Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> cc(c_gpu.rows(),c_gpu.cols());
-  copy(cc, c_gpu);
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "mdivide_left_tri 1: " << deltaT << std::endl;
-  return cc;
+  if(TriView==Eigen::Lower){
+    check_square("mdivide_left_tri", "A", A);
+    check_multiplicable("mdivide_left_tri", "A", A, "b", b);
+    clock_t start_check = clock();
+    matrix_gpu A_gpu(A);
+    matrix_gpu b_gpu(b);
+    A_gpu = lower_triangular_inverse(A_gpu);
+    matrix_gpu c_gpu = multiply(A_gpu, b_gpu);    
+    int n = A.rows();
+    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> cc(c_gpu.rows(),c_gpu.cols());
+    copy(cc, c_gpu);
+    clock_t end_check = clock();
+    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+    std::cout << "mdivide_left_tri 1: " << deltaT << std::endl;
+    return cc;  
+  }else{
+    check_square("mdivide_left_tri", "A", A);
+    check_multiplicable("mdivide_left_tri", "A", A, "b", b);
+    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> aa =
+     promote_common<Eigen::Matrix<T1, R1, C1>, Eigen::Matrix<T2, R1, C1> >(A)
+        .template triangularView<TriView>()
+        .solve(
+            promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(b));
+    return aa;
+  }
 #else
   check_square("mdivide_left_tri", "A", A);
   check_multiplicable("mdivide_left_tri", "A", A, "b", b);
@@ -54,7 +65,6 @@ mdivide_left_tri(const Eigen::Matrix<T1, R1, C1> &A,
       .template triangularView<TriView>()
       .solve(
           promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(b));
-  std::cout << aa.rows() << ", " << aa.cols() << std::endl;
   return aa;
 #endif
 }

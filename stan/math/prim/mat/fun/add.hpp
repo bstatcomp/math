@@ -33,6 +33,7 @@ add(const Eigen::Matrix<T1, R, C>& m1, const Eigen::Matrix<T2, R, C>& m2) {
     result(i) = m1(i) + m2(i);
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+  std::cout << "add: " << deltaT << std::endl;
   return result;
 }
 

@@ -13,6 +13,7 @@
 #include <stan/math/gpu/copy_triangular_transposed.hpp>
 #include <stan/math/gpu/multiply_matrix_gpu.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>
+#include <algorithm>
 
 namespace stan {
 namespace math {
@@ -32,38 +33,40 @@ inline Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
 mdivide_left_tri(const Eigen::Matrix<T1, R1, C1> &A,
                  const Eigen::Matrix<T2, R2, C2> &b) {
 #ifdef STAN_OPENCL
-  if(TriView==Eigen::Lower){
+  if ( TriView == Eigen::Lower ) {
     check_square("mdivide_left_tri", "A", A);
     check_multiplicable("mdivide_left_tri", "A", A, "b", b);
-    clock_t start_check = clock();
     matrix_gpu A_gpu(A);
     matrix_gpu b_gpu(b);
     A_gpu = lower_triangular_inverse(A_gpu);
-    matrix_gpu c_gpu = multiply(A_gpu, b_gpu);    
+    matrix_gpu c_gpu = multiply(A_gpu, b_gpu);
     int n = A.rows();
-    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> cc(c_gpu.rows(),c_gpu.cols());
+    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
+                    R1, C2> cc(c_gpu.rows(), c_gpu.cols());
     copy(cc, c_gpu);
-    clock_t end_check = clock();
-    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-    return cc;  
-  }else{
+    return cc;
+  } else {
     check_square("mdivide_left_tri", "A", A);
     check_multiplicable("mdivide_left_tri", "A", A, "b", b);
-    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> aa =
-     promote_common<Eigen::Matrix<T1, R1, C1>, Eigen::Matrix<T2, R1, C1> >(A)
+    Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type,
+      R1, C2> aa = promote_common<Eigen::Matrix<T1, R1, C1>,
+          Eigen::Matrix<T2, R1, C1> >(A)
         .template triangularView<TriView>()
         .solve(
-            promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(b));
+            promote_common<Eigen::Matrix<T1, R2, C2>,
+             Eigen::Matrix<T2, R2, C2> >(b));
     return aa;
   }
 #else
   check_square("mdivide_left_tri", "A", A);
   check_multiplicable("mdivide_left_tri", "A", A, "b", b);
-  Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R1, C2> aa =
-   promote_common<Eigen::Matrix<T1, R1, C1>, Eigen::Matrix<T2, R1, C1> >(A)
+  Eigen::Matrix<typename boost::math::tools::promote_args<T1,
+    T2>::type, R1, C2> aa = promote_common<Eigen::Matrix<T1, R1, C1>,
+     Eigen::Matrix<T2, R1, C1> >(A)
       .template triangularView<TriView>()
       .solve(
-          promote_common<Eigen::Matrix<T1, R2, C2>, Eigen::Matrix<T2, R2, C2> >(b));
+          promote_common<Eigen::Matrix<T1, R2, C2>,
+           Eigen::Matrix<T2, R2, C2> >(b));
   return aa;
 #endif
 }
@@ -79,21 +82,17 @@ template <int TriView, typename T, int R1, int C1>
 inline Eigen::Matrix<T, R1, C1> mdivide_left_tri(
     const Eigen::Matrix<T, R1, C1> &A) {
 #ifdef STAN_OPENCL
-  clock_t start_check = clock();
   matrix_gpu A_gpu(A);
   A_gpu = lower_triangular_inverse(A_gpu);
   int n = A.rows();
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> c(n, n);
   copy(c, A_gpu);
-  
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   return c;
 #else
   check_square("mdivide_left_tri", "A", A);
   int n = A.rows();
   Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> b;
-  b.setIdentity(n, n);  
+  b.setIdentity(n, n);
   A.template triangularView<TriView>().solveInPlace(b);
   return b;
 #endif

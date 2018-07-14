@@ -12,6 +12,7 @@
 #include <stan/math/prim/scal/fun/square.hpp>
 #include <stan/math/prim/scal/fun/exp.hpp>
 #include <vector>
+#include <algorithm>
 #include <cmath>
 
 namespace stan {
@@ -54,13 +55,13 @@ inline
   T_sigma sigma_sq = square(sigma);
   T_l neg_half_inv_l_sq = -0.5 / square(length_scale);
 #ifdef STAN_OPENCL
-  Eigen::Matrix<double, -1, -1> cnst(2,1);
+  Eigen::Matrix<double, -1, -1> cnst(2, 1);
   cnst(0) = sigma_sq;
   cnst(1) = neg_half_inv_l_sq;
   matrix_gpu cnst_gpu(cnst);
   matrix_gpu X_gpu(x);
   matrix_gpu cov_gpu(cov.rows(), cov.cols());
-  cov_exp_quad2(X_gpu,cnst_gpu, cov_gpu);
+  cov_exp_quad2(X_gpu, cnst_gpu, cov_gpu);
   copy(cov, cov_gpu);
   cov(x_size - 1, x_size - 1) = sigma_sq;
 #else
@@ -177,14 +178,14 @@ cov_exp_quad(const std::vector<T_x1>& x1, const std::vector<T_x2>& x2,
   T_sigma sigma_sq = square(sigma);
   T_l neg_half_inv_l_sq = -0.5 / square(length_scale);
 #ifdef STAN_OPENCL
-  Eigen::Matrix<double, -1, -1> cnst(2,1);
+  Eigen::Matrix<double, -1, -1> cnst(2, 1);
   cnst(0) = sigma_sq;
   cnst(1) = neg_half_inv_l_sq;
   matrix_gpu cnst_gpu(cnst);
   matrix_gpu X1_gpu(x1);
   matrix_gpu X2_gpu(x2);
   matrix_gpu cov_gpu(cov.rows(), cov.cols());
-  cov_exp_quad3(X1_gpu,X2_gpu,cnst_gpu, cov_gpu);
+  cov_exp_quad3(X1_gpu, X2_gpu, cnst_gpu, cov_gpu);
   copy(cov, cov_gpu);
 #else
   for (size_t i = 0; i < x1.size(); ++i) {
@@ -193,7 +194,7 @@ cov_exp_quad(const std::vector<T_x1>& x1, const std::vector<T_x2>& x2,
           = sigma_sq * exp(squared_distance(x1[i], x2[j]) * neg_half_inv_l_sq);
     }
   }
-#endif  
+#endif
   return cov;
 }
 

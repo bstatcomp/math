@@ -227,7 +227,6 @@ class opencl_context_base {
         = {false, "basic_matrix", cov_exp_quad2_kernel};
     kernel_info["cov_exp_quad3"]
         = {false, "basic_matrix", cov_exp_quad3_kernel};
-        
   }
 
  protected:
@@ -312,7 +311,8 @@ class opencl_context {
         if (strcmp(kern.second.group, kernel_group) == 0) {
           opencl_context_base::getInstance().kernels[(kern.first)]
               = cl::Kernel(program_, kern.first, &err);
-          opencl_context_base::getInstance().kernel_info[kern.first].exists = true;
+          opencl_context_base::getInstance().kernel_info[kern.first].exists
+            = true;
         }
       }
     } catch (const cl::Error& e) {

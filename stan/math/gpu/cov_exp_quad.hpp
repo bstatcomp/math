@@ -15,7 +15,8 @@ namespace math {
  * @return the identity matrix
  *
  */
-inline void cov_exp_quad(matrix_gpu x, matrix_gpu pos, matrix_gpu cnst, matrix_gpu &dist, matrix_gpu &temp) {
+inline void cov_exp_quad(matrix_gpu x, matrix_gpu pos, matrix_gpu cnst,
+    matrix_gpu &dist, matrix_gpu &temp) {
   cl::Kernel kernel = opencl_context.get_kernel("cov_exp_quad");
   cl::CommandQueue cmdQueue = opencl_context.queue();
 
@@ -67,7 +68,8 @@ inline void cov_exp_quad2(matrix_gpu x, matrix_gpu cnst, matrix_gpu& res1) {
  * @return the identity matrix
  *
  */
-inline void cov_exp_quad3(matrix_gpu x1, matrix_gpu x2, matrix_gpu cnst, matrix_gpu& res1) {
+inline void cov_exp_quad3(matrix_gpu x1, matrix_gpu x2,
+    matrix_gpu cnst, matrix_gpu& res1) {
   cl::Kernel kernel = opencl_context.get_kernel("cov_exp_quad3");
   cl::CommandQueue cmdQueue = opencl_context.queue();
 

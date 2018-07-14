@@ -45,9 +45,7 @@ mdivide_right_tri(const Eigen::Matrix<T1, R1, C1> &b,
           promote_common<Eigen::Matrix<T1, R1, C1>, Eigen::Matrix<T2, R1, C1> >(
               b)
               .transpose())
-      .transpose();  
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
+      .transpose();
   return DD;
 }
 

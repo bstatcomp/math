@@ -35,7 +35,7 @@ namespace math {
 template <class RNG>
 inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
                                         const Eigen::MatrixXd& S, RNG& rng) {
-#ifdef STAN_OPENCL  
+#ifdef STAN_OPENCL
   using boost::normal_distribution;
   using boost::variate_generator;
   clock_t start_check = clock();
@@ -50,7 +50,7 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
   Eigen::VectorXd z(S.cols());
   for (int i = 0; i < S.cols(); i++)
     z(i) = std_normal_rng();
-  
+
   Eigen::VectorXd a = mu + L * z;
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
@@ -74,11 +74,9 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
   for (int i = 0; i < S.cols(); i++)
     z(i) = std_normal_rng();
 
-  
   Eigen::VectorXd a = mu + llt_of_S.matrixL() * z;
   return a;
 #endif
-  
 }
 
 }  // namespace math

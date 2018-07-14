@@ -198,7 +198,7 @@ namespace stan {
     inline Eigen::Matrix<var, -1, -1>
       cholesky_decompose_gpu(const Eigen::Matrix<var, -1, -1> &A) {
       Eigen::Matrix<double, -1, -1> L_A(value_of_rec(A));
-      L_A = cholesky_decompose_gpu(L_A);      
+      L_A = cholesky_decompose_gpu(L_A);
       // Memory allocated in arena.
       vari* dummy = new vari(0.0, false);
       Eigen::Matrix<var, -1, -1> L(A.rows(), A.cols());

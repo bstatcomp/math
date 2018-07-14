@@ -39,7 +39,7 @@ namespace stan {
       if (inv.rows() < 65)
         parts = 1;
       if (inv.rows() > 2500)
-        parts = 64;        
+        parts = 64;
       if (inv.rows() > 4000)
         parts = 128;
       try {

@@ -19,6 +19,7 @@
 #include <boost/type_traits.hpp>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 namespace stan {
 namespace math {
@@ -84,12 +85,9 @@ class cov_exp_quad_vari : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari*>(size_)) {
-    
-    
-    
     double inv_half_sq_l_d = 0.5 / (l_d_ * l_d_);
      size_t pos = 0;
-#ifndef STAN_OPENCL   
+#ifndef STAN_OPENCL
     for (size_t j = 0; j < size_ - 1; ++j) {
       for (size_t i = j + 1; i < size_; ++i) {
         double dist_sq = squared_distance(x[i], x[j]);
@@ -101,7 +99,7 @@ class cov_exp_quad_vari : public vari {
     }
 #else
     Eigen::Matrix<double, -1, -1> ids(size_, size_);
-    Eigen::Matrix<double, -1, -1> cnst(2,1);
+    Eigen::Matrix<double, -1, -1> cnst(2, 1);
     cnst(0) = sigma_sq_d_;
     cnst(1) = inv_half_sq_l_d;
     for (size_t j = 0; j < size_ - 1; ++j) {
@@ -110,13 +108,13 @@ class cov_exp_quad_vari : public vari {
         ++pos;
       }
     }
-    Eigen::Matrix<double, -1, -1> dist(1, size_ltri_);    
-    Eigen::Matrix<double, -1, -1> temp(1, size_ltri_);    
+    Eigen::Matrix<double, -1, -1> dist(1, size_ltri_);
+    Eigen::Matrix<double, -1, -1> temp(1, size_ltri_);
     matrix_gpu X_gpu(x);
     matrix_gpu pos_gpu(ids);
     matrix_gpu cnst_gpu(cnst);
-    matrix_gpu dist_gpu(1,size_ltri_);
-    matrix_gpu temp_gpu(1,size_ltri_);
+    matrix_gpu dist_gpu(1, size_ltri_);
+    matrix_gpu temp_gpu(1, size_ltri_);
     cov_exp_quad(X_gpu, pos_gpu, cnst_gpu, dist_gpu, temp_gpu);
     copy(dist, dist_gpu);
     copy(temp, temp_gpu);
@@ -131,7 +129,6 @@ class cov_exp_quad_vari : public vari {
       }
     }
 #endif
-    
     for (size_t i = 0; i < size_; ++i)
       cov_diag_[i] = new vari(sigma_sq_d_, false);
   }

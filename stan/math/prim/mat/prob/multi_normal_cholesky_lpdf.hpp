@@ -18,6 +18,7 @@
 #include <stan/math/prim/scal/meta/return_type.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <algorithm>
 
 namespace stan {
 namespace math {
@@ -131,8 +132,6 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
       const vector_partials_t scaled_diff
           = (half * inv_L_dbl.template triangularView<Eigen::Lower>())
                 .transpose();
-      
-
       logp -= 0.5 * dot_self(half);
 
       if (!is_constant_struct<T_y>::value) {
@@ -144,13 +143,10 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
           ops_partials.edge2_.partials_vec_[i](j) += scaled_diff(j);
       }
       if (!is_constant_struct<T_covar>::value) {
-        ops_partials.edge3_.partials_ += scaled_diff * half;//
+        ops_partials.edge3_.partials_ += scaled_diff * half;
       }
     }
   }
-  
-  end_check = clock();
-  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   if (include_summand<propto, T_covar_elem>::value) {
     logp += inv_L_dbl.diagonal().array().log().sum() * size_vec;
     if (!is_constant_struct<T_covar>::value) {
@@ -158,15 +154,12 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
       matrix_gpu a(inv_L_dbl);
       a = transpose(a);
       copy(inv_L_dbl, a);
-      ops_partials.edge3_.partials_ -= size_vec * inv_L_dbl;      
+      ops_partials.edge3_.partials_ -= size_vec * inv_L_dbl;
 #else
       ops_partials.edge3_.partials_ -= size_vec * inv_L_dbl.transpose();
 #endif
-      
     }
   }
-  end_check = clock();
-  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   return ops_partials.build(logp);
 }
 

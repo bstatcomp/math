@@ -8,6 +8,7 @@
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>
 #include <boost/utility/enable_if.hpp>
+#include <algorithm>
 
 namespace stan {
 namespace math {
@@ -59,8 +60,8 @@ inline Eigen::Matrix<double, R1, C2> multiply(
   check_multiplicable("multiply", "m1", m1, "m2", m2);
   matrix_gpu m1_gpu(m1);
   matrix_gpu m2_gpu(m2);
-  matrix_gpu m3_gpu(m1.rows(),m2.cols());
-  Eigen::Matrix<double, R1, C2> a(m1.rows(),m2.cols());
+  matrix_gpu m3_gpu(m1.rows(), m2.cols());
+  Eigen::Matrix<double, R1, C2> a(m1.rows(), m2.cols());
   m3_gpu = multiply(m1_gpu, m2_gpu);
   copy(a, m3_gpu);
   return a;
@@ -78,7 +79,6 @@ inline Eigen::Matrix<double, R1, C2> multiply(
 template <int C1, int R2>
 inline double multiply(const Eigen::Matrix<double, 1, C1>& rv,
                        const Eigen::Matrix<double, R2, 1>& v) {
-  
   check_matching_sizes("multiply", "rv", rv, "v", v);
   return rv.dot(v);
 }

@@ -89,7 +89,8 @@ class matrix_gpu {
       check_opencl_error("copy GPU->GPU", e);
     }
   }
-  matrix_gpu(const std::vector<double>& A) : rows_(1), cols_(A.size()) {
+  explicit matrix_gpu(const std::vector<double>& A)
+          : rows_(1), cols_(A.size()) {
     if (size() > 0) {
       cl::Context& ctx = opencl_context.context();
       cl::CommandQueue& queue = opencl_context.queue();

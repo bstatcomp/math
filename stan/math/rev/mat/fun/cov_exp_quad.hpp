@@ -100,7 +100,6 @@ class cov_exp_quad_vari : public vari {
       }
     }
 #else
-    clock_t start_check = clock();
     Eigen::Matrix<double, -1, -1> ids(size_, size_);
     Eigen::Matrix<double, -1, -1> cnst(2,1);
     cnst(0) = sigma_sq_d_;
@@ -131,9 +130,6 @@ class cov_exp_quad_vari : public vari {
         ++pos;
       }
     }
-    clock_t end_check = clock();
-    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-    std::cout << "cov_exp_quad: " << deltaT << std::endl;
 #endif
     
     for (size_t i = 0; i < size_; ++i)
@@ -141,7 +137,6 @@ class cov_exp_quad_vari : public vari {
   }
 
   virtual void chain() {
-    clock_t start_check = clock();
     double adjl = 0;
     double adjsigma = 0;
 
@@ -157,9 +152,6 @@ class cov_exp_quad_vari : public vari {
     }
     l_vari_->adj_ += adjl / (l_d_ * l_d_ * l_d_);
     sigma_vari_->adj_ += adjsigma * 2 / sigma_d_;
-    clock_t end_check = clock();
-    double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-    std::cout << "cov_exp_quad chain: " << deltaT << std::endl;
   }
 };
 
@@ -237,7 +229,6 @@ class cov_exp_quad_vari<T_x, double, T_l> : public vari {
 
   virtual void chain() {
     double adjl = 0;
-
     for (size_t i = 0; i < size_ltri_; ++i) {
       vari* el_low = cov_lower_[i];
       adjl += el_low->adj_ * el_low->val_ * dist_[i];
@@ -267,14 +258,11 @@ cov_exp_quad(const std::vector<T_x>& x, const var& sigma, const var& l) {
   size_t x_size = x.size();
   for (size_t i = 0; i < x_size; ++i)
     check_not_nan("cov_exp_quad", "x", x[i]);
-
   Eigen::Matrix<var, -1, -1> cov(x_size, x_size);
   if (x_size == 0)
     return cov;
-
   cov_exp_quad_vari<T_x, var, var>* baseVari
       = new cov_exp_quad_vari<T_x, var, var>(x, sigma, l);
-
   size_t pos = 0;
   for (size_t j = 0; j < x_size - 1; ++j) {
     for (size_t i = (j + 1); i < x_size; ++i) {
@@ -309,7 +297,6 @@ cov_exp_quad(const std::vector<T_x>& x, double sigma, const var& l) {
   size_t x_size = x.size();
   for (size_t i = 0; i < x_size; ++i)
     check_not_nan("cov_exp_quad", "x", x[i]);
-
   Eigen::Matrix<var, -1, -1> cov(x_size, x_size);
   if (x_size == 0)
     return cov;

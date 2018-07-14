@@ -298,7 +298,6 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
-    std::cout << "compiling " << kernel_group << std::endl;
     try {
       cl::Program::Sources source(
           1,

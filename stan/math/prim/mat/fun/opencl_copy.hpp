@@ -120,7 +120,6 @@ inline void copy(matrix_gpu& dst, const matrix_gpu& src) {
                                     cl::NDRange(dst.rows(), dst.cols()),
                                     cl::NullRange, NULL, NULL);
     } catch (const cl::Error& e) {
-      std::cout << e.err() << std::endl;
       check_opencl_error("copy GPU->GPU", e);
     }
   }

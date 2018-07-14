@@ -38,9 +38,10 @@ namespace stan {
       int parts = 32;
       if (inv.rows() < 65)
         parts = 1;
-
       if (inv.rows() > 2500)
-        parts = 64;
+        parts = 64;        
+      if (inv.rows() > 4000)
+        parts = 128;
       try {
         matrix_gpu temp(inv.rows(),  inv.cols() * 2);
 

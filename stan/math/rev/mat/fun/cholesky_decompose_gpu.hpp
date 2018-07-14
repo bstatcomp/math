@@ -185,10 +185,6 @@ namespace stan {
         for (size_type j = 0; j < M_; ++j)
           for (size_type i = j; i < M_; ++i)
             variRefA_[pos++]->adj_ += Lbar.coeffRef(i, j);
-        
-      clock_t end_check = clock();
-      double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-      std::cout << "chol rev: " << deltaT << std::endl;
       }
     };
     /**

@@ -54,7 +54,6 @@ inline Eigen::VectorXd multi_normal_rng(const Eigen::VectorXd& mu,
   Eigen::VectorXd a = mu + L * z;
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "multi_normal_rng: " << deltaT << std::endl;
   return a;
 #else
   using boost::normal_distribution;

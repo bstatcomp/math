@@ -109,6 +109,8 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
   if (unlikely(size_y == 0))
     return T_return(0.0);
 
+  end_check = clock();
+  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   T_partials_return logp(0.0);
   operands_and_partials<T_y, T_loc, T_covar> ops_partials(y, mu, L);
 
@@ -116,6 +118,8 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
     logp += NEG_LOG_SQRT_TWO_PI * size_y * size_vec;
   matrix_partials_t inv_L_dbl
       = mdivide_left_tri<Eigen::Lower>(value_of(L));
+  end_check = clock();
+  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   if (include_summand<propto, T_y, T_loc, T_covar_elem>::value) {
     for (size_t i = 0; i < size_vec; i++) {
       vector_partials_t y_minus_mu_dbl(size_y);
@@ -144,6 +148,9 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
       }
     }
   }
+  
+  end_check = clock();
+  deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
   if (include_summand<propto, T_covar_elem>::value) {
     logp += inv_L_dbl.diagonal().array().log().sum() * size_vec;
     if (!is_constant_struct<T_covar>::value) {
@@ -160,7 +167,6 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
   }
   end_check = clock();
   deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "multi_normal_chol: " << deltaT << std::endl;
   return ops_partials.build(logp);
 }
 

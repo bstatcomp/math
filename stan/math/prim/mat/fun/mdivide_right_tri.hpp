@@ -48,7 +48,6 @@ mdivide_right_tri(const Eigen::Matrix<T1, R1, C1> &b,
       .transpose();  
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "mdivide_right_tri 3: " << deltaT << std::endl;
   return DD;
 }
 

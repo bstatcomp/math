@@ -45,7 +45,6 @@ mdivide_left_tri(const Eigen::Matrix<T1, R1, C1> &A,
     copy(cc, c_gpu);
     clock_t end_check = clock();
     double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-    std::cout << "mdivide_left_tri 1: " << deltaT << std::endl;
     return cc;  
   }else{
     check_square("mdivide_left_tri", "A", A);
@@ -89,7 +88,6 @@ inline Eigen::Matrix<T, R1, C1> mdivide_left_tri(
   
   clock_t end_check = clock();
   double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "mdivide_left_tri 2: " << deltaT << std::endl;
   return c;
 #else
   check_square("mdivide_left_tri", "A", A);

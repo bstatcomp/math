@@ -24,7 +24,6 @@ template <int R, int C, typename T>
 inline typename boost::enable_if_c<boost::is_arithmetic<T>::value,
                                    Eigen::Matrix<double, R, C> >::type
 multiply(const Eigen::Matrix<double, R, C>& m, T c) {
-  std::cout << "c1" << std::endl;
   return c * m;
 }
 
@@ -40,7 +39,6 @@ template <int R, int C, typename T>
 inline typename boost::enable_if_c<boost::is_arithmetic<T>::value,
                                    Eigen::Matrix<double, R, C> >::type
 multiply(T c, const Eigen::Matrix<double, R, C>& m) {
-  std::cout << "c2" << std::endl;
   return c * m;
 }
 
@@ -58,7 +56,6 @@ template <int R1, int C1, int R2, int C2>
 inline Eigen::Matrix<double, R1, C2> multiply(
     const Eigen::Matrix<double, R1, C1>& m1,
     const Eigen::Matrix<double, R2, C2>& m2) {
-  clock_t start_check = clock();
   check_multiplicable("multiply", "m1", m1, "m2", m2);
   matrix_gpu m1_gpu(m1);
   matrix_gpu m2_gpu(m2);
@@ -66,9 +63,6 @@ inline Eigen::Matrix<double, R1, C2> multiply(
   Eigen::Matrix<double, R1, C2> a(m1.rows(),m2.cols());
   m3_gpu = multiply(m1_gpu, m2_gpu);
   copy(a, m3_gpu);
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "multiply: " << deltaT << std::endl;
   return a;
 }
 

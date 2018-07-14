@@ -25,15 +25,11 @@ template <typename T1, typename T2, int R, int C>
 inline Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R,
                      C>
 add(const Eigen::Matrix<T1, R, C>& m1, const Eigen::Matrix<T2, R, C>& m2) {
-  clock_t start_check = clock();
   check_matching_dims("add", "m1", m1, "m2", m2);
   Eigen::Matrix<typename boost::math::tools::promote_args<T1, T2>::type, R, C>
       result(m1.rows(), m1.cols());
   for (int i = 0; i < result.size(); ++i)
     result(i) = m1(i) + m2(i);
-  clock_t end_check = clock();
-  double deltaT = static_cast<double>(end_check - start_check) / CLOCKS_PER_SEC;
-  std::cout << "add: " << deltaT << std::endl;
   return result;
 }
 

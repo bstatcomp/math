@@ -58,13 +58,17 @@ inline Eigen::Matrix<double, R1, C2> multiply(
     const Eigen::Matrix<double, R1, C1>& m1,
     const Eigen::Matrix<double, R2, C2>& m2) {
   check_multiplicable("multiply", "m1", m1, "m2", m2);
+#ifdef STAN_OPENCL
   matrix_gpu m1_gpu(m1);
   matrix_gpu m2_gpu(m2);
   matrix_gpu m3_gpu(m1.rows(), m2.cols());
-  Eigen::Matrix<double, R1, C2> a(m1.rows(), m2.cols());
+  Eigen::Matrix<double, R1, C2> m3(m1.rows(), m2.cols());
   m3_gpu = multiply(m1_gpu, m2_gpu);
-  copy(a, m3_gpu);
-  return a;
+  copy(m3, m3_gpu);
+  return m3;
+#else
+  return m1 * m2;
+#endif
 }
 
 /**

@@ -3,12 +3,10 @@
 #ifdef STAN_OPENCL
 #include <stan/math/gpu/opencl_context.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
-#include <stan/math/gpu/copy_submatrix.hpp>
-#include <stan/math/gpu/zeros.hpp>
 #include <stan/math/gpu/subtract.hpp>
-#include <stan/math/gpu/zeros.hpp>
-#include <stan/math/gpu/copy_triangular_transposed.hpp>
-#include <stan/math/gpu/multiply_matrix_gpu.hpp>
+#include <stan/math/gpu/transpose.hpp>
+#include <stan/math/gpu/multiply.hpp>
+#include <stan/math/gpu/multiply_self_transpose.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>
 #include <stan/math/gpu/err/check_diagonal_zeros.hpp>
 #include <stan/math/gpu/err/check_nan.hpp>
@@ -61,8 +59,8 @@ namespace stan {
         matrix_gpu Mid(A.rows()-offset-block, A.rows()-offset-block);
         matrix_gpu Mid_temp(A.rows()-offset-block, A.rows()-offset-block);
 
-        copy_submatrix(A, D, offset, offset, 0, 0, block, block);
-        zeros(V);
+        D.sub_block(A, offset, offset, 0, 0, block, block);
+        V.zeros();
         try {
           kernel_chol_block.setArg(0, V.buffer());
           kernel_chol_block.setArg(1, D.buffer());
@@ -73,22 +71,22 @@ namespace stan {
           check_opencl_error("cholesky_decompose", e);
         }
         copy(D, V);
-        copy_submatrix(V, A, 0, 0, offset, offset, block, block);
+        A.sub_block(V, 0, 0, offset, offset, block, block);
 
         V = lower_triangular_inverse(D);
-
-        copy_submatrix(A, L, (offset+block), offset, 0, 0,
+        
+        L.sub_block(A, (offset+block), offset, 0, 0,
           (A.rows()-offset-block) , block);
         V = transpose(V);
         L = multiply(L, V);
-        copy_submatrix(L, A, 0, 0, (offset+block), offset,
+        A.sub_block(L, 0, 0, (offset+block), offset,
           (A.rows()-offset-block) , block);
 
-        copy_submatrix(A, Mid_temp, (offset+block), (offset+block),
+        Mid_temp.sub_block(A, (offset+block), (offset+block),
           0, 0, (A.rows()-offset-block), (A.rows()-offset-block));
-        Mid = multiply_with_self_transposed(L);
+        Mid = multiply_self_transpose(L);
         Mid = subtract(Mid_temp, Mid);
-        copy_submatrix(Mid, A, 0, 0, (offset+block), (offset+block),
+        A.sub_block(Mid, 0, 0, (offset+block), (offset+block),
           (A.rows()-offset-block), (A.rows()-offset-block));
         offset += block;
       }
@@ -96,8 +94,8 @@ namespace stan {
       if (left > 0) {
         matrix_gpu D(left, left);
         matrix_gpu V(left, left);
-        copy_submatrix(A, D, offset, offset, 0, 0, left, left);
-        zeros(V);
+        D.sub_block(A, offset, offset, 0, 0, left, left);
+        V.zeros();
         try {
           kernel_chol_block.setArg(0, V.buffer());
           kernel_chol_block.setArg(1, D.buffer());
@@ -107,15 +105,15 @@ namespace stan {
         } catch (const cl::Error& e) {
           check_opencl_error("cholesky_decompose", e);
         }
-        copy_submatrix(V, A, 0, 0, offset, offset, left, left);
+        A.sub_block(V, 0, 0, offset, offset, left, left);
       }
-      zeros(A, UPPER);
-      copy_triangular_transposed(A, LOWER_TO_UPPER_TRIANGULAR);
+      V.zeros<gpu::Upper>();
+      A.triangular_transpose<gpu::LowerToUpper>();
       check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
         "Matrix m", A);
-      zeros(A, UPPER);
+      A.zeros<gpu::Upper>();
       matrix_gpu B(A);
       return B;
     }
@@ -165,27 +163,27 @@ namespace stan {
         matrix_gpu Mid(A.rows()-offset-block, A.rows()-offset-block);
         matrix_gpu Mid_temp(A.rows()-offset-block, A.rows()-offset-block);
 
-        copy_submatrix(A, D, offset, offset, 0, 0, block, block);
-        zeros(V);
+        D.sub_block(A, offset, offset, 0, 0, block, block);
+        V.zeros();
         int block_level2 = std::min(100, max_workgroup_size);
         V = cholesky_decompose_gpu(D, block_level2);
         copy(D, V);
-        copy_submatrix(V, A, 0, 0, offset, offset, block, block);
+        A.sub_block(V, 0, 0, offset, offset, block, block);
 
         V = lower_triangular_inverse(D);
 
-        copy_submatrix(A, L, (offset+block), offset, 0, 0,
+        L.sub_block(A, (offset+block), offset, 0, 0,
           (A.rows()-offset-block) , block);
         V = transpose(V);
         L = multiply(L, V);
-        copy_submatrix(L, A, 0, 0, (offset+block), offset,
+        A.sub_block(L, 0, 0, (offset+block), offset,
           (A.rows()-offset-block) , block);
 
-        copy_submatrix(A, Mid_temp, (offset+block), (offset+block),
+        Mid_temp.sub_block(A, (offset+block), (offset+block),
           0, 0, (A.rows()-offset-block), (A.rows()-offset-block));
-        Mid = multiply_with_self_transposed(L);
+        Mid = multiply_self_transpose(L);
         Mid = subtract(Mid_temp, Mid);
-        copy_submatrix(Mid, A, 0, 0, (offset+block), (offset+block),
+        A.sub_block(Mid, 0, 0, (offset+block), (offset+block),
           (A.rows()-offset-block), (A.rows()-offset-block));
 
         offset += block;
@@ -194,18 +192,18 @@ namespace stan {
       if (left > 0) {
         matrix_gpu D(left, left);
         matrix_gpu V(left, left);
-        copy_submatrix(A, D, offset, offset, 0, 0, left, left);
-        zeros(V);
+        D.sub_block(A, offset, offset, 0, 0, left, left);
+        V.zeros();
         V = cholesky_decompose_gpu(D, 100);
-        copy_submatrix(V, A, 0, 0, offset, offset, left, left);
+        A.sub_block(V, 0, 0, offset, offset, left, left);
       }
-      zeros(A, UPPER);
-      copy_triangular_transposed(A, LOWER_TO_UPPER_TRIANGULAR);
+      A.zeros<gpu::Upper>();
+      A.triangular_transpose<gpu::LowerToUpper>();
       check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
         "Matrix m", A);
-      zeros(A, UPPER);
+      A.zeros<gpu::Upper>();
       copy(m_tmp, A); // NOLINT
 
       return m_tmp;

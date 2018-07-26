@@ -4,7 +4,8 @@
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
 #include <stan/math/prim/mat/fun/cholesky_decompose_gpu.hpp>
-#include <stan/math/gpu/multiply_matrix_gpu.hpp>
+#include <stan/math/gpu/diagonal_multiply.hpp>
+#include <stan/math/gpu/multiply.hpp>
 #include <stan/math/gpu/inverse_gpu.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
 #include <stan/math/rev/scal/fun/value_of_rec.hpp>
@@ -119,15 +120,15 @@ namespace stan {
           matrix_gpu Cbar3_gpu(k-j, M-k);
           matrix_gpu temp_gpu(k-j, j);
 
-          copy_submatrix(L_gpu, R_gpu, j, 0, 0, 0, k-j, j);
-          copy_submatrix(L_gpu, D_gpu, j, j, 0, 0, k-j, k-j);
-          copy_submatrix(L_gpu, B_gpu, k, 0, 0, 0, M-k, j);
-          copy_submatrix(L_gpu, C_gpu, k, j, 0, 0, M-k, k-j);
+          R_gpu.sub_block(L_gpu, j, 0, 0, 0, k-j, j);
+          D_gpu.sub_block(L_gpu, j, j, 0, 0, k-j, k-j);
+          B_gpu.sub_block(L_gpu, k, 0, 0, 0, M-k, j);
+          C_gpu.sub_block(L_gpu, k, j, 0, 0, M-k, k-j);
 
-          copy_submatrix(Lbar_gpu, Rbar_gpu, j, 0, 0, 0, k-j, j);
-          copy_submatrix(Lbar_gpu, Dbar_gpu, j, j, 0, 0, k-j, k-j);
-          copy_submatrix(Lbar_gpu, Bbar_gpu, k, 0, 0, 0, M-k, j);
-          copy_submatrix(Lbar_gpu, Cbar_gpu, k, j, 0, 0, M-k, k-j);
+          Rbar_gpu.sub_block(Lbar_gpu, j, 0, 0, 0, k-j, j);
+          Dbar_gpu.sub_block(Lbar_gpu, j, j, 0, 0, k-j, k-j);
+          Bbar_gpu.sub_block(Lbar_gpu, k, 0, 0, 0, M-k, j);
+          Cbar_gpu.sub_block(Lbar_gpu, k, j, 0, 0, M-k, k-j);
 
           if (Cbar_gpu.size() > 0) {
             copy(Dinv_gpu, D_gpu);
@@ -147,10 +148,9 @@ namespace stan {
           }
 
           D_gpu = transpose(D_gpu);
-          zeros(Dbar_gpu, UPPER);
+          Dbar_gpu.zeros<gpu::Upper>();
           Dbar2_gpu = multiply(D_gpu, Dbar_gpu);
-          copy_triangular_transposed(Dbar2_gpu,
-            LOWER_TO_UPPER_TRIANGULAR);
+          Dbar2_gpu.triangular_transpose<gpu::LowerToUpper>();
           D_gpu = transpose(D_gpu);
           D_gpu = lower_triangular_inverse(D_gpu);
           D_gpu = transpose(D_gpu);
@@ -166,18 +166,17 @@ namespace stan {
 
           if (Dbar_gpu.size() > 0 && R_gpu.size() > 0) {
             copy(Dbar_gpu, Dbar2_gpu);
-            copy_triangular_transposed(Dbar_gpu,
-              LOWER_TO_UPPER_TRIANGULAR);
+            Dbar_gpu.triangular_transpose<gpu::LowerToUpper>();
             temp_gpu = multiply(Dbar_gpu, R_gpu);
             Rbar_gpu = subtract(Rbar_gpu, temp_gpu);
           }
-          diagonal_multiply(Dbar2_gpu, 0.5);
-          zeros(Dbar2_gpu, UPPER);
+          Dbar2_gpu = diagonal_multiply(Dbar2_gpu, 0.5);
+          Dbar2_gpu.zeros<gpu::Upper>();
 
-          copy_submatrix(Rbar_gpu, Lbar_gpu, 0, 0, j, 0, k-j, j);
-          copy_submatrix(Dbar2_gpu, Lbar_gpu, 0, 0, j, j, k-j, k-j);
-          copy_submatrix(Bbar_gpu, Lbar_gpu, 0, 0, k, 0, M-k, j);
-          copy_submatrix(Cbar_gpu, Lbar_gpu, 0, 0, k, j, M-k, k-j);
+          Lbar_gpu.sub_block(Rbar_gpu, 0, 0, j, 0, k-j, j);
+          Lbar_gpu.sub_block(Dbar2_gpu, 0, 0, j, j, k-j, k-j);
+          Lbar_gpu.sub_block(Bbar_gpu, 0, 0, k, 0, M-k, j);
+          Lbar_gpu.sub_block(Cbar_gpu, 0, 0, k, j, M-k, k-j);
         }
         copy(Lbar, Lbar_gpu);
         pos = 0;

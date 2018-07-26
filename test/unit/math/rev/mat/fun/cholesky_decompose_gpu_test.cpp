@@ -447,3 +447,4 @@ TEST(AgradRevMatrix, check_varis_on_stack_large) {
   X = stan::math::multiply(X, stan::math::transpose(X));
   test::check_varis_on_stack(stan::math::cholesky_decompose_gpu(X));
 }
+

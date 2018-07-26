@@ -6,6 +6,7 @@
 
 namespace stan {
 namespace math {
+
 /**
  * Copies the lower or upper
  * triangular of the source matrix to
@@ -13,20 +14,17 @@ namespace math {
  * Both matrices are stored on the GPU.
  *
  * @param src the source matrix
- * @param lower_upper enum to describe
+ * @tparam triangular_map int to describe
  * which part of the matrix to copy:
- * LOWER - copies the lower triangular
- * UPPER - copes the upper triangular
+ * Lower - copies the lower triangular
+ * Upper - copes the upper triangular
  *
  * @return the matrix with the copied content
  *
  */
-inline matrix_gpu copy_triangular(matrix_gpu& src, triangularity lower_upper) {
-  if (src.size() == 0) {
-    matrix_gpu dst(src);
-    return dst;
-  }
-  if (src.size() == 1) {
+template <int triangular_map>
+inline matrix_gpu copy_triangular(const matrix_gpu& src) {
+  if (src.size() == 0 || src.size() == 1) {
     matrix_gpu dst(src);
     return dst;
   }
@@ -34,11 +32,8 @@ inline matrix_gpu copy_triangular(matrix_gpu& src, triangularity lower_upper) {
   cl::Kernel kernel = opencl_context.get_kernel("copy_triangular");
   cl::CommandQueue cmdQueue = opencl_context.queue();
   try {
-    kernel.setArg(0, dst.buffer());
-    kernel.setArg(1, src.buffer());
-    kernel.setArg(2, dst.rows());
-    kernel.setArg(3, dst.cols());
-    kernel.setArg(4, lower_upper);
+    opencl_context.set_kernel_args(kernel, dst.buffer(), src.buffer(),
+                                   dst.rows(), dst.cols(), triangular_map);
     cmdQueue.enqueueNDRangeKernel(kernel, cl::NullRange,
                                   cl::NDRange(dst.rows(), dst.cols()),
                                   cl::NullRange, NULL, NULL);

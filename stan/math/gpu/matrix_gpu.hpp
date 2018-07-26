@@ -257,7 +257,7 @@ class matrix_gpu {
       return;
     }    
     if ((A_i + nrows) > A.rows() || (A_j + ncols) > A.cols() ||
-        (this_i + nrows) > this->rows() || (A_j + ncols) > this->cols()) {
+        (this_i + nrows) > this->rows() ||  (this_j + nrows) > this->cols()) {
       domain_error("copy_submatrix", "submatrix in *this", " is out of bounds",
                    "");
     }

@@ -182,6 +182,7 @@ class opencl_context_base {
         ;  // NOLINT
     const char* cov_exp_quad3_kernel =
 #include <stan/math/gpu/kernels/cov_exp_quad3_kernel.cl>
+        ;  // NOLINT
     const char* multiply_self_transpose_kernel =
 #include <stan/math/gpu/kernels/multiply_self_transpose_kernel.cl>
         ;  // NOLINT

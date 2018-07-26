@@ -3,7 +3,7 @@
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
-#include <stan/math/gpu/multiply_matrix_gpu.hpp>
+#include <stan/math/gpu/multiply.hpp>
 #include <stan/math/prim/arr/err/check_matching_sizes.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <boost/type_traits/is_arithmetic.hpp>

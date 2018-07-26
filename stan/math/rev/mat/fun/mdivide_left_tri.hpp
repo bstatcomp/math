@@ -3,9 +3,7 @@
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
-#include <stan/math/gpu/copy_submatrix.hpp>
 #include <stan/math/gpu/copy_triangular.hpp>
-#include <stan/math/gpu/zeros.hpp>
 #include <stan/math/gpu/subtract.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <stan/math/prim/mat/err/check_square.hpp>
@@ -318,7 +316,7 @@ class mdivide_left_tri_vd_vari : public vari {
       A2t_gpu = stan::math::transpose(A2_gpu);
       AA_gpu = stan::math::multiply(A4_gpu, A2t_gpu);
       stan::math::matrix_gpu A1_gpu(temp1);
-      A1_gpu = stan::math::copy_triangular(A1_gpu, stan::math::LOWER);
+      A1_gpu = stan::math::copy_triangular<stan::math::gpu::Lower>(A1_gpu);
       A1_gpu = stan::math::lower_triangular_inverse(A1_gpu);
       A1_gpu = stan::math::transpose(A1_gpu);
       A3a_gpu = stan::math::multiply(A1_gpu, AA_gpu);

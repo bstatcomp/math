@@ -109,10 +109,10 @@ namespace stan {
       }
       V.zeros<gpu::Upper>();
       A.triangular_transpose<gpu::LowerToUpper>();
-      check_nan("cholesky_decompose_gpu",
+      /*check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
-        "Matrix m", A);
+        "Matrix m", A);*/
       A.zeros<gpu::Upper>();
       matrix_gpu B(A);
       return B;
@@ -136,10 +136,10 @@ namespace stan {
     typename boost::enable_if_c<boost::is_arithmetic<T>::value,
     Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>::type
     cholesky_decompose_gpu(const Eigen::Matrix<T,
-     Eigen::Dynamic, Eigen::Dynamic>& m) {
+     Eigen::Dynamic, Eigen::Dynamic>& m, int abc = 300, int abc1 = 100) {
       if (m.size() == 0) return m;
       matrix_gpu A(m);
-      check_symmetric("cholesky_decompose", "m", A);
+      //check_symmetric("cholesky_decompose", "m", A);
 
       Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
        m_tmp(m.rows(), m.cols());
@@ -153,7 +153,7 @@ namespace stan {
       cl::Kernel kernel_chol_block
           = opencl_context.get_kernel("cholesky_block");
       // Will be managed by the library core system
-      int block = std::min(420, max_workgroup_size);
+      int block = std::min(abc, max_workgroup_size);
       int offset = 0;
       matrix_gpu V(block, block);
       matrix_gpu D(block, block);
@@ -165,7 +165,7 @@ namespace stan {
 
         D.sub_block(A, offset, offset, 0, 0, block, block);
         V.zeros();
-        int block_level2 = std::min(100, max_workgroup_size);
+        int block_level2 = std::min(abc1, max_workgroup_size);
         V = cholesky_decompose_gpu(D, block_level2);
         copy(D, V);
         A.sub_block(V, 0, 0, offset, offset, block, block);
@@ -199,10 +199,10 @@ namespace stan {
       }
       A.zeros<gpu::Upper>();
       A.triangular_transpose<gpu::LowerToUpper>();
-      check_nan("cholesky_decompose_gpu",
+      /*check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
-        "Matrix m", A);
+        "Matrix m", A);*/
       A.zeros<gpu::Upper>();
       copy(m_tmp, A); // NOLINT
       return m_tmp;

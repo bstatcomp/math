@@ -112,6 +112,9 @@ class gp_periodic_cov_vari : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari *>(size_)) {
+    
+    
+    clock_t start = clock();
     double neg_two_inv_l_sq = -2.0 / (l_d_ * l_d_);
     double pi_div_p = pi() / p_d_;
 
@@ -130,9 +133,16 @@ class gp_periodic_cov_vari : public vari {
       }
       cov_diag_[j] = new vari(sigma_sq_d_, false);
     }
+    
+    
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 4 " << duration*1000.0 << std::endl;;
   }
 
   virtual void chain() {
+    
+    clock_t start = clock();
     double adjl = 0;
     double adjsigma = 0;
     double adjp = 0;
@@ -152,6 +162,10 @@ class gp_periodic_cov_vari : public vari {
     l_vari_->adj_ += adjl * 4 / (l_d_sq * l_d_);
     sigma_vari_->adj_ += adjsigma * 2 / sigma_d_;
     p_vari_->adj_ += adjp * 2 * pi() / l_d_sq / (p_d_ * p_d_);
+    
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 4 " << duration*1000.0 << std::endl;;
   }
 };
 
@@ -244,6 +258,7 @@ class gp_periodic_cov_vari<T_x, double, T_l, T_p> : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari *>(size_)) {
+              clock_t start = clock();
     double neg_two_inv_l_sq = -2.0 / (l_d_ * l_d_);
     double pi_div_p = pi() / p_d_;
 
@@ -262,9 +277,13 @@ class gp_periodic_cov_vari<T_x, double, T_l, T_p> : public vari {
       }
       cov_diag_[j] = new vari(sigma_sq_d_, false);
     }
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 4 " << duration*1000.0 << std::endl;;
   }
 
   virtual void chain() {
+    clock_t start = clock();
     double adjl = 0;
     double adjp = 0;
 
@@ -276,7 +295,10 @@ class gp_periodic_cov_vari<T_x, double, T_l, T_p> : public vari {
     }
     double l_d_sq = l_d_ * l_d_;
     l_vari_->adj_ += adjl * 4 / (l_d_sq * l_d_);
-    p_vari_->adj_ += adjp * 2 * pi() / l_d_sq / (p_d_ * p_d_);
+    p_vari_->adj_ += adjp * 2 * pi() / l_d_sq / (p_d_ * p_d_);    
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 3 " << duration*1000.0 << std::endl;;
   }
 };
 
@@ -305,6 +327,8 @@ inline typename boost::enable_if_c<
     Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>>::type
 gp_periodic_cov(const std::vector<T_x> &x, const var &sigma, const var &l,
                 const var &p) {
+                                    clock_t start = clock();
+
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
   check_positive(fun, "length-scale", l);
@@ -329,6 +353,9 @@ gp_periodic_cov(const std::vector<T_x> &x, const var &sigma, const var &l,
     }
     cov.coeffRef(j, j).vi_ = baseVari->cov_diag_[j];
   }
+  clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 2 " << duration*1000.0 << std::endl;;
   return cov;
 }
 
@@ -357,6 +384,7 @@ inline typename boost::enable_if_c<
     Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>>::type
 gp_periodic_cov(const std::vector<T_x> &x, double sigma, const var &l,
                 const var &p) {
+                  clock_t start = clock();
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
   check_positive(fun, "length-scale", l);
@@ -382,6 +410,9 @@ gp_periodic_cov(const std::vector<T_x> &x, double sigma, const var &l,
     cov.coeffRef(j, j).vi_ = baseVari->cov_diag_[j];
   }
   cov.coeffRef(x_size - 1, x_size - 1).vi_ = baseVari->cov_diag_[x_size - 1];
+  clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov 1 " << duration*1000.0 << std::endl;;
   return cov;
 }
 }  // namespace math

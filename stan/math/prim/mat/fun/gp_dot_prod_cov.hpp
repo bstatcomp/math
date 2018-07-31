@@ -39,6 +39,8 @@ template <typename T_x, typename T_sigma>
 inline typename Eigen::Matrix<typename stan::return_type<T_x, T_sigma>::type,
                               Eigen::Dynamic, Eigen::Dynamic>
 gp_dot_prod_cov(const std::vector<T_x> &x, const T_sigma &sigma) {
+                    clock_t start = clock();
+
   using stan::math::dot_product;
   using stan::math::square;
 
@@ -68,6 +70,9 @@ gp_dot_prod_cov(const std::vector<T_x> &x, const T_sigma &sigma) {
     }
   }
   cov(x_size - 1, x_size - 1) = sigma_sq + dot_self(x[x_size - 1]);
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_dot_prod_cov 1 " << duration*1000.0 << std::endl;;
   return cov;
 }
 
@@ -97,6 +102,8 @@ template <typename T_sigma>
 inline typename Eigen::Matrix<typename stan::return_type<double, T_sigma>::type,
                               Eigen::Dynamic, Eigen::Dynamic>
 gp_dot_prod_cov(const std::vector<double> &x, const T_sigma &sigma) {
+                    clock_t start = clock();
+
   using stan::math::dot_product;
   using stan::math::square;
 
@@ -126,6 +133,10 @@ gp_dot_prod_cov(const std::vector<double> &x, const T_sigma &sigma) {
     }
   }
   cov(x_size - 1, x_size - 1) = sigma_sq + x[x_size - 1] * x[x_size - 1];
+  
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_dot_prod_cov 2 " << duration*1000.0 << std::endl;;
   return cov;
 }
 
@@ -157,6 +168,8 @@ inline typename Eigen::Matrix<
     Eigen::Dynamic>
 gp_dot_prod_cov(const std::vector<T_x1> &x1, const std::vector<T_x2> &x2,
                 const T_sigma &sigma) {
+                  clock_t start = clock();
+
   using stan::math::dot_product;
   using stan::math::square;
 
@@ -190,6 +203,9 @@ gp_dot_prod_cov(const std::vector<T_x1> &x1, const std::vector<T_x2> &x2,
       cov(i, j) = sigma_sq + dot_product(x1[i], x2[j]);
     }
   }
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_dot_prod_cov 3 " << duration*1000.0 << std::endl;;
   return cov;
 }
 
@@ -220,6 +236,7 @@ inline typename Eigen::Matrix<typename stan::return_type<double, T_sigma>::type,
                               Eigen::Dynamic, Eigen::Dynamic>
 gp_dot_prod_cov(const std::vector<double> &x1, const std::vector<double> &x2,
                 const T_sigma &sigma) {
+                  clock_t start = clock();
   using stan::math::square;
 
   check_not_nan("gp_dot_prod_cov", "sigma", sigma);
@@ -252,6 +269,9 @@ gp_dot_prod_cov(const std::vector<double> &x1, const std::vector<double> &x2,
       cov(i, j) = sigma_sq + x1[i] * x2[j];
     }
   }
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_dot_prod_cov 4 " << duration*1000.0 << std::endl;;
   return cov;
 }
 }  // namespace math

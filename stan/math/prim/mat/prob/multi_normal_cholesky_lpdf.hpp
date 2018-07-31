@@ -48,6 +48,7 @@ namespace math {
 template <bool propto, typename T_y, typename T_loc, typename T_covar>
 typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
     const T_y& y, const T_loc& mu, const T_covar& L) {
+  clock_t start = clock();
   static const char* function = "multi_normal_cholesky_lpdf";
   typedef typename scalar_type<T_covar>::type T_covar_elem;
   typedef typename return_type<T_y, T_loc, T_covar>::type T_return;
@@ -154,6 +155,9 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_cholesky_lpdf(
 #endif
     }
   }
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"multi normal chol " << duration*1000.0 << std::endl;;
   return ops_partials.build(logp);
 }
 

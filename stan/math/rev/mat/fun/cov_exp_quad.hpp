@@ -85,6 +85,7 @@ class cov_exp_quad_vari : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari*>(size_)) {
+              clock_t start = clock();
     double inv_half_sq_l_d = 0.5 / (l_d_ * l_d_);
      size_t pos = 0;
 #ifndef STAN_OPENCL
@@ -131,9 +132,13 @@ class cov_exp_quad_vari : public vari {
 #endif
     for (size_t i = 0; i < size_; ++i)
       cov_diag_[i] = new vari(sigma_sq_d_, false);
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"cov_exp_quad2 chain " << duration*1000.0 << std::endl;;
   }
 
   virtual void chain() {
+    clock_t start = clock();
     double adjl = 0;
     double adjsigma = 0;
 
@@ -149,6 +154,9 @@ class cov_exp_quad_vari : public vari {
     }
     l_vari_->adj_ += adjl / (l_d_ * l_d_ * l_d_);
     sigma_vari_->adj_ += adjsigma * 2 / sigma_d_;
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"cov_exp_quad2 " << duration*1000.0 << std::endl;;
   }
 };
 
@@ -209,6 +217,7 @@ class cov_exp_quad_vari<T_x, double, T_l> : public vari {
             size_ltri_)),
         cov_diag_(
             ChainableStack::instance().memalloc_.alloc_array<vari*>(size_)) {
+    clock_t start = clock();
     double inv_half_sq_l_d = 0.5 / (l_d_ * l_d_);
     size_t pos = 0;
     for (size_t j = 0; j < size_ - 1; ++j) {
@@ -222,15 +231,23 @@ class cov_exp_quad_vari<T_x, double, T_l> : public vari {
     }
     for (size_t i = 0; i < size_; ++i)
       cov_diag_[i] = new vari(sigma_sq_d_, false);
+    
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"cov_exp_quad1 " << duration*1000.0 << std::endl;;
   }
 
   virtual void chain() {
+    clock_t start = clock();
     double adjl = 0;
     for (size_t i = 0; i < size_ltri_; ++i) {
       vari* el_low = cov_lower_[i];
       adjl += el_low->adj_ * el_low->val_ * dist_[i];
     }
     l_vari_->adj_ += adjl / (l_d_ * l_d_ * l_d_);
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"cov_exp_quad1 chain " << duration*1000.0 << std::endl;;
   }
 };
 
@@ -297,7 +314,6 @@ cov_exp_quad(const std::vector<T_x>& x, double sigma, const var& l) {
   Eigen::Matrix<var, -1, -1> cov(x_size, x_size);
   if (x_size == 0)
     return cov;
-
   cov_exp_quad_vari<T_x, double, var>* baseVari
       = new cov_exp_quad_vari<T_x, double, var>(x, sigma, l);
 

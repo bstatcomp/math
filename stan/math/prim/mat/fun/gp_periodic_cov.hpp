@@ -50,7 +50,8 @@ inline typename Eigen::Matrix<
     typename stan::return_type<T_x, T_sigma, T_l, T_p>::type, Eigen::Dynamic,
     Eigen::Dynamic>
 gp_periodic_cov(const std::vector<T_x> &x, const T_sigma &sigma, const T_l &l,
-                const T_p &p) {
+                const T_p &p) {    clock_t start = clock();
+
   using std::exp;
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
@@ -80,6 +81,9 @@ gp_periodic_cov(const std::vector<T_x> &x, const T_sigma &sigma, const T_l &l,
       cov(j, i) = cov(i, j);
     }
   }
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov a " << duration*1000.0 << std::endl;;
   return cov;
 }
 
@@ -121,6 +125,7 @@ inline typename Eigen::Matrix<
     Eigen::Dynamic, Eigen::Dynamic>
 gp_periodic_cov(const std::vector<T_x1> &x1, const std::vector<T_x2> &x2,
                 const T_sigma &sigma, const T_l &l, const T_p &p) {
+    clock_t start = clock();
   using std::exp;
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
@@ -148,6 +153,9 @@ gp_periodic_cov(const std::vector<T_x1> &x1, const std::vector<T_x2> &x2,
                         * neg_two_inv_l_sq);
     }
   }
+    clock_t stop = clock();
+    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+    std::cout<<"gp_periodic_cov b " << duration*1000.0 << std::endl;;
   return cov;
 }
 }  // namespace math

@@ -69,7 +69,7 @@ namespace stan {
        *
        */
       virtual void chain() {
-        clock_t start_check = clock();
+        clock_t start = clock();
         using Eigen::MatrixXd;
         using Eigen::Lower;
         using Eigen::Block;
@@ -184,6 +184,9 @@ namespace stan {
         for (size_type j = 0; j < M_; ++j)
           for (size_type i = j; i < M_; ++i)
             variRefA_[pos++]->adj_ += Lbar.coeffRef(i, j);
+        clock_t stop = clock();
+        double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+        std::cout<<"chol chain " << duration*1000.0 << std::endl;;
       }
     };
     /**
@@ -196,6 +199,7 @@ namespace stan {
      */
     inline Eigen::Matrix<var, -1, -1>
       cholesky_decompose_gpu(const Eigen::Matrix<var, -1, -1> &A) {
+      clock_t start = clock();
       Eigen::Matrix<double, -1, -1> L_A(value_of_rec(A));
       L_A = cholesky_decompose_gpu(L_A);
       // Memory allocated in arena.
@@ -210,6 +214,9 @@ namespace stan {
         for (size_type k = 0; k < j; ++k)
           L.coeffRef(k, j).vi_ = dummy;
       }
+      clock_t stop = clock();
+      double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+      std::cout<<"cholesky base " << duration*1000.0 << std::endl;;
       return L;
     }
   }

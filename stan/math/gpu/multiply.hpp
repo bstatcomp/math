@@ -88,6 +88,8 @@ namespace stan {
       matrix_gpu tempPad(Mpad, Npad);
       matrix_gpu Apad(Mpad, Kpad);
       matrix_gpu Bpad(Kpad, Npad);      
+      Apad.zeros();
+      Bpad.zeros();
       Apad.sub_block(A, 0, 0, 0, 0, A.rows(), A.cols());
       Bpad.sub_block(B, 0, 0, 0, 0, B.rows(), B.cols());
       cl::Kernel kernel = opencl_context.get_kernel("matrix_multiply");

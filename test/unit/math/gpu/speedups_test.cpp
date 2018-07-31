@@ -22,7 +22,7 @@
 #include <boost/math/distributions.hpp>
 #include <vector>
 TEST(SpeedupTests, matrix_multiply_dummy) {
-  //ignore timing, just to compile the proper kernels
+  //ignore timing, only used to compile the GPU kernels
   int size = 100;
   Eigen::MatrixXd x(size, size);
   Eigen::MatrixXd y(size, size);
@@ -30,6 +30,7 @@ TEST(SpeedupTests, matrix_multiply_dummy) {
   z = stan::math::multiply(x, y);  
 }
 TEST(MathMatrix, mdivide_left_tri_val) {
+  //ignore timing, only used to compile the GPU kernels
   using stan::math::mdivide_left_tri;
   int size = 50;
   stan::math::matrix_d Ad(size, size);
@@ -316,7 +317,7 @@ TEST(MathMatrix, cholesky_decompose_exception1) {
   EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
   clock_t stop = clock();
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
 }
 TEST(MathMatrix, cholesky_decompose_exception2) {
   int size = 1024;
@@ -335,7 +336,7 @@ TEST(MathMatrix, cholesky_decompose_exception2) {
   EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
   clock_t stop = clock();
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
 }
 TEST(MathMatrix, cholesky_decompose_exception3) {
   int size = 2048;
@@ -354,7 +355,7 @@ TEST(MathMatrix, cholesky_decompose_exception3) {
   EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
   clock_t stop = clock();
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
 }
 TEST(MathMatrix, cholesky_decompose_exception4) {
   int size = 4096;
@@ -394,7 +395,7 @@ TEST(MathMatrix, cholesky_decompose_exception5) {
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
   std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
 }
-
+#ifdef STAN_OPENCL
 TEST(MathMatrix, cholesky_decompose_exception6) {
   int size = 512;
   stan::math::matrix_d m;
@@ -402,11 +403,11 @@ TEST(MathMatrix, cholesky_decompose_exception6) {
 
 
   m.resize(size, size);
-  /*for (int i = 0; i < size; i++)
+  for (int i = 0; i < size; i++)
   for (int j = 0; j < size; j++) {
     m(i, j) = stan::math::normal_rng(0.0, 1.0, rng);
   }
-  m=m*m.transpose();*/
+  m=m*m.transpose();
   
   clock_t start = clock();
   stan::math::cholesky_decompose_gpu(m);
@@ -420,14 +421,14 @@ TEST(MathMatrix, cholesky_decompose_exception7) {
   stan::math::matrix_d m;
 
   m.resize(size, size);
-  /*for(int i=0;i<size;i++){
+  for(int i=0;i<size;i++){
     for(int j=0;j<i;j++){
       m(i,j) = i%2;
     }
   }
   for(int i=0;i<size;i++)
     m(i,i) = 20.0;
-  m=m*m.transpose();*/
+  m=m*m.transpose();
   clock_t start = clock();
   stan::math::cholesky_decompose_gpu(m);
   clock_t stop = clock();
@@ -439,14 +440,14 @@ TEST(MathMatrix, cholesky_decompose_exception8) {
   stan::math::matrix_d m;
 
   m.resize(size, size);
-  /*for(int i=0;i<size;i++){
+  for(int i=0;i<size;i++){
     for(int j=0;j<i;j++){
       m(i,j) = i%5;
     }
   }
   for(int i=0;i<size;i++)
     m(i,i) = 10.0;
-  m=m*m.transpose();*/
+  m=m*m.transpose();
   clock_t start = clock();
   stan::math::cholesky_decompose_gpu(m);
   clock_t stop = clock();
@@ -458,14 +459,14 @@ TEST(MathMatrix, cholesky_decompose_exception9) {
   stan::math::matrix_d m;
 
   m.resize(size, size);
-  /*for(int i=0;i<size;i++){
+  for(int i=0;i<size;i++){
     for(int j=0;j<i;j++){
       m(i,j) = i%5;
     }
   }
   for(int i=0;i<size;i++)
     m(i,i) = 10.0;
-  m=m*m.transpose();*/
+  m=m*m.transpose();
   clock_t start = clock();
   stan::math::cholesky_decompose_gpu(m);
   clock_t stop = clock();
@@ -477,19 +478,20 @@ TEST(MathMatrix, cholesky_decompose_exception10) {
   stan::math::matrix_d m;
 
   m.resize(size, size);
-  /*for(int i=0;i<size;i++){
+  for(int i=0;i<size;i++){
     for(int j=0;j<i;j++){
       m(i,j) = i%5;
     }
   }
   for(int i=0;i<size;i++)
     m(i,i) = 10.0;
-  m=m*m.transpose();*/
+  m=m*m.transpose();
   
   clock_t start = clock();
-  stan::math::cholesky_decompose_gpu(m,320, 440);
+  stan::math::cholesky_decompose_gpu(m);
   clock_t stop = clock();
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
   std::cout<<"choleskky_decompose gpu ( " << size << " ):" << duration*1000.0 << std::endl;;
 
 }
+#endif

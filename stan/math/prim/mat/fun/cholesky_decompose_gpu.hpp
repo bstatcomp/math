@@ -109,10 +109,10 @@ namespace stan {
       }
       V.zeros<gpu::Upper>();
       A.triangular_transpose<gpu::LowerToUpper>();
-      /*check_nan("cholesky_decompose_gpu",
+      check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
-        "Matrix m", A);*/
+        "Matrix m", A);
       A.zeros<gpu::Upper>();
       matrix_gpu B(A);
       return B;
@@ -139,7 +139,7 @@ namespace stan {
      Eigen::Dynamic, Eigen::Dynamic>& m, int abc = 300, int abc1 = 100) {
       if (m.size() == 0) return m;
       matrix_gpu A(m);
-      //check_symmetric("cholesky_decompose", "m", A);
+      check_symmetric("cholesky_decompose", "m", A);
 
       Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>
        m_tmp(m.rows(), m.cols());
@@ -199,10 +199,10 @@ namespace stan {
       }
       A.zeros<gpu::Upper>();
       A.triangular_transpose<gpu::LowerToUpper>();
-      /*check_nan("cholesky_decompose_gpu",
+      check_nan("cholesky_decompose_gpu",
         "Matrix m", A);
       check_diagonal_zeros("cholesky_decompose_gpu",
-        "Matrix m", A);*/
+        "Matrix m", A);
       A.zeros<gpu::Upper>();
       copy(m_tmp, A); // NOLINT
       return m_tmp;

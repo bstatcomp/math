@@ -34,6 +34,8 @@ namespace stan {
       matrix_gpu tempPad(Mpad, Mpad);
       matrix_gpu Apad(Mpad, Npad);
       matrix_gpu ATpad(Npad, Mpad);
+      Apad.zeros();
+      ATpad.zeros();
       matrix_gpu AT = stan::math::transpose(A);
       Apad.sub_block(A, 0, 0, 0, 0, A.rows(), A.cols());
       ATpad.sub_block(AT, 0, 0, 0, 0, AT.rows(), AT.cols());

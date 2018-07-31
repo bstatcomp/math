@@ -300,101 +300,6 @@ TEST(MathPrimMat, vec_double_cov_exp_quad8) {
   std::cout<<"cov_exp_quad_x1 (" << size << "):" << duration*1000.0 << std::endl;;
 }
 
-TEST(MathMatrix, cholesky_decompose_exception1) {
-  int size = 512;
-  stan::math::matrix_d m;
-
-  m.resize(size, size);
-  for(int i=0;i<size;i++){
-    for(int j=0;j<size;j++){
-      m(i,j) = i%5;
-    }
-  }
-  for(int i=0;i<size;i++)
-    m(i,i) = 10.0;
-  m=m*m.transpose();
-  clock_t start = clock();
-  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
-  clock_t stop = clock();
-  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
-}
-TEST(MathMatrix, cholesky_decompose_exception2) {
-  int size = 1024;
-  stan::math::matrix_d m;
-
-  m.resize(size, size);
-  for(int i=0;i<size;i++){
-    for(int j=0;j<size;j++){
-      m(i,j) = i%2;
-    }
-  }
-  for(int i=0;i<size;i++)
-    m(i,i) = 20.0;
-  m=m*m.transpose();
-  clock_t start = clock();
-  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
-  clock_t stop = clock();
-  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
-}
-TEST(MathMatrix, cholesky_decompose_exception3) {
-  int size = 2048;
-  stan::math::matrix_d m;
-
-  m.resize(size, size);
-  for(int i=0;i<size;i++){
-    for(int j=0;j<size;j++){
-      m(i,j) = i%5;
-    }
-  }
-  for(int i=0;i<size;i++)
-    m(i,i) = 10.0;
-  m=m*m.transpose();
-  clock_t start = clock();
-  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
-  clock_t stop = clock();
-  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
-}
-TEST(MathMatrix, cholesky_decompose_exception4) {
-  int size = 4096;
-  stan::math::matrix_d m;
-
-  m.resize(size, size);
-  for(int i=0;i<size;i++){
-    for(int j=0;j<size;j++){
-      m(i,j) = i%5;
-    }
-  }
-  for(int i=0;i<size;i++)
-    m(i,i) = 10.0;
-  m=m*m.transpose();
-  clock_t start = clock();
-  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
-  clock_t stop = clock();
-  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
-}
-TEST(MathMatrix, cholesky_decompose_exception5) {
-  int size = 8192;
-  stan::math::matrix_d m;
-
-  m.resize(size, size);
-  for(int i=0;i<size;i++){
-    for(int j=0;j<size;j++){
-      m(i,j) = i%5;
-    }
-  }
-  for(int i=0;i<size;i++)
-    m(i,i) = 10.0;
-  m=m*m.transpose();
-  clock_t start = clock();
-  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
-  clock_t stop = clock();
-  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
-}
 #ifdef STAN_OPENCL
 TEST(MathMatrix, cholesky_decompose_exception6) {
   int size = 512;
@@ -493,5 +398,101 @@ TEST(MathMatrix, cholesky_decompose_exception10) {
   double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
   std::cout<<"choleskky_decompose gpu ( " << size << " ):" << duration*1000.0 << std::endl;;
 
+}
+#else
+TEST(MathMatrix, cholesky_decompose_exception1) {
+  int size = 512;
+  stan::math::matrix_d m;
+
+  m.resize(size, size);
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      m(i,j) = i%5;
+    }
+  }
+  for(int i=0;i<size;i++)
+    m(i,i) = 10.0;
+  m=m*m.transpose();
+  clock_t start = clock();
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+}
+TEST(MathMatrix, cholesky_decompose_exception2) {
+  int size = 1024;
+  stan::math::matrix_d m;
+
+  m.resize(size, size);
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      m(i,j) = i%2;
+    }
+  }
+  for(int i=0;i<size;i++)
+    m(i,i) = 20.0;
+  m=m*m.transpose();
+  clock_t start = clock();
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+}
+TEST(MathMatrix, cholesky_decompose_exception3) {
+  int size = 2048;
+  stan::math::matrix_d m;
+
+  m.resize(size, size);
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      m(i,j) = i%5;
+    }
+  }
+  for(int i=0;i<size;i++)
+    m(i,i) = 10.0;
+  m=m*m.transpose();
+  clock_t start = clock();
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"cholesky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+}
+TEST(MathMatrix, cholesky_decompose_exception4) {
+  int size = 4096;
+  stan::math::matrix_d m;
+
+  m.resize(size, size);
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      m(i,j) = i%5;
+    }
+  }
+  for(int i=0;i<size;i++)
+    m(i,i) = 10.0;
+  m=m*m.transpose();
+  clock_t start = clock();
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
+}
+TEST(MathMatrix, cholesky_decompose_exception5) {
+  int size = 8192;
+  stan::math::matrix_d m;
+
+  m.resize(size, size);
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      m(i,j) = i%5;
+    }
+  }
+  for(int i=0;i<size;i++)
+    m(i,i) = 10.0;
+  m=m*m.transpose();
+  clock_t start = clock();
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"choleskky_decompose (" << size << "):" << duration*1000.0 << std::endl;;
 }
 #endif

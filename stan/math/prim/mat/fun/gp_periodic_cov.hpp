@@ -15,11 +15,14 @@
 #include <stan/math/prim/scal/meta/return_type.hpp>
 #include <cmath>
 
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/gpu/cov_exp_quad.hpp>
 #include <vector>
 
 namespace stan {
 namespace math {
-
+int x_on_gpu = 0;
+matrix_gpu *x_gpu;
 /**
  * Returns a periodic covariance matrix \f$ \mathbf{K} \f$ using the input \f$
  * \mathbf{X} \f$. The elements of \f$ \mathbf{K} \f$ are defined as \f$
@@ -50,7 +53,7 @@ inline typename Eigen::Matrix<
     typename stan::return_type<T_x, T_sigma, T_l, T_p>::type, Eigen::Dynamic,
     Eigen::Dynamic>
 gp_periodic_cov(const std::vector<T_x> &x, const T_sigma &sigma, const T_l &l,
-                const T_p &p) {    clock_t start = clock();
+                const T_p &p) {    
 
   using std::exp;
   const char *fun = "gp_periodic_cov";
@@ -63,15 +66,41 @@ gp_periodic_cov(const std::vector<T_x> &x, const T_sigma &sigma, const T_l &l,
   Eigen::Matrix<typename stan::return_type<T_x, T_sigma, T_l, T_p>::type,
                 Eigen::Dynamic, Eigen::Dynamic>
       cov(x.size(), x.size());
-
+  
+  Eigen::Matrix<double,
+                Eigen::Dynamic, Eigen::Dynamic>
+      cov2(x.size(), x.size());
+  
   size_t x_size = x.size();
   if (x_size == 0)
     return cov;
-
+ 
+  clock_t start = clock();
   T_sigma sigma_sq = square(sigma);
   T_l neg_two_inv_l_sq = -2.0 * inv_square(l);
   T_p pi_div_p = pi() / p;
-
+  
+#ifdef STAN_OPENCL
+  if(x_on_gpu == 0){
+      x_gpu = new matrix_gpu(x);
+      x_on_gpu = 1;
+  }
+  matrix_gpu cov_gpu(x.size(), x.size());
+  Eigen::Matrix<double,Eigen::Dynamic, Eigen::Dynamic>
+      consts(3, 1);
+  consts(0) = value_of(sigma_sq);
+  consts(1) = value_of(neg_two_inv_l_sq);
+  consts(2) = value_of(pi_div_p);
+  matrix_gpu consts_gpu(consts);
+  gp_periodic_cov(*x_gpu, consts_gpu, cov_gpu);
+  
+  copy(cov2, cov_gpu);  
+  cov=cov2;
+  clock_t stop = clock();
+  double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
+  std::cout<<"gp_periodic_cov a " <<  x.size() << "- " << duration*1000.0 << std::endl;;
+  
+#else
   for (size_t j = 0; j < x_size; ++j) {
     cov(j, j) = sigma_sq;
     for (size_t i = j + 1; i < x_size; ++i) {
@@ -81,9 +110,8 @@ gp_periodic_cov(const std::vector<T_x> &x, const T_sigma &sigma, const T_l &l,
       cov(j, i) = cov(i, j);
     }
   }
-    clock_t stop = clock();
-    double duration = ( stop - start ) / (double) CLOCKS_PER_SEC;
-    std::cout<<"gp_periodic_cov a " << duration*1000.0 << std::endl;;
+#endif
+  
   return cov;
 }
 

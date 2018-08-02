@@ -186,6 +186,9 @@ class opencl_context_base {
     const char* multiply_self_transpose_kernel =
 #include <stan/math/gpu/kernels/multiply_self_transpose_kernel.cl>
         ;  // NOLINT
+    const char* gp_periodic_cov_kernel =
+#include <stan/math/gpu/kernels/gp_periodic_cov_kernel.cl>
+        ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -229,6 +232,8 @@ class opencl_context_base {
         = {false, "basic_matrix", cov_exp_quad2_kernel};
     kernel_info["cov_exp_quad3"]
         = {false, "basic_matrix", cov_exp_quad3_kernel};
+    kernel_info["gp_periodic_cov"]
+        = {false, "basic_matrix", gp_periodic_cov_kernel};
   }
 
  protected:

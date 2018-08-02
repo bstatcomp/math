@@ -43,6 +43,57 @@ inline void cov_exp_quad(matrix_gpu x, matrix_gpu pos, matrix_gpu cnst,
  * @return the identity matrix
  *
  */
+inline void gp_periodic_cov(matrix_gpu x, matrix_gpu cnst,
+    matrix_gpu &temp) {
+  cl::Kernel kernel = opencl_context.get_kernel("gp_periodic_cov");
+  cl::CommandQueue cmdQueue = opencl_context.queue();
+
+  try {
+    kernel.setArg(0, x.buffer());
+    kernel.setArg(1, cnst.buffer());
+    kernel.setArg(2, temp.buffer());
+    kernel.setArg(3, x.size());
+    cmdQueue.enqueueNDRangeKernel(kernel, cl::NullRange,
+                                  cl::NDRange(x.size(), x.size()),
+                                  cl::NullRange, NULL, NULL);
+  } catch (const cl::Error& e) {
+    check_opencl_error("gp_periodic_cov", e);
+  }
+}
+
+/**
+ * Returns the identity matrix stored on the GPU
+ *
+ * @param rows_cols the number of rows and columns
+ *
+ * @return the identity matrix
+ *
+ */
+inline void gp_dot_prod_cov(matrix_gpu x, matrix_gpu cnst,
+    matrix_gpu &temp) {
+  cl::Kernel kernel = opencl_context.get_kernel("gp_periodic_cov");
+  cl::CommandQueue cmdQueue = opencl_context.queue();
+
+  try {
+    kernel.setArg(0, x.buffer());
+    kernel.setArg(1, cnst.buffer());
+    kernel.setArg(2, temp.buffer());
+    kernel.setArg(3, x.size());
+    cmdQueue.enqueueNDRangeKernel(kernel, cl::NullRange,
+                                  cl::NDRange(x.size(), x.size()),
+                                  cl::NullRange, NULL, NULL);
+  } catch (const cl::Error& e) {
+    check_opencl_error("gp_periodic_cov", e);
+  }
+}
+/**
+ * Returns the identity matrix stored on the GPU
+ *
+ * @param rows_cols the number of rows and columns
+ *
+ * @return the identity matrix
+ *
+ */
 inline void cov_exp_quad2(matrix_gpu x, matrix_gpu cnst, matrix_gpu& res1) {
   cl::Kernel kernel = opencl_context.get_kernel("cov_exp_quad2");
   cl::CommandQueue cmdQueue = opencl_context.queue();

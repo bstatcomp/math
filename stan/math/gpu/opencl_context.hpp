@@ -15,7 +15,7 @@
 #include <vector>
 #include <cerrno>
 
-#define DEVICE_FILTER CL_DEVICE_TYPE_GPU
+#define DEVICE_FILTER CL_DEVICE_TYPE_ALL
 #ifndef OPENCL_DEVICE_ID
 #error OPENCL_DEVICE_ID_NOT_SET
 #endif
@@ -183,9 +183,12 @@ class opencl_context_base {
     const char* cov_exp_quad3_kernel =
 #include <stan/math/gpu/kernels/cov_exp_quad3_kernel.cl>
         ;  // NOLINT
-    const char* multiply_self_transpose_kernel =
+      const char* multiply_self_transpose_kernel =
 #include <stan/math/gpu/kernels/multiply_self_transpose_kernel.cl>
-        ;  // NOLINT
+      ;  // NOLINT
+      const char* householder_QR_1_kernel =
+#include <stan/math/gpu/kernels/householder_QR_1.cl>
+      ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -227,8 +230,10 @@ class opencl_context_base {
         = {false, "basic_matrix", cov_exp_quad_kernel};
     kernel_info["cov_exp_quad2"]
         = {false, "basic_matrix", cov_exp_quad2_kernel};
-    kernel_info["cov_exp_quad3"]
-        = {false, "basic_matrix", cov_exp_quad3_kernel};
+      kernel_info["cov_exp_quad3"]
+              = {false, "basic_matrix", cov_exp_quad3_kernel};
+      kernel_info["householder_QR_1"]
+              = {false, "basic_matrix", householder_QR_1_kernel};
   }
 
  protected:
@@ -304,13 +309,14 @@ class opencl_context {
         kernel_source += kern.second.raw_code;
       }
     }
+    cl::Program program_;
     try {
       cl::Program::Sources source(
           1,
           std::make_pair(kernel_source.c_str(), strlen(kernel_source.c_str())));
-      cl::Program program_ = cl::Program(context(), source);
+      program_ = cl::Program(context(), source);
       program_.build({device()}, temp);
-
+        std::cerr << " Build log: " << program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device()[0]) << "\n";
       cl_int err = CL_SUCCESS;
       // Iterate over the kernel list and get all the kernels from this group
       // and mark them as compiled.
@@ -323,6 +329,8 @@ class opencl_context {
         }
       }
     } catch (const cl::Error& e) {
+        std::cerr << " Error building: " << program_.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device()[0]) << "\n";
+
       check_opencl_error("Kernel Compilation", e);
     }
   }

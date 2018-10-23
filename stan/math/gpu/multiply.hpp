@@ -71,7 +71,7 @@ namespace stan {
      * @throw <code>std::invalid_argument</code> if the 
      *   number of columns in A and rows in B do not match
      */
-    inline matrix_gpu multiply(matrix_gpu & A, matrix_gpu & B) {
+    inline matrix_gpu multiply(const matrix_gpu & A, const matrix_gpu & B) {
       check_size_match("multiply (GPU)", "A.cols()", A.cols(),
        "B.rows()", B.rows());             
       matrix_gpu temp(A.rows(), B.cols());      

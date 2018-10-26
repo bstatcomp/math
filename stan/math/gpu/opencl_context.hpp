@@ -189,6 +189,15 @@ class opencl_context_base {
       const char* householder_QR_1_kernel =
 #include <stan/math/gpu/kernels/householder_QR_1.cl>
       ;  // NOLINT
+      const char* householder_QR_2_kernel =
+#include <stan/math/gpu/kernels/householder_QR_2.cl>
+      ;  // NOLINT
+      const char* householder_QR_3_kernel =
+#include <stan/math/gpu/kernels/householder_QR_3.cl>
+      ;  // NOLINT
+      const char* householder_QR_4_kernel =
+#include <stan/math/gpu/kernels/householder_QR_4.cl>
+      ;  // NOLINT
     kernel_info["dummy"] = {
         false, "timing", "__kernel void dummy(__global const int* foo) { };"};
     kernel_info["dummy2"] = {
@@ -234,6 +243,12 @@ class opencl_context_base {
               = {false, "basic_matrix", cov_exp_quad3_kernel};
       kernel_info["householder_QR_1"]
               = {false, "basic_matrix", householder_QR_1_kernel};
+      kernel_info["householder_QR_2"]
+              = {false, "basic_matrix", householder_QR_2_kernel};
+      kernel_info["householder_QR_3"]
+              = {false, "basic_matrix", householder_QR_3_kernel};
+      kernel_info["householder_QR_4"]
+              = {false, "basic_matrix", householder_QR_4_kernel};
   }
 
  protected:

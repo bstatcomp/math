@@ -1,6 +1,6 @@
 #include <iostream>
 
-#define OPENCL_PLATFORM_ID 1
+#define OPENCL_PLATFORM_ID 0
 #define OPENCL_DEVICE_ID 0
 
 #include <stan/math.hpp>
@@ -90,43 +90,55 @@ void test_my_mul(){
         -4,   24, -41,  -6, -9,  1;
     Vec h(4);
     h << 1,2,-3,3;
-    Mat V(5,5);
-    V << 0,0,0,0,0,
-        0,1,0,0,0,
-        0,2,0,0,0,
-        0,-3,0,0,0,
-        0,3,0,0,0;
-    cout << "block" <<endl;
-    cout << a.block(1,2,4,4) << endl;
-    cout << "tmp vec" <<endl;
-    Mat tmp =(a.block(1,2,4,4).transpose()*h);
-    cout << tmp << endl;
-    Mat cpu = a.block(1,2,4,4)-h*tmp.transpose();
-    cout << "cpu res" <<endl;
-    cout << cpu << endl;
-    cl::Kernel kernel = opencl_context.get_kernel("householder_QR_1");
-    cl::CommandQueue& cmdQueue = opencl_context.queue();
+    Mat V(7,6);
+    V << 0,0,0,0,2,0,
+         0,1,0,0,3,0,
+         0,2,0,0,4,0,
+         0,-3,0,0,5,0,
+         0,-3,0,0,6,0,
+         0,-3,0,0,9,0,
+         0,3,0,0,-9,0;
+    int cols=4;
     matrix_gpu a_gpu(a);
     matrix_gpu h_gpu(h);
     matrix_gpu V_gpu(V);
-    matrix_gpu res_gpu(4,4);
+    matrix_gpu res_gpu(cols,1);
+    //cout << "block" <<endl;
+    //cout << a.block(1,2,4,4) << endl;
+    Mat cpu = a.leftCols(cols).transpose() * a.col(cols);
+    a.col(cols) = V.col(cols) - a.leftCols(cols) * cpu;
+    cl::Kernel kernel = opencl_context.get_kernel("householder_QR_3");
+    cl::Kernel kernel4 = opencl_context.get_kernel("householder_QR_4");
+    cl::CommandQueue& cmdQueue = opencl_context.queue();
     try {
-        opencl_context.set_kernel_args(kernel, (int) a.rows(), (int) a.cols(), 1, 2, 4, 4, (int)V.rows(),
-                a_gpu.buffer(), V_gpu.buffer(), res_gpu.buffer());
+        opencl_context.set_kernel_args(kernel, (int) a.rows(), (int) a.cols(), cols,
+                                       a_gpu.buffer(), a_gpu.buffer(), res_gpu.buffer());
         cmdQueue.enqueueNDRangeKernel(kernel, cl::NullRange,
-                                      cl::NDRange(6),
-                                      cl::NDRange(3), NULL, NULL);
+                                      cl::NDRange(64),
+                                      cl::NDRange(64), NULL, NULL);
+
+        cout << "a:" <<endl;
+        p(a_gpu);
+        opencl_context.set_kernel_args(kernel4, (int) a.rows(), (int) a.cols(), cols,
+                                       a_gpu.buffer(), res_gpu.buffer(), V_gpu.buffer());
+        cmdQueue.enqueueNDRangeKernel(kernel4, cl::NullRange,
+                                      cl::NDRange(64),
+                                      cl::NDRange(64), NULL, NULL);
     }
     catch (const cl::Error& e) {
         check_opencl_error("QR", e);
     }
-    Mat res(res_gpu.rows(),res_gpu.cols());
-    copy(res,res_gpu);
+
     cout << "cpu res" <<endl;
     cout << cpu << endl;
     cout << "GPU res" <<endl;
-    cout << res << endl;
-    cout << (res-cpu).array().abs().sum() << endl;
+    p(res_gpu);
+
+
+    cout << "cpu res2" <<endl;
+    cout << a << endl;
+    cout << "GPU res2" <<endl;
+    p(a_gpu);
 
 }
 
@@ -136,8 +148,8 @@ int main() {
     //test_my_mul();
     //return 0;
 
-    int A = 1100;
-    int B = 1100;
+    int A = 10000;
+    int B = 10000;
     const int MAX_BLOCK=400;
     Mat a = Mat::Random(A, B);
     Mat R,Q,R2;
@@ -174,33 +186,31 @@ int main() {
     cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
     */
 
-    /*start = std::chrono::steady_clock::now();
-    block_householder_qr(a, Q, R, 60);
-    cout << "CPU my block 60: "
-         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
-         << "ms" << endl;
-    R2 = R;
-    R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
-    cout << "R triang: " << (R - R2).array().abs().sum() << endl;
-    cout << "reconstruct: " << (Q * R - a).array().abs().sum() << endl;
-    cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
-
+    cl::Kernel kernel_1 = opencl_context.get_kernel("householder_QR_1");
 
     start = std::chrono::steady_clock::now();
-    block_householder_qr_gpu3(a, Q, R, 120);
-    cout << "GPU my block 120 (+compile): "
-         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
-         << "ms" << endl;
-    */
-    start = std::chrono::steady_clock::now();
-    block_householder_qr_gpu4(a, Q, R, 90);
-    cout << "GPU my block 90: "
+    block_householder_qr_gpu5(a, Q, R, 120);
+    cout << "GPU my block 120: "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
          << "ms" << endl;
     chk(a,Q,R);
 
-
-    cout << "##################### CPU" << endl;
+    block_householder_qr_gpu6(a, Q, R, 160);
+    start = std::chrono::steady_clock::now();
+    block_householder_qr_gpu6(a, Q, R, 160);
+    cout << "GPU my block 160: "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+         << "ms" << endl;
+    chk(a,Q,R);
+/*
+    start = std::chrono::steady_clock::now();
+    block_householder_qr(a, Q, R, 60);
+    cout << "CPU my block 60: "
+         << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+         << "ms" << endl;
+    chk(a,Q,R);
+*/
+    /*cout << "##################### CPU" << endl;
     for (int r = 20; r < std::min({A,B,MAX_BLOCK}); r += 5) {
         start = std::chrono::steady_clock::now();
         block_householder_qr(a, Q, R, r);
@@ -244,9 +254,9 @@ int main() {
              << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
              << "ms" << endl;
         chk(a,Q,R);
-    }
+    }*/
 
-    cout << "##################### GPU 5" << endl;
+    /*cout << "##################### GPU 5" << endl;
     for (int r = 20; r < std::min({A,B,MAX_BLOCK}); r += 5) {
         start = std::chrono::steady_clock::now();
         block_householder_qr_gpu5(a, Q, R, r);
@@ -255,6 +265,17 @@ int main() {
              << "ms" << endl;
         chk(a,Q,R);
     }
+
+
+    cout << "##################### GPU 6" << endl;
+    for (int r = 20; r < std::min({A,B,MAX_BLOCK}); r += 5) {
+        start = std::chrono::steady_clock::now();
+        block_householder_qr_gpu6(a, Q, R, r);
+        cout << "block " << r << ": "
+             << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+             << "ms" << endl;
+        chk(a,Q,R);
+    }*/
 
     return 0;
 }

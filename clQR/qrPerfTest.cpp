@@ -32,11 +32,11 @@ void p(const matrix_gpu& a) {
 }
 
 void chk(const Mat& a, const Mat& Q, const Mat& R){
-    /*Mat R2 = R;
+    Mat R2 = R;
     R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
     cout << "R triang: " << (R - R2).array().abs().sum() << endl;
     cout << "reconstruct: " << (Q * R - a).array().abs().sum() << endl;
-    cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;*/
+    cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
 }
 
 int test() {
@@ -159,8 +159,8 @@ int main() {
     //test_my_mul();
     //return 0;
 
-    int A = 10000;
-    int B = 10000;
+    int A = 1000;
+    int B = 1000;
     const int MAX_BLOCK=400;
     Mat a = Mat::Random(A, B);
     Mat R,Q,R2;

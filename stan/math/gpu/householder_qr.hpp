@@ -149,7 +149,6 @@ void block_householder_qr_gpu(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eige
                 cmdQueue.enqueueNDRangeKernel(kernel_2, cl::NullRange,
                                               cl::NDRange(128),
                                               cl::NDRange(128), NULL, NULL);
-                cmdQueue.finish();
                 opencl_context.set_kernel_args(kernel_1, R_gpu.rows(), R_gpu.cols(),
                                                (int)(k+j), (int)(k+j),
                                                tmp_gpu.rows(), tmp_gpu.cols(),V_gpu.rows(),
@@ -157,7 +156,6 @@ void block_householder_qr_gpu(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eige
                 cmdQueue.enqueueNDRangeKernel(kernel_1, cl::NullRange,
                                               cl::NDRange(((actual_r+63)/64)*64),
                                               cl::NDRange(64), NULL, NULL);
-                cmdQueue.finish();
             }
             catch (const cl::Error& e) {
                 std::cout << "err1";
@@ -176,13 +174,11 @@ void block_householder_qr_gpu(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eige
                 cmdQueue.enqueueNDRangeKernel(kernel_3, cl::NullRange,
                                               cl::NDRange(((j+63)/64)*64),
                                               cl::NDRange(64), NULL, NULL);
-                cmdQueue.finish();
                 opencl_context.set_kernel_args(kernel_4, W_gpu.rows(), W_gpu.cols(),(int)j,
                                                        W_gpu.buffer(), tmp_gpu.buffer(), V_gpu.buffer());
                 cmdQueue.enqueueNDRangeKernel(kernel_4, cl::NullRange,
                                               cl::NDRange(((W_gpu.rows()+63)/64)*64),
                                               cl::NDRange(64), NULL, NULL);
-                cmdQueue.finish();
             }
             catch (const cl::Error& e) {
                 std::cout << "err2";

@@ -17,7 +17,21 @@ using namespace stan::math;
 using Mat=Matrix<double, Dynamic, Dynamic>;
 using Vec=VectorXd;
 
-void chk(Mat a, Mat Q, Mat R){
+void p(const Eigen::MatrixXd& a) {
+    std::cout << a << std::endl;
+}
+
+void p(const Eigen::VectorXd& a) {
+    std::cout << a << std::endl;
+}
+
+void p(const matrix_gpu& a) {
+    Eigen::MatrixXd b(a.rows(), a.cols());
+    copy(b, a);
+    std::cout << b << std::endl;
+}
+
+void chk(const Mat& a, const Mat& Q, const Mat& R){
     /*Mat R2 = R;
     R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
     cout << "R triang: " << (R - R2).array().abs().sum() << endl;
@@ -51,9 +65,6 @@ int test() {
     cout << "reconstruct1:" << endl << Q * R << endl;
     cout << "ID1:" << endl << Q.transpose() * Q << endl;*/
 
-
-    cout << "my naive impl:" << endl;
-    householder_qr(a, Q, R);
     /*cout << "Q2:" << endl << Q << endl;
     cout << "R2:" << endl << R << endl;
     cout << "reconstruct2:" << endl << Q * R << endl;
@@ -66,7 +77,7 @@ int test() {
 
     for (int r = 1; r <= 3; r++) {
         cout << "##################################################################################  block impl, r=" << r << endl;
-        block_householder_qr_gpu3(a, Q, R, r);
+        block_householder_qr_gpu(a, Q, R, r);
         /*cout << "Q3:" << endl << Q << endl;
         cout << "R3:" << endl << R << endl;
         cout << "reconstruct3:" << endl << Q * R << endl;
@@ -189,15 +200,15 @@ int main() {
     cl::Kernel kernel_1 = opencl_context.get_kernel("householder_QR_1");
 
     start = std::chrono::steady_clock::now();
-    block_householder_qr_gpu5(a, Q, R, 120);
+    block_householder_qr_gpu_hybrid(a, Q, R, 120);
     cout << "GPU my block 120: "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
          << "ms" << endl;
     chk(a,Q,R);
 
-    block_householder_qr_gpu6(a, Q, R, 160);
+    block_householder_qr_gpu(a, Q, R, 160);
     start = std::chrono::steady_clock::now();
-    block_householder_qr_gpu6(a, Q, R, 160);
+    block_householder_qr_gpu(a, Q, R, 160);
     cout << "GPU my block 160: "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
          << "ms" << endl;

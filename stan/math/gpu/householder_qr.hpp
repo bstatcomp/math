@@ -15,10 +15,17 @@
 namespace stan {
 namespace math {
 
-void block_householder_qr(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r) {
+/**
+ * Calculates QR decomposition of A using the block Householder algorithm on a CPU.
+ * @param A matrix to factorize
+ * @param Q out the orthonormal matrix
+ * @param R out the lower triangular matrix
+ * @param r Block size. Optimal value depends on the hardware.
+ */
+void block_householder_qr(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r = 60) {
     R = A;
     Q = Eigen::MatrixXd::Identity(R.rows(), R.rows());
-    //Eigen::ArrayXd mags = A.triangularView<Eigen::Lower>().colwise().norm(); //lahko ahead of time za cel R - ampak le od diagonale dol
+    //Eigen::ArrayXd mags = A.triangularView<Eigen::Lower>().colwise().norm(); //householder norms could be calculated ahead of time (only below diadonal elements)
     for (size_t k = 0; k < std::min(R.rows() - 1, R.cols()); k += r) {
         int actual_r = std::min({r, static_cast<int>(R.cols() - k), static_cast<int>(R.rows() - k)});
         Eigen::MatrixXd V(R.rows() - k, actual_r);
@@ -49,7 +56,16 @@ void block_householder_qr(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::M
     }
 }
 
-void block_householder_qr_gpu5(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r) {
+/**
+ * Calculates QR decomposition of A using the block Householder algorithm, which divides work between CPU and GPU.
+ * This is slower than full GPU implementation (`block_householder_qr_gpu`) for large matrices (> ~8000*8000) and
+ * faster for smaller matrices.
+ * @param A matrix to factorize
+ * @param Q out the orthonormal matrix
+ * @param R out the lower triangular matrix
+ * @param r Block size. Optimal value depends on the hardware.
+ */
+void block_householder_qr_gpu_hybrid(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r = 120) {
     R = A;
     matrix_gpu Q_gpu(static_cast<const Eigen::MatrixXd>(Eigen::MatrixXd::Identity(A.rows(), A.rows())));
 
@@ -101,10 +117,18 @@ void block_householder_qr_gpu5(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eig
     copy(Q, Q_gpu);
 }
 
-void block_householder_qr_gpu6(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r) {
+/**
+ * Calculates QR decomposition of A using the block Householder algorithm on a GPU.
+ * This is faster than hybrid CPU/GPU (`block_householder_qr_gpu_hybrid`) implementation
+ * for large matrices (> ~8000*8000) and slower for smaller matrices.
+ * @param A matrix to factorize
+ * @param Q out the orthonormal matrix
+ * @param R out the lower triangular matrix
+ * @param r Block size. Optimal value depends on the hardware.
+ */
+void block_householder_qr_gpu(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eigen::MatrixXd& R, int r = 160) {
     matrix_gpu R_gpu(A);
     matrix_gpu Q_gpu=identity(A.rows());
-    //matrix_gpu Q_gpu(static_cast<const Eigen::MatrixXd>(Eigen::MatrixXd::Identity(A.rows(), A.rows())));
 
     cl::Kernel kernel_1 = opencl_context.get_kernel("householder_QR_1");
     cl::Kernel kernel_2 = opencl_context.get_kernel("householder_QR_2");
@@ -179,6 +203,79 @@ void block_householder_qr_gpu6(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eig
     Q = Eigen::MatrixXd(A.rows(), A.rows());
     copy(Q, Q_gpu);
     copy(R, R_gpu);
+}
+
+/**
+ * Returns the upper triangular factor of the fat QR decomposition. Does not use GPU implementation, as it is not autodiff-able.
+ * @param m Matrix.
+ * @tparam T scalar type
+ * @return Upper triangular matrix with maximal rows
+ */
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> qr_R_gpu(
+        const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& m) {
+    return qr_R(m);
+}
+
+/**
+ * Returns the upper triangular factor of the fat QR decomposition. GPU implementation is used only for double types.
+ * @param m Matrix.
+ * @tparam T scalar type
+ * @return Upper triangular matrix with maximal rows
+ */
+template <>
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> qr_R_gpu(
+        const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& m) {
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> matrix_t;
+    check_nonzero_size("qr_R", "m", m);
+
+    matrix_t Q, R;
+    block_householder_qr_gpu(m, Q, R);
+
+    if (m.rows() > m.cols())
+        R.bottomRows(m.rows() - m.cols()).setZero();
+    const int min_size = std::min(m.rows(), m.cols());
+    for (int i = 0; i < min_size; i++) {
+        for (int j = 0; j < i; j++)
+            R.coeffRef(i, j) = 0.0;
+        if (R(i, i) < 0)
+            R.row(i) *= -1.0;
+    }
+    return R;
+}
+
+/**
+ * Returns the orthogonal factor of the fat QR decomposition. Does not use GPU implementation, as it is not autodiff-able.
+ * @param m Matrix.
+ * @tparam T scalar type
+ * @return Orthogonal matrix with maximal columns
+ */
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> qr_Q_gpu(
+        const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& m) {
+    return qr_Q(m);
+}
+
+/**
+ * Returns the orthogonal factor of the fat QR decomposition. GPU implementation is used only for double types.
+ * @param m Matrix.
+ * @tparam T scalar type
+ * @return Orthogonal matrix with maximal columns
+ */
+template <>
+Eigen::Matrix<double , Eigen::Dynamic, Eigen::Dynamic> qr_Q_gpu(
+        const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& m) {
+    typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> matrix_t;
+    check_nonzero_size("qr_Q", "m", m);
+
+    matrix_t Q, R;
+    block_householder_qr_gpu(m, Q, R);
+
+    const int min_size = std::min(m.rows(), m.cols());
+    for (int i = 0; i < min_size; i++)
+        if (R(i, i) < 0)
+            Q.col(i) *= -1.0;
+    return Q;
 }
 
 }

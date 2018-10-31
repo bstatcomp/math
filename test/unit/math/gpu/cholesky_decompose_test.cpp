@@ -36,7 +36,7 @@ TEST(MathMatrix, cholesky_decompose_cpu_vs_gpu_small) {
   EXPECT_MATRIX_NEAR(m1, m1_res, 1e-8);
 }
 
-void cholesky_decompose_test(int size) {
+void cholesky_decompose_test2(int size) {
   stan::math::matrix_d m1 = stan::math::matrix_d::Random(size, size);
   stan::math::matrix_d m1_pos_def
       = m1 * m1.transpose() + size * Eigen::MatrixXd::Identity(size, size);
@@ -55,10 +55,10 @@ void cholesky_decompose_test(int size) {
   std::chrono::steady_clock::time_point end
           = std::chrono::steady_clock::now();
       size_t current
-          = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin)
+          = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
                 .count();
   std::cout << "N: " << size << " - CPU: " << current << std::endl;
-  
+  /*
   std::chrono::steady_clock::time_point begin1
           = std::chrono::steady_clock::now();       
   m1_cl = stan::math::cholesky_decompose(m1_pos_def);
@@ -76,11 +76,28 @@ void cholesky_decompose_test(int size) {
       max_error = std::max(max_error, a);
     }
   }
-  EXPECT_LT(max_error, 1e-8);
+  EXPECT_LT(max_error, 1e-8);*/
 }
 
+void cholesky_decompose_test(int size){
+    int repeat = 100;
+    if(size > 200)
+      repeat = 50;
+    if(size > 1000)
+      repeat = 30;
+    if(size > 4000)
+      repeat = 10;
+    if(size > 8000)
+      repeat = 5;    
+    if(size > 10000)
+      repeat = 1;
+    for(int i=0;i<repeat;i++){
+      cholesky_decompose_test2(size);
+    }
+    
+}
 TEST(MathMatrix, cholesky_decompose_small) {
-  /*cholesky_decompose_test(10);
+  cholesky_decompose_test(10);
   cholesky_decompose_test(30);
   cholesky_decompose_test(50);
   cholesky_decompose_test(70);
@@ -107,9 +124,9 @@ TEST(MathMatrix, cholesky_decompose_small) {
   cholesky_decompose_test(2000);
   cholesky_decompose_test(2500);
   cholesky_decompose_test(3000);
-  cholesky_decompose_test(3500);*/
+  cholesky_decompose_test(3500);
   cholesky_decompose_test(4000);
-  /*cholesky_decompose_test(4500);
+  cholesky_decompose_test(4500);
   cholesky_decompose_test(5000);
   cholesky_decompose_test(6000);
   cholesky_decompose_test(7000);
@@ -121,8 +138,7 @@ TEST(MathMatrix, cholesky_decompose_small) {
   cholesky_decompose_test(16000);
   cholesky_decompose_test(18000);
   cholesky_decompose_test(20000);
-  cholesky_decompose_test(20000);
   cholesky_decompose_test(22500);
-  cholesky_decompose_test(30000);*/
+  cholesky_decompose_test(30000);
 }
 #endif

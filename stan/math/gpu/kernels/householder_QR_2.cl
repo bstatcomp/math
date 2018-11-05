@@ -28,14 +28,14 @@ __kernel void householder_QR_2(const int total_rows, const int total_cols, const
 		first = first - copysign(sqrt(acc),first);
 		acc2+=first*first;
 		acc_loc[0]=rsqrt(acc2) * sqrt(2.);
-		if(R_idx==total_cols-1 || R_idx==total_cols-1){
+		if(R_idx==total_rows-1){
 			acc_loc[0]=1;
 		}
 	}
 	
 	barrier(CLK_LOCAL_MEM_FENCE);
 	double sqrt2_div_norm=acc_loc[0];
-	for(int i=gid+R_idx;i<total_rows;i++){
+	for(int i=gid+R_idx;i<total_rows;i+=128){
 		double tmp=R[total_rows*R_idx +i]*sqrt2_div_norm;
 		if(i==gid+R_idx && gid==0){
 			tmp=first*sqrt2_div_norm;

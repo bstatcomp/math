@@ -44,7 +44,7 @@ int test() {
     a << 12,-51,4,
     6,167,-68,
     -4,24,-41;*/
-    Mat a(4, 6);
+    Mat a(6, 4);
     a << 12, -51, 4, 4, 5, 6,
             6, 167, -68, 7, 8, 9,
             -4, 24, -41, 7, 9, 6,
@@ -53,40 +53,15 @@ int test() {
 
     cout << "Eigen impl:" << endl;
     HouseholderQR<Mat> qr(a);
-    Mat R = qr.matrixQR();
+    Mat R = qr.matrixQR().triangularView<Eigen::Upper>();
     Mat Q = qr.householderQ();
     Mat R2 = R;
-    R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
-    cout << "R triang: " << (R - R2).array().abs().sum() << endl;
-    cout << "reconstruct: " << (Q * R - a).array().abs().sum() << endl;
-    cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
-    /*cout << "Q1:" << endl << Q << endl;
-    cout << "R1:" << endl << R << endl;
-    cout << "reconstruct1:" << endl << Q * R << endl;
-    cout << "ID1:" << endl << Q.transpose() * Q << endl;*/
-
-    /*cout << "Q2:" << endl << Q << endl;
-    cout << "R2:" << endl << R << endl;
-    cout << "reconstruct2:" << endl << Q * R << endl;
-    cout << "ID2:" << endl << Q.transpose() * Q << endl;*/
-    R2 = R;
-    R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
-    cout << "R triang: " << (R - R2).array().abs().sum() << endl;
-    cout << "reconstruct: " << (Q * R - a).array().abs().sum() << endl;
-    cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
+    chk(a,Q,R);
 
     for (int r = 1; r <= 3; r++) {
         cout << "##################################################################################  block impl, r=" << r << endl;
         block_householder_qr_gpu(a, Q, R, r);
-        /*cout << "Q3:" << endl << Q << endl;
-        cout << "R3:" << endl << R << endl;
-        cout << "reconstruct3:" << endl << Q * R << endl;
-        cout << "ID3:" << endl << Q.transpose() * Q << endl;*/
-        R2 = R;
-        R2.triangularView<Eigen::StrictlyLower>() = Eigen::MatrixXd::Constant(R.rows(), R.cols(), 0);
-        cout << "R triang: " << (R - R2).array().abs().sum() << endl;
-        cout << "reconstruct: " << (Q * R - a).array().abs().sum() << endl;
-        cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
+        chk(a,Q,R);
     }
 }
 
@@ -159,8 +134,8 @@ int main() {
     //test_my_mul();
     //return 0;
 
-    int A = 1000;
-    int B = 1000;
+    int A = 1001;
+    int B = 1001;
     const int MAX_BLOCK=400;
     Mat a = Mat::Random(A, B);
     Mat R,Q,R2;
@@ -197,11 +172,13 @@ int main() {
     cout << "ID: " << (Q.transpose() * Q).array().abs().sum() - Q.rows() << endl;
     */
 
+    //force kernel compilation
     cl::Kernel kernel_1 = opencl_context.get_kernel("householder_QR_1");
+    cl::Kernel kernel_2 = opencl_context.get_kernel("matrix_multiply");
 
     start = std::chrono::steady_clock::now();
     block_householder_qr_gpu_hybrid(a, Q, R, 120);
-    cout << "GPU my block 120: "
+    cout << "GPU - hybrid my block 120: "
          << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
          << "ms" << endl;
     chk(a,Q,R);

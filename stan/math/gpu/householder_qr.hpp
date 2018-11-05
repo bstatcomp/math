@@ -167,15 +167,15 @@ void block_householder_qr_gpu(const Eigen::MatrixXd& A, Eigen::MatrixXd& Q, Eige
         matrix_gpu& Y_gpu = V_gpu;
         matrix_gpu W_gpu = V_gpu;
         for (size_t j = 1; j < actual_r; j++) {
-            matrix_gpu tmp_gpu(j,1);
+            matrix_gpu tmp_gpu2(j,1);
             try{
                 opencl_context.set_kernel_args(kernel_3, Y_gpu.rows(), Y_gpu.cols(), (int)j,
-                                               Y_gpu.buffer(), V_gpu.buffer(), tmp_gpu.buffer());
+                                               Y_gpu.buffer(), V_gpu.buffer(), tmp_gpu2.buffer());
                 cmdQueue.enqueueNDRangeKernel(kernel_3, cl::NullRange,
                                               cl::NDRange(((j+63)/64)*64),
                                               cl::NDRange(64), NULL, NULL);
                 opencl_context.set_kernel_args(kernel_4, W_gpu.rows(), W_gpu.cols(),(int)j,
-                                                       W_gpu.buffer(), tmp_gpu.buffer(), V_gpu.buffer());
+                                                       W_gpu.buffer(), tmp_gpu2.buffer(), V_gpu.buffer());
                 cmdQueue.enqueueNDRangeKernel(kernel_4, cl::NullRange,
                                               cl::NDRange(((W_gpu.rows()+63)/64)*64),
                                               cl::NDRange(64), NULL, NULL);

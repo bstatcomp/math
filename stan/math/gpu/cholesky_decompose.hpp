@@ -55,9 +55,6 @@ inline matrix_gpu cholesky_decompose(matrix_gpu& A, const int block = 100,
   // Repeats the blocked cholesky decomposition until the size of the remaining
   // submatrix is smaller or equal to the block size
   while ((offset + block) < (A.rows())) {
-    auto block_subset = A.rows() - offset - block;
-    matrix_gpu A_21(block_subset, block);
-    matrix_gpu A_22(block_subset, block_subset);
     // Copies the A_11 submatrix from the input
     A_11.sub_block(A, offset, offset, 0, 0, block, block);
     // Calls the blocked cholesky for the submatrix A_11
@@ -74,8 +71,12 @@ inline matrix_gpu cholesky_decompose(matrix_gpu& A, const int block = 100,
     } else {
       L_11 = cholesky_decompose(A_11, block / divider, divider, min_block);
     }
+    
     // Copies the cholesky factor of A_11 back to the input matrix
     A.sub_block(L_11, 0, 0, offset, offset, block, block);
+    auto block_subset = A.rows() - offset - block;
+    matrix_gpu A_21(block_subset, block);
+    matrix_gpu A_22(block_subset, block_subset);
     // Copies the A_21 submatrix from the input matrix,
     auto block_offset = offset + block;
     A_21.sub_block(A, block_offset, offset, 0, 0, block_subset, block);
@@ -83,6 +84,7 @@ inline matrix_gpu cholesky_decompose(matrix_gpu& A, const int block = 100,
     // and copies the resulting submatrix to the input matrix
     matrix_gpu A_11_inverse = lower_triangular_inverse(L_11);
     A_11_inverse = transpose(A_11_inverse);
+    
     // TODO(Steve): Replace with mult operator when that PR goes through
     matrix_gpu L_21 = multiply(A_21, A_11_inverse);
     A.sub_block(L_21, 0, 0, block_offset, offset, block_subset, block);
@@ -93,8 +95,8 @@ inline matrix_gpu cholesky_decompose(matrix_gpu& A, const int block = 100,
     // and copies the resulting submatrix back to the input matrix
     matrix_gpu temp = multiply_transpose(L_21);
     // TODO(Steve): Replace with subtraction operator when that PR goes through
-    matrix_gpu L_22 = subtract(A_22, temp);
-    A.sub_block(L_22, 0, 0, block_offset, block_offset, block_subset,
+    temp = subtract(A_22, temp);
+    A.sub_block(temp, 0, 0, block_offset, block_offset, block_subset,
                 block_subset);
     offset += block;
   }
@@ -120,8 +122,8 @@ inline matrix_gpu cholesky_decompose(matrix_gpu& A, const int block = 100,
     }
     A.sub_block(L_11, 0, 0, offset, offset, remaining_rows, remaining_rows);
   }
-  check_nan("cholesky_decompose_gpu", "Matrix m", A);
-  check_diagonal_zeros("cholesky_decompose_gpu", "Matrix m", A);
+  /*check_nan("cholesky_decompose_gpu", "Matrix m", A);
+  check_diagonal_zeros("cholesky_decompose_gpu", "Matrix m", A);*/
   A.zeros<stan::math::TriangularViewGPU::Upper>();
   return A;
 }

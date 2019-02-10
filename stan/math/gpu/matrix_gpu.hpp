@@ -39,6 +39,7 @@ class matrix_gpu {
   cl::Buffer oclBuffer_;
   const int rows_;
   const int cols_;
+  cl::Event event_; // Will be used to track when job in queue is finished
 
  public:
   int rows() const { return rows_; }
@@ -46,6 +47,8 @@ class matrix_gpu {
   int cols() const { return cols_; }
 
   int size() const { return rows_ * cols_; }
+
+  cl::Event event() {return event_};
 
   const cl::Buffer& buffer() const { return oclBuffer_; }
 

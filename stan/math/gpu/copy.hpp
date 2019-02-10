@@ -44,8 +44,8 @@ void copy(matrix_gpu& dst, const Eigen::Matrix<double, R, C>& src) {
        * We do not want to execute any further kernels
        * on the device until we are sure that the data is transferred)
        */
-      queue.enqueueWriteBuffer(dst.buffer(), CL_TRUE, 0,
-                               sizeof(double) * dst.size(), src.data());
+      queue.enqueueWriteBuffer(dst.buffer(), CL_FALSE, 0,
+                               sizeof(double) * dst.size(), src.data(), NULL, *dst.event());
     } catch (const cl::Error& e) {
       check_opencl_error("copy Eigen->GPU", e);
     }
@@ -77,12 +77,13 @@ void copy(Eigen::Matrix<double, R, C>& dst, const matrix_gpu& src) {
        * Reads the contents of the OpenCL buffer
        * starting at the offset 0 to the Eigen
        * matrix
-       * CL_TRUE denotes that the call is blocking
+       * enqueue barrier makes sure all events are finished before transfer
        * We do not want to execute any further kernels
        * on the device until we are sure that the data is transferred)
        */
+      queue.enqueueBarrierWithWaitList({src.event()})
       queue.enqueueReadBuffer(src.buffer(), CL_TRUE, 0,
-                              sizeof(double) * dst.size(), dst.data());
+                              sizeof(double) * dst.size(), dst.data(), {src.event()});
     } catch (const cl::Error& e) {
       check_opencl_error("copy GPU->Eigen", e);
     }

@@ -11,21 +11,46 @@
 #include <stan/math/prim/mat/err/check_pos_definite.hpp>
 #include <stan/math/prim/mat/err/check_square.hpp>
 #include <stan/math/prim/mat/err/check_symmetric.hpp>
+
+#ifdef STAN_OPENCL
 #include <stan/math/gpu/cholesky_decompose.hpp>
 #include <stan/math/gpu/constants.hpp>
-#include <stan/math/gpu/diagonal_multiply.hpp>
 #include <stan/math/gpu/copy.hpp>
+#include <stan/math/gpu/diagonal_multiply.hpp>
 #include <stan/math/gpu/lower_tri_inverse.hpp>
 #include <stan/math/gpu/matrix_gpu.hpp>
 #include <stan/math/gpu/multiply.hpp>
-#include <stan/math/gpu/err/check_square.hpp>
-#include <stan/math/gpu/err/check_symmetric.hpp>
+#include <stan/math/gpu/opencl_context.hpp>
+#endif
 
 #include <algorithm>
 
 namespace stan {
 namespace math {
 
+namespace internal {
+/**
+ * Set the lower right triangular of a var matrix given a set of vari**
+ *
+ * @param L Matrix of vars
+ * @param variRef Values to be set in lower right triangular of L.
+ * @return None, L modified by reference.
+ */
+inline void set_lower_tri_coeff_ref(Eigen::Matrix<var, -1, -1>& L,
+                                    vari**& variRef) {
+  size_t pos = 0;
+  vari* dummy = new vari(0.0, false);
+
+  for (size_type j = 0; j < L.cols(); ++j) {
+    for (size_type i = j; i < L.cols(); ++i) {
+      L.coeffRef(i, j).vi_ = variRef[pos++];
+    }
+    for (size_type k = 0; k < j; ++k)
+      L.coeffRef(k, j).vi_ = dummy;
+  }
+  return;
+}
+}  // namespace internal
 class cholesky_block : public vari {
  public:
   int M_;
@@ -59,7 +84,7 @@ class cholesky_block : public vari {
         variRefL_(ChainableStack::instance().memalloc_.alloc_array<vari*>(
             A.rows() * (A.rows() + 1) / 2)) {
     size_t pos = 0;
-    block_size_ = std::max((M_ / 8 / 16) * 16, 8);
+    block_size_ = std::max(M_ / 8, 8);
     block_size_ = std::min(block_size_, 128);
     for (size_type j = 0; j < M_; ++j) {
       for (size_type i = j; i < M_; ++i) {
@@ -233,13 +258,12 @@ class cholesky_scalar : public vari {
     }
   }
 };
-
-class cholesky_gpu : public vari {
-public:
-  int M_;  
+#ifdef STAN_OPENCL
+class cholesky_opencl : public vari {
+ public:
+  int M_;
   vari** variRefA_;
   vari** variRefL_;
-
 
   /**
    * Constructor for GPU cholesky function.
@@ -256,22 +280,23 @@ public:
    * @param A matrix
    * @param L_A matrix, cholesky factor of A
    */
-  cholesky_gpu(const Eigen::Matrix<var, -1, -1>& A,
-               const Eigen::Matrix<double, -1, -1>& L_A)
-    : vari(0.0),
-      M_(A.rows()),
-      variRefA_(ChainableStack::instance().memalloc_.alloc_array<vari*>
-                (A.rows() * (A.rows() + 1) / 2)),
-      variRefL_(ChainableStack::instance().memalloc_.alloc_array<vari*>
-                (A.rows() * (A.rows() + 1) / 2)) {
-        size_t pos = 0;
-        for (size_type j = 0; j < M_; ++j) {
-          for (size_type i = j; i < M_; ++i) {
-            variRefA_[pos] = A.coeffRef(i, j).vi_;
-            variRefL_[pos] = new vari(L_A.coeffRef(i, j), false); ++pos;
-          }
-        }
+  cholesky_opencl(const Eigen::Matrix<var, -1, -1>& A,
+                  const Eigen::Matrix<double, -1, -1>& L_A)
+      : vari(0.0),
+        M_(A.rows()),
+        variRefA_(ChainableStack::instance().memalloc_.alloc_array<vari*>(
+            A.rows() * (A.rows() + 1) / 2)),
+        variRefL_(ChainableStack::instance().memalloc_.alloc_array<vari*>(
+            A.rows() * (A.rows() + 1) / 2)) {
+    size_t pos = 0;
+    for (size_type j = 0; j < M_; ++j) {
+      for (size_type i = j; i < M_; ++i) {
+        variRefA_[pos] = A.coeffRef(i, j).vi_;
+        variRefL_[pos] = new vari(L_A.coeffRef(i, j), false);
+        ++pos;
       }
+    }
+  }
   /**
    * Reverse mode differentiation algorithm using a GPU
    *
@@ -298,16 +323,18 @@ public:
 
     matrix_gpu L(L_);
     matrix_gpu Lbar(Lbar_);
-    int M = M_;
-    int block_size_ = std::max((M / 8 / 16) * 16, 8);
-    block_size_ = std::min(block_size_, 512);
+    int block_size_
+        = M_ / opencl_context.tuning_opts().cholesky_rev_block_partition;
+    block_size_ = std::max(block_size_, 8);
+    block_size_ = std::min(
+        block_size_, opencl_context.tuning_opts().cholesky_rev_min_block_size);
     // The following is a GPU implementation of
     // the chain() function from the cholesky_block
     // vari class implementation
-    for (int k = M; k > 0; k -= block_size_) {
-      int j = std::max(0, k - block_size_);
-      int k_j_ind = k - j;
-      int m_k_ind = M - k;
+    for (int k = M_; k > 0; k -= block_size_) {
+      const int j = std::max(0, k - block_size_);
+      const int k_j_ind = k - j;
+      const int m_k_ind = M_ - k;
 
       matrix_gpu R(k_j_ind, j);
       matrix_gpu D(k_j_ind, k_j_ind);
@@ -329,25 +356,23 @@ public:
       Bbar.sub_block(Lbar, k, 0, 0, 0, m_k_ind, j);
       Cbar.sub_block(Lbar, k, j, 0, 0, m_k_ind, k_j_ind);
 
-      // TODO(STEVE): Figure out why this if needs to be here.
-      if (Cbar.size() > 0) {
-        Cbar = Cbar * lower_triangular_inverse(D);
-        Bbar = Bbar - Cbar * R;
-        Dbar = Dbar - transpose(Cbar) * C;
-      }
+      Cbar = Cbar * lower_triangular_inverse(D);
+      Bbar = Bbar - Cbar * R;
+      Dbar = Dbar - transpose(Cbar) * C;
 
       // the implementation of the symbolic_rev inline function
-      // for the GPU 
+      // for the GPU
       Dbar = transpose(D) * Dbar;
       Dbar.triangular_transpose<TriangularMapGPU::LowerToUpper>();
       D = transpose(lower_triangular_inverse(D));
       Dbar = D * transpose(D * Dbar);
       Dbar.triangular_transpose<TriangularMapGPU::LowerToUpper>();
-      // end of symbolic_rev inline function 
+      // end of symbolic_rev inline function
 
       Rbar = Rbar - transpose(Cbar) * B;
       Rbar = Rbar - Dbar * R;
       Dbar = diagonal_multiply(Dbar, 0.5);
+      Dbar.zeros<stan::math::TriangularViewGPU::Upper>();
 
       Lbar.sub_block(Rbar, 0, 0, j, 0, k_j_ind, j);
       Lbar.sub_block(Dbar, 0, 0, j, j, k_j_ind, k_j_ind);
@@ -361,7 +386,7 @@ public:
         variRefA_[pos++]->adj_ += Lbar_.coeffRef(i, j);
   }
 };
-
+#endif
 
 /**
  * Reverse mode specialization of cholesky decomposition
@@ -377,19 +402,17 @@ public:
 inline Eigen::Matrix<var, -1, -1> cholesky_decompose(
     const Eigen::Matrix<var, -1, -1>& A) {
   check_square("cholesky_decompose", "A", A);
-  check_symmetric("cholesky_decompose", "A", A);
-
   Eigen::Matrix<double, -1, -1> L_A(value_of_rec(A));
 #ifdef STAN_OPENCL
   if (L_A.rows() > opencl_context.tuning_opts().cholesky_size_worth_transfer) {
-    // NOTE: We don't do the pos def check here because
-    // The GPU cholesky only returns the lower left
     L_A = cholesky_decompose(L_A);
   } else {
+    check_symmetric("cholesky_decompose", "A", A);
     Eigen::LLT<Eigen::Ref<Eigen::MatrixXd>, Eigen::Lower> L_factor(L_A);
     check_pos_definite("cholesky_decompose", "m", L_factor);
   }
 #else
+  check_symmetric("cholesky_decompose", "A", A);
   Eigen::LLT<Eigen::Ref<Eigen::MatrixXd>, Eigen::Lower> L_factor(L_A);
   check_pos_definite("cholesky_decompose", "m", L_factor);
 #endif
@@ -415,29 +438,17 @@ inline Eigen::Matrix<var, -1, -1> cholesky_decompose(
     }
   } else {
 #ifdef STAN_OPENCL
-    if (L_A.rows() > opencl_context.tuning_opts().cholesky_size_worth_transfer) {
-      cholesky_gpu* baseVari = new cholesky_gpu(A, L_A);
-      size_t pos = 0;
-      for (size_type j = 0; j < L.cols(); ++j) {
-        for (size_type i = j; i < L.cols(); ++i) {
-          L.coeffRef(i, j).vi_ = baseVari->variRefL_[pos++];
-        }
-        for (size_type k = 0; k < j; ++k)
-          L.coeffRef(k, j).vi_ = dummy;
-      }
+    if (L_A.rows()
+        > opencl_context.tuning_opts().cholesky_size_worth_transfer) {
+      cholesky_opencl* baseVari = new cholesky_opencl(A, L_A);
+      internal::set_lower_tri_coeff_ref(L, baseVari->variRefL_);
     } else {
-#endif
       cholesky_block* baseVari = new cholesky_block(A, L_A);
-      size_t pos = 0;
-      for (size_type j = 0; j < L.cols(); ++j) {
-        for (size_type i = j; i < L.cols(); ++i) {
-          L.coeffRef(i, j).vi_ = baseVari->variRefL_[pos++];
-        }
-        for (size_type k = 0; k < j; ++k)
-          L.coeffRef(k, j).vi_ = dummy;
-      }
-#ifdef STAN_OPENCL
+      internal::set_lower_tri_coeff_ref(L, baseVari->variRefL_);
     }
+#else
+    cholesky_block* baseVari = new cholesky_block(A, L_A);
+    internal::set_lower_tri_coeff_ref(L, baseVari->variRefL_);
 #endif
   }
 

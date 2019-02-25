@@ -5,7 +5,7 @@
 #include <vector>
 
 #ifdef STAN_OPENCL
-#include <stan/math/rev/scal/fun/to_var.hpp>
+#include <stan/math/gpu/opencl_context.hpp>
 #endif
 
 template <typename T_x>
@@ -354,6 +354,53 @@ double test_gradient(int size, double prec) {
   return grads_ad.sum();
 }
 
+TEST(AgradRevMatrix, mat_cholesky) {
+  using stan::math::cholesky_decompose;
+  using stan::math::matrix_v;
+  using stan::math::singular_values;
+  using stan::math::transpose;
+
+  // symmetric
+  matrix_v X(2, 2);
+  AVAR a = 3.0;
+  AVAR b = -1.0;
+  AVAR c = -1.0;
+  AVAR d = 1.0;
+  X << a, b, c, d;
+
+  matrix_v L = cholesky_decompose(X);
+
+  matrix_v LL_trans = multiply(L, transpose(L));
+  EXPECT_FLOAT_EQ(a.val(), LL_trans(0, 0).val());
+  EXPECT_FLOAT_EQ(b.val(), LL_trans(0, 1).val());
+  EXPECT_FLOAT_EQ(c.val(), LL_trans(1, 0).val());
+  EXPECT_FLOAT_EQ(d.val(), LL_trans(1, 1).val());
+
+  EXPECT_NO_THROW(singular_values(X));
+}
+
+TEST(AgradRevMatrix, exception_mat_cholesky) {
+  stan::math::matrix_v m;
+
+  // not positive definite
+  m.resize(2, 2);
+  m << 1.0, 2.0, 2.0, 3.0;
+  EXPECT_THROW(stan::math::cholesky_decompose(m), std::domain_error);
+
+  // zero size
+  m.resize(0, 0);
+  EXPECT_NO_THROW(stan::math::cholesky_decompose(m));
+
+  // not square
+  m.resize(2, 3);
+  EXPECT_THROW(stan::math::cholesky_decompose(m), std::invalid_argument);
+
+  // not symmetric
+  m.resize(2, 2);
+  m << 1.0, 2.0, 3.0, 4.0;
+  EXPECT_THROW(stan::math::cholesky_decompose(m), std::domain_error);
+}
+
 TEST(AgradRevMatrix, mat_cholesky_1st_deriv_small) {
   test_gradients(9, 1e-10);
   test_gradients_simple(10, 1e-10);
@@ -393,6 +440,7 @@ TEST(AgradRevMatrix, check_varis_on_stack_large) {
 
 #ifdef STAN_OPENCL
 TEST(AgradRevMatrix, mat_cholesky_1st_deriv_large_gradients_opencl) {
+  stan::math::opencl_context.tuning_opts().cholesky_size_worth_transfer = 25;
   test_gradient(51, 1e-08);
   test_gp_grad(1300, 1e-08);
   test_gp_grad(2000, 1e-08);
@@ -400,12 +448,11 @@ TEST(AgradRevMatrix, mat_cholesky_1st_deriv_large_gradients_opencl) {
   test_simple_vec_mult(45, 1e-08);
 }
 
-//TODO(Steve): This test fails but I suspect the matrix is not pos-def
-// do we need to check varis on stack, since we havent changed anything in terms of varis on stack?
 TEST(AgradRevMatrix, check_varis_on_stack_large_opencl) {
-  stan::math::matrix_v m1 = stan::math::matrix_v::Random(1250, 1250);
+  stan::math::opencl_context.tuning_opts().cholesky_size_worth_transfer = 25;
+  stan::math::matrix_v m1 = stan::math::matrix_v::Random(50, 50);
   stan::math::matrix_v m1_pos_def
-      = m1 * m1.transpose() + 500 * stan::math::matrix_v::Identity(1250, 1250);
+      = m1 * m1.transpose() + 50 * stan::math::matrix_v::Identity(50, 50);
   test::check_varis_on_stack(stan::math::cholesky_decompose(m1_pos_def));
 }
 #endif

@@ -4,6 +4,7 @@
 #include <stan/math/gpu/matrix_gpu.hpp>
 #include <stan/math/gpu/kernels/add.hpp>
 #include <stan/math/gpu/err/check_matching_dims.hpp>
+#include <stan/math/gpu/event_utils.hpp>
 #include <CL/cl.hpp>
 
 namespace stan {
@@ -28,9 +29,12 @@ inline matrix_gpu add(const matrix_gpu& A, const matrix_gpu& B) {
     return C;
   }
   cl::CommandQueue cmdQueue = opencl_context.queue();
+  std::vector<cl::Event> matrix_events = event_concat_cl(A.events(), B.events());
   try {
-    opencl_kernels::add(cl::NDRange(A.rows(), A.cols()), C.buffer(), A.buffer(),
-                        B.buffer(), A.rows(), A.cols());
+    cl::Event event_ = opencl_kernels::add(matrix_events,
+      cl::NDRange(A.rows(), A.cols()), C.buffer(), A.buffer(),
+      B.buffer(), A.rows(), A.cols());
+    C.events(event_);
   } catch (const cl::Error& e) {
     check_opencl_error("add", e);
   }

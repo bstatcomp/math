@@ -36,6 +36,7 @@ void copy(matrix_gpu& dst, const Eigen::Matrix<double, R, C>& src) {
                    "dst.cols()", dst.cols());
   if (src.size() > 0) {
     cl::CommandQueue queue = opencl_context.queue();
+    cl::Event event_;
     try {
       /**
        * Writes the contents of src to the OpenCL buffer
@@ -45,7 +46,8 @@ void copy(matrix_gpu& dst, const Eigen::Matrix<double, R, C>& src) {
        * on the device until we are sure that the data is transferred)
        */
       queue.enqueueWriteBuffer(dst.buffer(), CL_FALSE, 0,
-                               sizeof(double) * dst.size(), src.data(), NULL, *dst.event());
+                               sizeof(double) * dst.size(), src.data(), NULL, &event_);
+      dst.events(event_);
     } catch (const cl::Error& e) {
       check_opencl_error("copy Eigen->GPU", e);
     }
@@ -81,9 +83,9 @@ void copy(Eigen::Matrix<double, R, C>& dst, const matrix_gpu& src) {
        * We do not want to execute any further kernels
        * on the device until we are sure that the data is transferred)
        */
-      queue.enqueueBarrierWithWaitList({src.event()})
+      queue.enqueueBarrierWithWaitList(&src.events());
       queue.enqueueReadBuffer(src.buffer(), CL_TRUE, 0,
-                              sizeof(double) * dst.size(), dst.data(), {src.event()});
+                              sizeof(double) * dst.size(), dst.data(), &src.events());
     } catch (const cl::Error& e) {
       check_opencl_error("copy GPU->Eigen", e);
     }
@@ -113,7 +115,8 @@ inline void copy(matrix_gpu& dst, const matrix_gpu& src) {
        * see the matrix_gpu(matrix_gpu&) constructor
        *  for explanation
        */
-      opencl_kernels::copy(cl::NDRange(dst.rows(), dst.cols()), src.buffer(),
+     std::vector<cl::Event> matrix_events = event_concat_cl(dst.events(), src.events());
+      cl::Event event_ = opencl_kernels::copy(matrix_events, cl::NDRange(dst.rows(), dst.cols()), src.buffer(),
                            dst.buffer(), dst.rows(), dst.cols());
     } catch (const cl::Error& e) {
       std::cout << e.err() << std::endl;

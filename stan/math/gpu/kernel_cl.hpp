@@ -123,10 +123,10 @@ struct global_range_kernel {
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(cl::Event event, cl::NDRange global_thread_size, Args... args) const {
+  auto operator()(const std::vector<cl::Event>& events, cl::NDRange global_thread_size, Args... args) const {
     auto f = make_functor();
-    cl::EnqueueArgs eargs(opencl_context.queue(), event, global_thread_size);
-    f(eargs, args...);
+    cl::EnqueueArgs eargs(opencl_context.queue(), events, global_thread_size);
+    return f(eargs, args...);
   }
 };
 /**
@@ -154,12 +154,12 @@ struct local_range_kernel {
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(cl::Event event, cl::NDRange global_thread_size, cl::NDRange thread_block_size,
+  auto operator()(std::vector<cl::Event> events, cl::NDRange global_thread_size, cl::NDRange thread_block_size,
                   Args... args) const {
     auto f = make_functor();
-    cl::EnqueueArgs eargs(opencl_context.queue(), event, global_thread_size,
+    cl::EnqueueArgs eargs(opencl_context.queue(), events, global_thread_size,
                           thread_block_size);
-    f(eargs, args...);
+    return f(eargs, args...);
   }
 };
 

@@ -31,7 +31,7 @@ inline void check_symmetric(const char* function, const char* name,
     cl::Buffer buffer_symmetric_flag(ctx, CL_MEM_READ_WRITE, sizeof(int));
     cmd_queue.enqueueWriteBuffer(buffer_symmetric_flag, CL_TRUE, 0, sizeof(int),
                                  &symmetric_flag);
-    cl::Event event_ = opencl_kernels::check_symmetric(y.events(), cl::NDRange(y.rows(), y.cols()), y.buffer(),
+    opencl_kernels::check_symmetric(y.events(), cl::NDRange(y.rows(), y.cols()), y.buffer(),
                                     buffer_symmetric_flag, y.rows(), y.cols(),
                                     math::CONSTRAINT_TOLERANCE);
     cmd_queue.enqueueReadBuffer(buffer_symmetric_flag, CL_TRUE, 0, sizeof(int),

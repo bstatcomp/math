@@ -31,10 +31,10 @@ inline matrix_gpu add(const matrix_gpu& A, const matrix_gpu& B) {
   cl::CommandQueue cmdQueue = opencl_context.queue();
   std::vector<cl::Event> matrix_events = event_concat_cl(A.events(), B.events());
   try {
-    cl::Event event_ = opencl_kernels::add(matrix_events,
+    cl::Event add_event = opencl_kernels::add(matrix_events,
       cl::NDRange(A.rows(), A.cols()), C.buffer(), A.buffer(),
       B.buffer(), A.rows(), A.cols());
-    C.events(event_);
+    C.events(add_event);
   } catch (const cl::Error& e) {
     check_opencl_error("add", e);
   }

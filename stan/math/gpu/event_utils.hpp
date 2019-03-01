@@ -10,7 +10,7 @@ namespace math {
       std::vector<cl::Event> vec_concat;
       vec_concat.insert(vec_concat.end(), v1.begin(), v1.end());
       vec_concat.insert(vec_concat.end(), v2.begin(), v2.end());
-      return vec_concat;   // rvo blocked
+      return vec_concat;
   }
 }
 }

@@ -51,6 +51,7 @@ class matrix_gpu {
   int size() const { return rows_ * cols_; }
 
   inline const std::vector<cl::Event>& events() const {return events_;};
+  // push a new event onto the event stack
   inline void events(cl::Event new_event) {
     return this->events_.push_back(new_event);
   };
@@ -128,10 +129,11 @@ class matrix_gpu {
          * on the device until we are sure that the data
          * is finished transfering)
          */
-        cl::Event event_;
+        cl::Event transfer_event;
         queue.enqueueWriteBuffer(oclBuffer_, CL_FALSE, 0,
-                                 sizeof(double) * A.size(), A.data(), NULL, &event_);
-        this->events(event_);
+                                 sizeof(double) * A.size(), A.data(),
+                                 NULL, &transfer_event);
+        this->events(transfer_event);
       } catch (const cl::Error& e) {
         check_opencl_error("matrix constructor", e);
       }
@@ -162,10 +164,10 @@ class matrix_gpu {
       return;
     cl::CommandQueue cmdQueue = opencl_context.queue();
     try {
-      cl::Event event_ = opencl_kernels::zeros(this->events(), cl::NDRange(this->rows(), this->cols()),
-                            this->buffer(), this->rows(), this->cols(),
-                            triangular_view);
-      this->events(event_);
+      cl::Event zero_event = opencl_kernels::zeros(this->events(),
+         cl::NDRange(this->rows(), this->cols()), this->buffer(), this->rows(),
+         this->cols(), triangular_view);
+      this->events(zero_event);
     } catch (const cl::Error& e) {
       check_opencl_error("zeros", e);
     }
@@ -192,10 +194,10 @@ class matrix_gpu {
 
     cl::CommandQueue cmdQueue = opencl_context.queue();
     try {
-      cl::Event event_ = opencl_kernels::triangular_transpose(this->events(),
+      cl::Event triangular_event = opencl_kernels::triangular_transpose(this->events(),
             cl::NDRange(this->rows(), this->cols()), this->buffer(), this->rows(),
             this->cols(), triangular_map);
-      this->events(event_);
+      this->events(triangular_event);
     } catch (const cl::Error& e) {
       check_opencl_error("triangular_transpose", e);
     }
@@ -223,11 +225,11 @@ class matrix_gpu {
     cl::CommandQueue cmdQueue = opencl_context.queue();
     try {
       std::vector<cl::Event> matrix_events = event_concat_cl(this->events(), A.events());
-      cl::Event event_ = opencl_kernels::sub_block(matrix_events, cl::NDRange(nrows, ncols), A.buffer(),
+      cl::Event block_event = opencl_kernels::sub_block(matrix_events, cl::NDRange(nrows, ncols), A.buffer(),
                                 this->buffer(), A_i, A_j, this_i, this_j, nrows,
                                 ncols, A.rows(), A.cols(), this->rows(),
                                 this->cols());
-      this->events(event_);
+      this->events(block_event);
     } catch (const cl::Error& e) {
       check_opencl_error("copy_submatrix", e);
     }

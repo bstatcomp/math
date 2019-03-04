@@ -1,0 +1,53 @@
+#ifndef STAN_MATH_GPU_SUB_BLOCK_HPP
+#define STAN_MATH_GPU_SUB_BLOCK_HPP
+#ifdef STAN_OPENCL
+
+#include <stan/math/gpu/opencl_context.hpp>
+#include <stan/math/gpu/constants.hpp>
+#include <stan/math/gpu/kernels/sub_block.hpp>
+#include <stan/math/gpu/event_utils.hpp>
+#include <stan/math/prim/scal/err/domain_error.hpp>
+#include <stan/math/gpu/matrix_gpu.hpp>
+#include <CL/cl.hpp>
+
+namespace stan {
+namespace math {
+
+/**
+ * Write the context of A into
+ * <code>this</code> starting at the top left of <code>this</code>
+ * @param A input matrix
+ * @param A_i the offset row in A
+ * @param A_j the offset column in A
+ * @param this_i the offset row for the matrix to be subset into
+ * @param this_j the offset col for the matrix to be subset into
+ * @param nrows the number of rows in the submatrix
+ * @param ncols the number of columns in the submatrix
+ */
+void matrix_gpu::sub_block(const matrix_gpu& A, int A_i, int A_j, int this_i, int this_j,
+               int nrows, int ncols) {
+  if (nrows == 0 || ncols == 0) {
+    return;
+  }
+  if ((A_i + nrows) > A.rows() || (A_j + ncols) > A.cols()
+      || (this_i + nrows) > this->rows() || (this_j + ncols) > this->cols()) {
+    domain_error("sub_block", "submatrix in *this", " is out of bounds", "");
+  }
+  cl::CommandQueue cmdQueue = opencl_context.queue();
+  try {
+    std::vector<cl::Event> matrix_events = event_concat_cl(this->events(), A.events());
+    cl::Event block_event = opencl_kernels::sub_block(matrix_events, cl::NDRange(nrows, ncols), A.buffer(),
+                              this->buffer(), A_i, A_j, this_i, this_j, nrows,
+                              ncols, A.rows(), A.cols(), this->rows(),
+                              this->cols());
+    this->events(block_event);
+  } catch (const cl::Error& e) {
+    check_opencl_error("copy_submatrix", e);
+  }
+}
+
+}  // namespace math
+}  // namespace stan
+
+#endif
+#endif

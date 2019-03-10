@@ -107,7 +107,6 @@ inline Eigen::Matrix<double, R1, C1> mdivide_left_tri(
   check_square("mdivide_left_tri", "A", A);
   if (A.rows() >= 
       opencl_context.tuning_opts().lower_tri_inverse_size_worth_transfer) {
-    std::cout << "abc" << std::endl;
     matrix_cl A_cl(A);
     auto Ainv_cl = lower_triangular_inverse(A_cl);
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Ainv(A.rows(),

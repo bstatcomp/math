@@ -1,5 +1,10 @@
 #include <stan/math/prim/mat.hpp>
 #include <gtest/gtest.h>
+#ifdef STAN_OPENCL
+#include <stan/math/opencl/opencl_context.hpp>
+#include <stan/math/opencl/multiply.hpp>
+#include <stan/math/opencl/copy.hpp>
+#endif
 
 TEST(MathMatrix, multiply_c_v) {
   stan::math::vector_d v(3);
@@ -133,3 +138,31 @@ TEST(AgradRevMatrix, multiply_vector_int) {
   EXPECT_EQ(4.0, prod_vec[1]);
   EXPECT_EQ(6.0, prod_vec[2]);
 }
+
+#ifdef STAN_OPENCL
+#define EXPECT_MATRIX_NEAR(A, B, DELTA) \
+  for (int i = 0; i < A.size(); i++)    \
+    EXPECT_NEAR(A(i), B(i), DELTA);
+
+TEST(MathMatrix, multiply_opencl) {
+  int tmp_size =
+    stan::math::opencl_context.tuning_opts().multiply_size_worth_transfer;
+  stan::math::opencl_context.tuning_opts().multiply_size_worth_transfer = 1;
+  using stan::math::multiply;
+  int size = 512;
+  auto m1 = stan::math::matrix_d::Random(size, size).eval();
+  auto m2 = stan::math::matrix_d::Random(size, size).eval();
+  
+  auto m3_cl = multiply(m1, m2);
+
+  stan::math::opencl_context.tuning_opts().multiply_size_worth_transfer = 1024;
+
+  auto m3 = multiply(m1, m2);
+
+  EXPECT_MATRIX_NEAR(m3_cl, m3, 1e-10);
+
+  stan::math::opencl_context.tuning_opts().multiply_size_worth_transfer =
+    tmp_size;
+}
+
+#endif

@@ -149,6 +149,10 @@ class opencl_context_base {
     // Used in math/rev/mat/fun/cholesky_decompose
     int cholesky_rev_min_block_size = 512;
     int cholesky_rev_block_partition = 8;
+    // Used in math/prim/mat/fun/multiply and
+    // math/rev/mat/fun/multiply
+    int multiply_size_worth_transfer = 1;
+    int lower_tri_inverse_size_worth_transfer = 1;
   } tuning_opts_;
 
   static opencl_context_base& getInstance() {

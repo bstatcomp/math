@@ -6,7 +6,12 @@
 #include <stan/math/prim/mat/fun/promote_common.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <stan/math/prim/mat/err/check_square.hpp>
-
+#ifdef STAN_OPENCL
+#include <stan/math/opencl/opencl_context.hpp>
+#include <stan/math/opencl/multiply.hpp>
+#include <stan/math/opencl/lower_tri_inverse.hpp>
+#include <stan/math/opencl/copy.hpp>
+#endif
 namespace stan {
 namespace math {
 
@@ -51,6 +56,73 @@ inline Eigen::Matrix<T, R1, C1> mdivide_left_tri(
   A.template triangularView<TriView>().solveInPlace(b);
   return b;
 }
+
+#ifdef STAN_OPENCL
+/**
+ * Returns the solution of the system Ax=b when A is triangular
+ * @param A Triangular matrix.  Specify upper or lower with TriView
+ * being Eigen::Upper or Eigen::Lower.
+ * @param b Right hand side matrix or vector.
+ * @return x = A^-1 b, solution of the linear system.
+ * @throws std::domain_error if A is not square or the rows of b don't
+ * match the size of A.
+ */
+template <int TriView, int R1, int C1, int R2, int C2>
+inline Eigen::Matrix<double, R1, C2>
+mdivide_left_tri(const Eigen::Matrix<double, R1, C1> &A,
+                 const Eigen::Matrix<double, R2, C2> &b) {
+  check_square("mdivide_left_tri", "A", A);
+  check_multiplicable("mdivide_left_tri", "A", A, "b", b);
+  if (A.rows() >= 
+      opencl_context.tuning_opts().lower_tri_inverse_size_worth_transfer) {
+    return promote_common<Eigen::Matrix<double, R1, C1>, Eigen::Matrix<double, R1, C1> >(
+             A)
+      .template triangularView<TriView>()
+      .solve(
+          promote_common<Eigen::Matrix<double, R2, C2>, Eigen::Matrix<double, R2, C2> >(
+              b));
+  } else {
+    return promote_common<Eigen::Matrix<double, R1, C1>, Eigen::Matrix<double, R1, C1> >(
+             A)
+      .template triangularView<TriView>()
+      .solve(
+          promote_common<Eigen::Matrix<double, R2, C2>, Eigen::Matrix<double, R2, C2> >(
+              b));  
+  }  
+}
+
+/**
+ * Returns the solution of the system Ax=b when A is triangular and b=I.
+ * @param A Triangular matrix.  Specify upper or lower with TriView
+ * being Eigen::Upper or Eigen::Lower.
+ * @return x = A^-1 .
+ * @note Because OpenCL only works on doubles there are two
+ * <code>mdivide_left_tri(A)</code> functions. One that works on doubles
+ * (this one) and another that works on all other types.
+ * @throws std::domain_error if A is not square
+ */
+template <int TriView, int R1, int C1>
+inline Eigen::Matrix<double, R1, C1> mdivide_left_tri(
+    const Eigen::Matrix<double, R1, C1> &A) {
+  check_square("mdivide_left_tri", "A", A);
+  if (A.rows() >= 
+      opencl_context.tuning_opts().lower_tri_inverse_size_worth_transfer) {
+    std::cout << "abc" << std::endl;
+    matrix_cl A_cl(A);
+    auto Ainv_cl = lower_triangular_inverse(A_cl);
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Ainv(A.rows(),
+                                                                 A.cols());
+    copy(Ainv, Ainv_cl);  // NOLINT
+    return Ainv;
+  } else {
+    int n = A.rows();
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> b;
+    b.setIdentity(n, n);
+    A.template triangularView<TriView>().solveInPlace(b);
+    return b;
+  }  
+}
+#endif
 
 }  // namespace math
 }  // namespace stan

@@ -10,6 +10,7 @@
 #include <stan/math/opencl/opencl_context.hpp>
 #include <stan/math/opencl/multiply.hpp>
 #include <stan/math/opencl/lower_tri_inverse.hpp>
+#include <stan/math/opencl/transpose.hpp>
 #include <stan/math/opencl/copy.hpp>
 #endif
 namespace stan {
@@ -75,12 +76,22 @@ mdivide_left_tri(const Eigen::Matrix<double, R1, C1> &A,
   check_multiplicable("mdivide_left_tri", "A", A, "b", b);
   if (A.rows() >= 
       opencl_context.tuning_opts().lower_tri_inverse_size_worth_transfer) {
-    return promote_common<Eigen::Matrix<double, R1, C1>, Eigen::Matrix<double, R1, C1> >(
-             A)
-      .template triangularView<TriView>()
-      .solve(
-          promote_common<Eigen::Matrix<double, R2, C2>, Eigen::Matrix<double, R2, C2> >(
-              b));
+    matrix_cl A_cl(A);
+    matrix_cl b_cl(b);
+    matrix_cl A_inv_cl(A.rows(), A.cols());
+    if (TriView == Eigen::Lower) {
+      A_inv_cl = lower_triangular_inverse(A_cl);
+    } else {
+      //TODO: Should we create an upper_triangular_inverse instea?
+      // in terms of performance this is fine
+      A_inv_cl = transpose(lower_triangular_inverse(transpose(A_cl)));
+    }    
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> C(A.rows(),
+                                                                 A.cols());
+    //TODO: change lower triangular multiply once it gets merged
+    auto C_cl = A_inv_cl * b_cl;
+    copy(C, C_cl);  // NOLINT
+    return C;
   } else {
     return promote_common<Eigen::Matrix<double, R1, C1>, Eigen::Matrix<double, R1, C1> >(
              A)
@@ -108,11 +119,18 @@ inline Eigen::Matrix<double, R1, C1> mdivide_left_tri(
   if (A.rows() >= 
       opencl_context.tuning_opts().lower_tri_inverse_size_worth_transfer) {
     matrix_cl A_cl(A);
-    auto Ainv_cl = lower_triangular_inverse(A_cl);
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Ainv(A.rows(),
+    matrix_cl A_inv_cl(A.rows(), A.cols());
+    if (TriView == Eigen::Lower) {
+      A_inv_cl = lower_triangular_inverse(A_cl);
+    } else {
+      //TODO: Should we create an upper_triangular_inverse instea?
+      // in terms of performance this is fine
+      A_inv_cl = transpose(lower_triangular_inverse(transpose(A_cl)));
+    }    
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A_inv(A.rows(),
                                                                  A.cols());
-    copy(Ainv, Ainv_cl);  // NOLINT
-    return Ainv;
+    copy(A_inv, A_inv_cl);  // NOLINT
+    return A_inv;
   } else {
     int n = A.rows();
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> b;

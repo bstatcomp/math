@@ -153,7 +153,7 @@ class opencl_context_base {
     // math/rev/mat/fun/multiply
     int multiply_result_size_worth_transfer = 250000;
     int multiply_common_dim_worth_transfer = 100;
-    int lower_tri_inverse_size_worth_transfer = 1;
+    int lower_tri_inverse_size_worth_transfer = 500;
   } tuning_opts_;
 
   static opencl_context_base& getInstance() {

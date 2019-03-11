@@ -123,7 +123,7 @@ pipeline {
                         Dependencies: { sh """#!/bin/bash
                             set -o pipefail
                             make test-math-dependencies 2>&1 | tee dependencies.log""" } ,
-                        Documentation: { sh 'make doxygen' },
+                        Documentation: { sh "make doxygen" },
                     )
                 }
             }
@@ -168,7 +168,7 @@ pipeline {
                         sh "echo STAN_OPENCL=true>> make/local"
                         sh "echo OPENCL_PLATFORM_ID=0>> make/local"
                         sh "echo OPENCL_DEVICE_ID=${OPENCL_DEVICE_ID}>> make/local"
-                        runTests("test/unit/math/gpu")
+                        runTests("test/unit/math/opencl")
                     }
                     post { always { retry(3) { deleteDir() } } }
                 }

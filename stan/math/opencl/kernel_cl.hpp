@@ -98,6 +98,26 @@ class kernel_functor {
   const std::map<const char*, int>& get_opts() const { return opts_; }
 };
 
+template <typename... Args>
+struct kernel_instance {
+    kernel_functor<Args...> f;
+    cl::NDRange global_thread_size;
+    std::vector<cl::Event> events_;
+    kernel_instance(kernel_functor<Args...> ff, std::vector<cl::Event> events, cl::NDRange global_thread)
+     : f(ff), global_thread_size(global_thread), events_(events) {}
+    /**
+     * Executes a kernel
+     * @param global_thread_size The global work size.
+     * @param args The arguments to pass to the kernel.
+     * @tparam Args Parameter pack of all kernel argument types.
+     */
+    auto operator()(Args... args) const {
+      cl::EnqueueArgs eargs(opencl_context.queue(), this->events_, this->global_thread_size);
+      return this->f()(eargs, args...);
+    }
+
+};
+
 /**
  * Creates functor for kernels that only need access to defining
  *  the global work size.
@@ -106,6 +126,7 @@ class kernel_functor {
  */
 template <typename... Args>
 struct global_range_kernel {
+
   const kernel_functor<Args...> make_functor;
   /**
    * Creates functor for kernels that only need access to defining
@@ -123,10 +144,9 @@ struct global_range_kernel {
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(const std::vector<cl::Event>& events, cl::NDRange global_thread_size, Args... args) const {
-    auto f = make_functor();
-    cl::EnqueueArgs eargs(opencl_context.queue(), events, global_thread_size);
-    return f(eargs, args...);
+  auto operator()(const std::vector<cl::Event>& events, cl::NDRange global_thread_size) const {
+    auto f = make_functor;
+    return kernel_instance<Args...>(f, events, global_thread_size);
   }
 };
 /**
@@ -154,8 +174,8 @@ struct local_range_kernel {
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(std::vector<cl::Event> events, cl::NDRange global_thread_size, cl::NDRange thread_block_size,
-                  Args... args) const {
+  auto operator()(std::vector<cl::Event> events, cl::NDRange global_thread_size,
+     cl::NDRange thread_block_size, Args... args) const {
     auto f = make_functor();
     cl::EnqueueArgs eargs(opencl_context.queue(), events, global_thread_size,
                           thread_block_size);

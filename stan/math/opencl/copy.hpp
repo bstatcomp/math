@@ -6,6 +6,7 @@
 #include <stan/math/opencl/kernel_cl.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/kernels/copy.hpp>
+#include <stan/math/opencl/event_utils.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <CL/cl.hpp>
@@ -115,8 +116,8 @@ inline void copy(matrix_cl& dst, const matrix_cl& src) {
        *  for explanation
        */
      std::vector<cl::Event> matrix_events = event_concat_cl(dst.events(), src.events());
-      cl::Event copy_event = opencl_kernels::copy(matrix_events, cl::NDRange(dst.rows(), dst.cols()), src.buffer(),
-                           dst.buffer(), dst.rows(), dst.cols());
+      auto copy_cl = opencl_kernels::copy(matrix_events, cl::NDRange(dst.rows(), dst.cols()));
+      cl::Event copy_event = copy_cl(src.buffer(), dst.buffer(), dst.rows(), dst.cols());
       dst.events(copy_event);
     } catch (const cl::Error& e) {
       std::cout << e.err() << std::endl;

@@ -4,14 +4,10 @@
 #include <stan/math/opencl/opencl_context.hpp>
 #include <stan/math/opencl/kernel_cl.hpp>
 #include <stan/math/opencl/constants.hpp>
-#include <stan/math/opencl/event_utils.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <stan/math/prim/scal/err/domain_error.hpp>
 #include <stan/math/opencl/kernels/copy.hpp>
-#include <stan/math/opencl/kernels/sub_block.hpp>
-#include <stan/math/opencl/kernels/triangular_transpose.hpp>
-#include <stan/math/opencl/kernels/zeros.hpp>
 #include <CL/cl.hpp>
 #include <iostream>
 #include <string>
@@ -44,9 +40,9 @@ class matrix_cl {
 
  public:
   void zeros();
-  template <TriangularMapGPU triangular_map = TriangularMapGPU::LowerToUpper>
+  template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
   void triangular_transpose();
-  void sub_block(const matrix_gpu& A, int A_i, int A_j, int this_i, int this_j,
+  void sub_block(const matrix_cl& A, int A_i, int A_j, int this_i, int this_j,
                  int nrows, int ncols);
   int rows() const { return rows_; }
 

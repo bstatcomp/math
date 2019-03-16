@@ -2,12 +2,10 @@
 #define STAN_MATH_OPENCL_MATRIX_CL_HPP
 #ifdef STAN_OPENCL
 #include <stan/math/opencl/opencl_context.hpp>
-#include <stan/math/opencl/kernel_cl.hpp>
 #include <stan/math/opencl/constants.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <stan/math/prim/scal/err/domain_error.hpp>
-#include <stan/math/opencl/kernels/copy.hpp>
 #include <CL/cl.hpp>
 #include <iostream>
 #include <string>
@@ -36,12 +34,14 @@ class matrix_cl {
   cl::Buffer oclBuffer_;
   const int rows_;
   const int cols_;
-  std::vector<cl::Event> events_; // Will be used to track jobs in queue
+  std::vector<cl::Event> events_; //Used to track jobs in queue
 
  public:
+  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
   void zeros();
   template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
   void triangular_transpose();
+  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
   void sub_block(const matrix_cl& A, int A_i, int A_j, int this_i, int this_j,
                  int nrows, int ncols);
   int rows() const { return rows_; }

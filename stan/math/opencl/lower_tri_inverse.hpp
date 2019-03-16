@@ -9,6 +9,8 @@
 
 #include <stan/math/opencl/identity.hpp>
 #include <stan/math/opencl/err/check_square.hpp>
+#include <stan/math/opencl/sub_block.hpp>
+#include <stan/math/opencl/zeros.hpp>
 #include <string>
 #include <vector>
 
@@ -75,14 +77,17 @@ inline matrix_cl lower_triangular_inverse(const matrix_cl& A) {
   inv_padded.sub_block(inv_mat, 0, 0, 0, 0, inv_mat.rows(), inv_mat.rows());
   try {
     // create a batch of identity matrices to be used in the first step
-    opencl_kernels::batch_identity(
-        cl::NDRange(parts, thread_block_size_1D, thread_block_size_1D),
-        temp.buffer(), thread_block_size_1D, temp.size());
+    auto batch_ident = opencl_kernels::batch_identity(
+        cl::NDRange(parts, thread_block_size_1D, thread_block_size_1D), temp);
+    cl::Event batch_event = batch_ident(temp.buffer(), thread_block_size_1D, temp.size());
+    temp.events(batch_event);
     // spawn parts thread blocks, each responsible for one block
-    opencl_kernels::diag_inv(cl::NDRange(parts * thread_block_size_1D),
-                             cl::NDRange(thread_block_size_1D),
-                             inv_padded.buffer(), temp.buffer(),
+    auto diag_inv_cl = opencl_kernels::diag_inv(cl::NDRange(parts * thread_block_size_1D),
+                             cl::NDRange(thread_block_size_1D), inv_padded, temp);
+    cl::Event diag_event = diag_inv_cl(inv_padded.buffer(), temp.buffer(),
                              inv_padded.rows());
+    inv_padded.events(diag_event);
+    temp.events(diag_event);
   } catch (cl::Error& e) {
     check_opencl_error("inverse step1", e);
   }
@@ -110,12 +115,18 @@ inline matrix_cl lower_triangular_inverse(const matrix_cl& A) {
     auto result_work_dim = result_matrix_dim / work_per_thread;
     auto result_ndrange
         = cl::NDRange(result_matrix_dim_x, result_work_dim, parts);
-    opencl_kernels::inv_lower_tri_multiply(
-        result_ndrange, ndrange_2d, inv_padded.buffer(), temp.buffer(),
+    auto inv_cl = opencl_kernels::inv_lower_tri_multiply(
+        result_ndrange, ndrange_2d, inv_padded, temp);
+    auto neg_rect = opencl_kernels::neg_rect_lower_tri_multiply(
+        result_ndrange, ndrange_2d, inv_padded, temp);
+    cl::Event inv_event = inv_cl(inv_padded.buffer(), temp.buffer(),
         inv_padded.rows(), result_matrix_dim);
-    opencl_kernels::neg_rect_lower_tri_multiply(
-        result_ndrange, ndrange_2d, inv_padded.buffer(), temp.buffer(),
+    inv_padded.events(inv_event);
+    temp.events(inv_event);
+    cl::Event neg_rect_event = neg_rect(inv_padded.buffer(), temp.buffer(),
         inv_padded.rows(), result_matrix_dim);
+    inv_padded.events(neg_rect_event);
+    temp.events(inv_event);
     // if this is the last submatrix, end
     if (parts == 1) {
       parts = 0;

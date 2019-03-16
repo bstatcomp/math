@@ -1,8 +1,9 @@
 #ifndef STAN_MATH_GPU_EVENT_UTILS_HPP
 #define STAN_MATH_GPU_EVENT_UTILS_HPP
 #ifdef STAN_OPENCL
-#include <type_traits>
+
 #include <stan/math/opencl/matrix_cl.hpp>
+#include <type_traits>
 #include <CL/cl.hpp>
 
 namespace stan {
@@ -11,6 +12,11 @@ namespace math {
   std::vector<cl::Event> event_concat_cl(const std::vector<cl::Event>& v1) {
     return v1;
   }
+  // Ends the recursion
+  std::vector<cl::Event> event_concat_cl(const matrix_cl& A) {
+    return A.events();
+  }
+
   // If there is one non cl events
   template <typename T, typename std::enable_if_t<std::is_integral<T>::value, int> = 0>
   std::vector<cl::Event> event_concat_cl(const std::vector<cl::Event>& v1, const T& throwaway_val) {
@@ -19,6 +25,12 @@ namespace math {
   // If both are non cl events return an empty vector
   template <typename T, typename std::enable_if_t<std::is_integral<T>::value, int> = 0>
   std::vector<cl::Event> event_concat_cl(const T& v1, const T& throwaway_val) {
+    std::vector<cl::Event> vec_concat;
+    return vec_concat;
+  }
+  // end is non cl event return an empty vector
+  template <typename T, typename std::enable_if_t<std::is_integral<T>::value, int> = 0>
+  std::vector<cl::Event> event_concat_cl(const T& throwaway_val) {
     std::vector<cl::Event> vec_concat;
     return vec_concat;
   }

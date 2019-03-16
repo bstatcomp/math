@@ -24,8 +24,9 @@ inline matrix_cl identity(int rows_cols) {
   cl::CommandQueue cmdQueue = opencl_context.queue();
 
   try {
-    opencl_kernels::identity(cl::NDRange(A.rows(), A.cols()), A.buffer(),
-                             A.rows(), A.cols());
+    auto ident = opencl_kernels::identity(cl::NDRange(A.rows(), A.cols()), A);
+    cl::Event ident_event = ident(A.buffer(), A.rows(), A.cols());
+    A.events(ident_event);
   } catch (const cl::Error& e) {
     check_opencl_error("identity", e);
   }

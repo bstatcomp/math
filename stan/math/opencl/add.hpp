@@ -29,9 +29,8 @@ inline matrix_cl add(const matrix_cl& A, const matrix_cl& B) {
     return C;
   }
   cl::CommandQueue cmdQueue = opencl_context.queue();
-  std::vector<cl::Event> matrix_events = event_concat_cl(A, B, C);
   try {
-    auto add_cl = opencl_kernels::add(matrix_events, cl::NDRange(A.rows(), A.cols()));
+    auto add_cl = opencl_kernels::add(cl::NDRange(A.rows(), A.cols()), A, B, C);
     cl::Event add_event = add_cl(C.buffer(), A.buffer(), B.buffer(), A.rows(), A.cols());
     C.events(add_event);
   } catch (const cl::Error& e) {

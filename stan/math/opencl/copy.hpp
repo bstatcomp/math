@@ -115,8 +115,7 @@ inline void copy(matrix_cl& dst, const matrix_cl& src) {
        * see the matrix_cl(matrix_cl&) constructor
        *  for explanation
        */
-     std::vector<cl::Event> matrix_events = event_concat_cl(dst.events(), src.events());
-      auto copy_cl = opencl_kernels::copy(matrix_events, cl::NDRange(dst.rows(), dst.cols()));
+      auto copy_cl = opencl_kernels::copy(cl::NDRange(dst.rows(), dst.cols()), src, dst);
       cl::Event copy_event = copy_cl(src.buffer(), dst.buffer(), dst.rows(), dst.cols());
       dst.events(copy_event);
     } catch (const cl::Error& e) {

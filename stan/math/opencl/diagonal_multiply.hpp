@@ -24,8 +24,9 @@ inline matrix_cl diagonal_multiply(const matrix_cl& A, const double scalar) {
   if (B.cols() < min_dim)
     min_dim = B.cols();
   try {
-    opencl_kernels::scalar_mul_diagonal(cl::NDRange(min_dim), B.buffer(),
-                                        scalar, B.rows(), min_dim);
+    auto mul = opencl_kernels::scalar_mul_diagonal(cl::NDRange(min_dim), B);
+    cl::Event mul_diag_event = mul(B.buffer(), scalar, B.rows(), min_dim);
+    B.events(mul_diag_event);
   } catch (const cl::Error& e) {
     check_opencl_error("diagonal_multiply", e);
   }

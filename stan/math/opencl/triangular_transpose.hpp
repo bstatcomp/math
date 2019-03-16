@@ -2,12 +2,12 @@
 #define STAN_MATH_GPU_TRIANGULAR_TRANSPOSE_HPP
 #ifdef STAN_OPENCL
 
-#include <stan/math/gpu/opencl_context.hpp>
-#include <stan/math/gpu/constants.hpp>
-#include <stan/math/gpu/kernels/triangular_transpose.hpp>
-#include <stan/math/gpu/event_utils.hpp>
+#include <stan/math/opencl/opencl_context.hpp>
+#include <stan/math/opencl/constants.hpp>
+#include <stan/math/opencl/kernels/triangular_transpose.hpp>
+#include <stan/math/opencl/event_utils.hpp>
 #include <stan/math/prim/scal/err/domain_error.hpp>
-#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/opencl/matrix_cl.hpp>
 
 #include <CL/cl.hpp>
 
@@ -24,8 +24,8 @@ namespace math {
  * @throw <code>std::invalid_argument</code> if the matrix is not square.
  *
  */
-template <TriangularMapGPU triangular_map = TriangularMapGPU::LowerToUpper>
-void matrix_gpu::triangular_transpose() {
+template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
+inline void matrix_cl::triangular_transpose() {
   if (size() == 0 || size() == 1) {
     return;
   }
@@ -35,8 +35,9 @@ void matrix_gpu::triangular_transpose() {
 
   cl::CommandQueue cmdQueue = opencl_context.queue();
   try {
-    cl::Event triangular_event = opencl_kernels::triangular_transpose(this->events(),
-          cl::NDRange(this->rows(), this->cols()), this->buffer(), this->rows(),
+    auto tri_trans = opencl_kernels::triangular_transpose(cl::NDRange(this->rows(), this->cols()),
+     this->events());
+    cl::Event triangular_event = tri_trans(this->buffer(), this->rows(),
           this->cols(), triangular_map);
     this->events(triangular_event);
   } catch (const cl::Error& e) {

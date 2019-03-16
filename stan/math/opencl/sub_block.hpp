@@ -2,12 +2,12 @@
 #define STAN_MATH_GPU_SUB_BLOCK_HPP
 #ifdef STAN_OPENCL
 
-#include <stan/math/gpu/opencl_context.hpp>
-#include <stan/math/gpu/constants.hpp>
-#include <stan/math/gpu/kernels/sub_block.hpp>
-#include <stan/math/gpu/event_utils.hpp>
+#include <stan/math/opencl/opencl_context.hpp>
+#include <stan/math/opencl/constants.hpp>
+#include <stan/math/opencl/kernels/sub_block.hpp>
+#include <stan/math/opencl/event_utils.hpp>
 #include <stan/math/prim/scal/err/domain_error.hpp>
-#include <stan/math/gpu/matrix_gpu.hpp>
+#include <stan/math/opencl/matrix_cl.hpp>
 #include <CL/cl.hpp>
 
 namespace stan {
@@ -24,7 +24,8 @@ namespace math {
  * @param nrows the number of rows in the submatrix
  * @param ncols the number of columns in the submatrix
  */
-void matrix_gpu::sub_block(const matrix_gpu& A, int A_i, int A_j, int this_i, int this_j,
+template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
+inline void matrix_cl::sub_block(const matrix_cl& A, int A_i, int A_j, int this_i, int this_j,
                int nrows, int ncols) {
   if (nrows == 0 || ncols == 0) {
     return;
@@ -35,12 +36,12 @@ void matrix_gpu::sub_block(const matrix_gpu& A, int A_i, int A_j, int this_i, in
   }
   cl::CommandQueue cmdQueue = opencl_context.queue();
   try {
-    std::vector<cl::Event> matrix_events = event_concat_cl(this->events(), A.events());
-    cl::Event block_event = opencl_kernels::sub_block(matrix_events, cl::NDRange(nrows, ncols), A.buffer(),
+    auto sub_block_cl = opencl_kernels::sub_block(cl::NDRange(nrows, ncols), A, this->events());
+    cl::Event sub_block_event = sub_block_cl(A.buffer(),
                               this->buffer(), A_i, A_j, this_i, this_j, nrows,
                               ncols, A.rows(), A.cols(), this->rows(),
-                              this->cols());
-    this->events(block_event);
+                              this->cols(), triangular_view);
+    this->events(sub_block_event);
   } catch (const cl::Error& e) {
     check_opencl_error("copy_submatrix", e);
   }

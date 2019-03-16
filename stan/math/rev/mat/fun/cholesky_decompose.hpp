@@ -19,6 +19,8 @@
 #include <stan/math/opencl/diagonal_multiply.hpp>
 #include <stan/math/opencl/lower_tri_inverse.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/triangular_transpose.hpp>
+#include <stan/math/opencl/sub_block.hpp>
 #include <stan/math/opencl/multiply.hpp>
 #include <stan/math/opencl/opencl_context.hpp>
 #endif

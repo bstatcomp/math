@@ -4,6 +4,8 @@
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/kernels/multiply_transpose.hpp>
 #include <stan/math/opencl/err/check_square.hpp>
+#include <stan/math/opencl/sub_block.hpp>
+#include <stan/math/opencl/zeros.hpp>
 #include <Eigen/Dense>
 
 namespace stan {
@@ -30,15 +32,19 @@ inline matrix_cl multiply_transpose(const matrix_cl& A) {
   int Npad = ((A.cols() + local - 1) / local) * local;
   matrix_cl tempPad(Mpad, Mpad);
   matrix_cl Apad(Mpad, Npad);
-  opencl_kernels::zeros(cl::NDRange(Mpad, Npad), Apad.buffer(), Mpad, Npad,
+  auto zeros_cl = opencl_kernels::zeros(cl::NDRange(Mpad, Npad), Apad);
+  cl::Event zero_event = zeros_cl(Apad.buffer(), Mpad, Npad,
                         TriangularViewCL::Entire);
+  Apad.events(zero_event);
   Apad.sub_block(A, 0, 0, 0, 0, A.rows(), A.cols());
   int wpt = opencl_kernels::multiply_transpose.make_functor.get_opts().at(
       "WORK_PER_THREAD");
   try {
-    opencl_kernels::multiply_transpose(
-        cl::NDRange(Mpad, Mpad / wpt), cl::NDRange(local, local / wpt),
-        Apad.buffer(), tempPad.buffer(), Apad.rows(), Apad.cols());
+
+    auto mult_trans = opencl_kernels::multiply_transpose(
+        cl::NDRange(Mpad, Mpad / wpt), cl::NDRange(local, local / wpt), Apad, tempPad);
+    cl::Event mult_trans_event = mult_trans(Apad.buffer(), tempPad.buffer(), Apad.rows(), Apad.cols());
+    temp.events(mult_trans_event);
   } catch (cl::Error& e) {
     check_opencl_error("multiply self transpose", e);
   }

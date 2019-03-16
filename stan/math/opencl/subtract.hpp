@@ -32,8 +32,9 @@ inline auto subtract(const matrix_cl& A, const matrix_cl& B) {
   }
   cl::CommandQueue cmdQueue = opencl_context.queue();
   try {
-    opencl_kernels::subtract(cl::NDRange(A.rows(), A.cols()), C.buffer(),
-                             A.buffer(), B.buffer(), A.rows(), A.cols());
+    auto sub_cl = opencl_kernels::subtract(cl::NDRange(A.rows(), A.cols()), C, A, B);
+    cl::Event sub_event = sub_cl(C.buffer(), A.buffer(), B.buffer(), A.rows(), A.cols());
+    C.events(sub_event);
   } catch (cl::Error& e) {
     check_opencl_error("subtract", e);
   }

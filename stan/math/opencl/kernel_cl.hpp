@@ -3,6 +3,8 @@
 #ifdef STAN_OPENCL
 #include <stan/math/opencl/opencl_context.hpp>
 #include <stan/math/opencl/kernels/helpers.hpp>
+#include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/event_utils.hpp>
 #include <CL/cl.hpp>
 #include <string>
 #include <algorithm>
@@ -99,12 +101,13 @@ class kernel_functor {
 };
 
 template <typename... Args>
-struct kernel_instance {
+struct kernel_instance_global {
     kernel_functor<Args...> f;
     cl::NDRange global_thread_size;
     std::vector<cl::Event> events_;
-    kernel_instance(kernel_functor<Args...> ff, std::vector<cl::Event> events, cl::NDRange global_thread)
+    kernel_instance_global(kernel_functor<Args...> ff, std::vector<cl::Event> events, cl::NDRange global_thread)
      : f(ff), global_thread_size(global_thread), events_(events) {}
+
     /**
      * Executes a kernel
      * @param global_thread_size The global work size.
@@ -112,7 +115,29 @@ struct kernel_instance {
      * @tparam Args Parameter pack of all kernel argument types.
      */
     auto operator()(Args... args) const {
-      cl::EnqueueArgs eargs(opencl_context.queue(), this->events_, this->global_thread_size);
+        cl::EnqueueArgs eargs(opencl_context.queue(), this->events_, this->global_thread_size);
+      return this->f()(eargs, args...);
+    }
+
+};
+
+template <typename... Args>
+struct kernel_instance_local {
+    kernel_functor<Args...> f;
+    cl::NDRange global_thread_size;
+    cl::NDRange local_thread_size;
+    std::vector<cl::Event> events_;
+   kernel_instance_local(kernel_functor<Args...> ff, std::vector<cl::Event> events, cl::NDRange global_thread, cl::NDRange local_thread)
+    : f(ff), global_thread_size(global_thread), events_(events), local_thread_size(local_thread) {}
+
+    /**
+     * Executes a kernel
+     * @param global_thread_size The global work size.
+     * @param args The arguments to pass to the kernel.
+     * @tparam Args Parameter pack of all kernel argument types.
+     */
+    auto operator()(Args... args) const {
+      cl::EnqueueArgs eargs(opencl_context.queue(), this->events_, this->global_thread_size, this->local_thread_size);
       return this->f()(eargs, args...);
     }
 
@@ -144,9 +169,11 @@ struct global_range_kernel {
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(const std::vector<cl::Event>& events, cl::NDRange global_thread_size) const {
+  template <typename... Margs>
+  auto operator()(cl::NDRange global_thread_size, Margs... args) const {
     auto f = make_functor;
-    return kernel_instance<Args...>(f, events, global_thread_size);
+    std::vector<cl::Event> matrix_events = event_concat_cl(args...);
+    return kernel_instance_global<Args...>(f, matrix_events, global_thread_size);
   }
 };
 /**
@@ -170,16 +197,14 @@ struct local_range_kernel {
   /**
    * Executes a kernel
    * @param global_thread_size The global work size.
-   * @param thread_block_size The thread block size.
    * @param args The arguments to pass to the kernel.
    * @tparam Args Parameter pack of all kernel argument types.
    */
-  auto operator()(std::vector<cl::Event> events, cl::NDRange global_thread_size,
-     cl::NDRange thread_block_size, Args... args) const {
-    auto f = make_functor();
-    cl::EnqueueArgs eargs(opencl_context.queue(), events, global_thread_size,
-                          thread_block_size);
-    return f(eargs, args...);
+  template <typename... Margs>
+  auto operator()(cl::NDRange global_thread_size, cl::NDRange local_thread_size, Margs... args) const {
+    auto f = make_functor;
+    std::vector<cl::Event> matrix_events = event_concat_cl(args...);
+    return kernel_instance_local<Args...>(f, matrix_events, global_thread_size, local_thread_size);
   }
 };
 

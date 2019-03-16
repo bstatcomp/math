@@ -21,8 +21,9 @@ inline matrix_cl transpose(const matrix_cl& src) {
     return dst;
   cl::CommandQueue cmdQueue = opencl_context.queue();
   try {
-    opencl_kernels::transpose(cl::NDRange(src.rows(), src.cols()), dst.buffer(),
-                              src.buffer(), src.rows(), src.cols());
+    auto trans_cl = opencl_kernels::transpose(cl::NDRange(src.rows(), src.cols()), dst, src);
+    cl::Event trans_event = trans_cl(dst.buffer(), src.buffer(), src.rows(), src.cols());
+    dst.events(trans_event);
   } catch (const cl::Error& e) {
     check_opencl_error("transpose", e);
   }

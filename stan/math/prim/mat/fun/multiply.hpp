@@ -5,6 +5,11 @@
 #include <stan/math/prim/arr/err/check_matching_sizes.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <type_traits>
+#ifdef STAN_OPENCL
+#include <stan/math/opencl/opencl_context.hpp>
+#include <stan/math/opencl/multiply.hpp>
+#include <stan/math/opencl/copy.hpp>
+#endif
 
 namespace stan {
 namespace math {
@@ -54,6 +59,24 @@ inline Eigen::Matrix<double, R1, C2> multiply(
     const Eigen::Matrix<double, R1, C1>& m1,
     const Eigen::Matrix<double, R2, C2>& m2) {
   check_multiplicable("multiply", "m1", m1, "m2", m2);
+#ifdef STAN_OPENCL
+  if (((m1.rows() * m2.cols()) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (m1.cols() >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl m1_cl(m1);
+    matrix_cl m2_cl(m2);
+    auto m3_cl = m1_cl * m2_cl;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> m3(m1.rows(),
+                                                                 m2.cols());
+    copy(m3, m3_cl);// NOLINT
+    return m3;
+  } else {
+    return m1 * m2;  
+  }
+#else
+  return m1 * m2;
+#endif
   return m1 * m2;
 }
 

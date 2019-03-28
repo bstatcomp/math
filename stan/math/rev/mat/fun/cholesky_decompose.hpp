@@ -322,16 +322,7 @@ class cholesky_opencl : public vari {
    *
    */
   virtual void chain() {
-    const int packed_size = M_ * (M_ + 1) / 2;
-    std::vector<double> L_adj_cpu(packed_size);
-    std::vector<double> L_val_cpu(packed_size);
-
-    for (size_type j = 0; j < packed_size; ++j) {
-      L_adj_cpu[j] = vari_ref_L_[j]->adj_;
-      L_val_cpu[j] = vari_ref_L_[j]->val_;
-    }
-    matrix_cl L = packed_copy<TriangularViewCL::Lower>(L_val_cpu, M_);
-    matrix_cl L_adj = packed_copy<TriangularViewCL::Lower>(L_adj_cpu, M_);
+    matrix_v_cl<TriangularViewCL::Lower> L(vari_ref_L_, M_);
     int block_size
         = M_ / opencl_context.tuning_opts().cholesky_rev_block_partition;
     block_size = std::max(block_size, 8);
@@ -355,15 +346,15 @@ class cholesky_opencl : public vari {
       matrix_cl B_adj(m_k_ind, j);
       matrix_cl C_adj(m_k_ind, k_j_ind);
 
-      R.sub_block(L, j, 0, 0, 0, k_j_ind, j);
-      D.sub_block(L, j, j, 0, 0, k_j_ind, k_j_ind);
-      B.sub_block(L, k, 0, 0, 0, m_k_ind, j);
-      C.sub_block(L, k, j, 0, 0, m_k_ind, k_j_ind);
+      R.sub_block(L.val_, j, 0, 0, 0, k_j_ind, j);
+      D.sub_block(L.val_, j, j, 0, 0, k_j_ind, k_j_ind);
+      B.sub_block(L.val_, k, 0, 0, 0, m_k_ind, j);
+      C.sub_block(L.val_, k, j, 0, 0, m_k_ind, k_j_ind);
 
-      R_adj.sub_block(L_adj, j, 0, 0, 0, k_j_ind, j);
-      D_adj.sub_block(L_adj, j, j, 0, 0, k_j_ind, k_j_ind);
-      B_adj.sub_block(L_adj, k, 0, 0, 0, m_k_ind, j);
-      C_adj.sub_block(L_adj, k, j, 0, 0, m_k_ind, k_j_ind);
+      R_adj.sub_block(L.adj_, j, 0, 0, 0, k_j_ind, j);
+      D_adj.sub_block(L.adj_, j, j, 0, 0, k_j_ind, k_j_ind);
+      B_adj.sub_block(L.adj_, k, 0, 0, 0, m_k_ind, j);
+      C_adj.sub_block(L.adj_, k, j, 0, 0, m_k_ind, k_j_ind);
 
       C_adj
           = opencl::multiply<TriangularViewCL::Entire, TriangularViewCL::Lower>(
@@ -377,12 +368,13 @@ class cholesky_opencl : public vari {
       D_adj = diagonal_multiply(D_adj, 0.5);
       D_adj.zeros<TriangularViewCL::Upper>();
 
-      L_adj.sub_block(R_adj, 0, 0, j, 0, k_j_ind, j);
-      L_adj.sub_block(D_adj, 0, 0, j, j, k_j_ind, k_j_ind);
-      L_adj.sub_block(B_adj, 0, 0, k, 0, m_k_ind, j);
-      L_adj.sub_block(C_adj, 0, 0, k, j, m_k_ind, k_j_ind);
+      L.adj_.sub_block(R_adj, 0, 0, j, 0, k_j_ind, j);
+      L.adj_.sub_block(D_adj, 0, 0, j, j, k_j_ind, k_j_ind);
+      L.adj_.sub_block(B_adj, 0, 0, k, 0, m_k_ind, j);
+      L.adj_.sub_block(C_adj, 0, 0, k, j, m_k_ind, k_j_ind);
     }
-    L_adj_cpu = packed_copy<TriangularViewCL::Lower>(L_adj);
+    const int packed_size = M_ * (M_ + 1) / 2;
+    auto L_adj_cpu = packed_copy<TriangularViewCL::Lower>(L.adj_);
     for (size_type j = 0; j < packed_size; ++j) {
       vari_ref_A_[j]->adj_ += L_adj_cpu[j];
     }

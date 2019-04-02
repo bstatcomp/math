@@ -19,6 +19,10 @@
 #include <stan/math/prim/mat/fun/as_column_vector_or_scalar.hpp>
 #include <stan/math/prim/scal/fun/as_column_vector_or_scalar.hpp>
 #include <stan/math/prim/arr/fun/value_of_rec.hpp>
+
+#include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/multiply.hpp>
+
 #include <cmath>
 
 namespace stan {
@@ -104,9 +108,16 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
   const auto &y_val_vec = as_column_vector_or_scalar(y_val);
 
   T_scale_val inv_sigma = 1 / as_array_or_scalar(sigma_val_vec);
-
-  Array<T_partials_return, Dynamic, 1> y_minus_mu_over_sigma
-      = x_val * beta_val_vec;
+  Matrix<T_partials_return, Dynamic, 1> y_minus_mu_over_sigma_mat(N);
+  auto y_minus_mu_over_sigma = y_minus_mu_over_sigma_mat.array();
+#ifdef STAN_OPENCL
+  const matrix_cl x_cl = matrix_cl::constant(x_val);
+  const matrix_cl beta_cl(beta_val_vec);
+  const matrix_cl product_cl = x_cl * beta_cl;
+  copy(y_minus_mu_over_sigma_mat, product_cl);
+#else
+  y_minus_mu_over_sigma = x_val * beta_val_vec;
+#endif
   y_minus_mu_over_sigma = (as_array_or_scalar(y_val_vec) - y_minus_mu_over_sigma
                            - as_array_or_scalar(alpha_val_vec))
                           * inv_sigma;
@@ -130,7 +141,15 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
           = (beta_val_vec * mu_derivative.transpose()).transpose();
     }
     if (!is_constant_struct<T_beta>::value) {
+#ifdef STAN_OPENCL
+      const matrix_cl mu_derivative_cl(mu_derivative.transpose().eval());
+      const matrix_cl beta_derivative_cl = mu_derivative_cl * x_cl;
+      Eigen::RowVectorXd beta_derivative(M);
+      copy(beta_derivative, beta_derivative_cl);
+      ops_partials.edge4_.partials_ = std::move(beta_derivative);
+#else
       ops_partials.edge4_.partials_ = mu_derivative.transpose() * x_val;
+#endif
     }
     if (!is_constant_struct<T_alpha>::value) {
       if (is_vector<T_alpha>::value)
@@ -169,7 +188,6 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
                                                       // passed this will only
                                                       // fail if x is not finite
   }
-
   // Compute log probability.
   T_partials_return logp(0.0);
   if (include_summand<propto>::value)

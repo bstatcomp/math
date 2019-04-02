@@ -190,6 +190,97 @@ class matrix_cl {
     }
   }
 
+  /**
+   * Constructor for the matrix_cl that
+   * creates a copy of the Eigen matrix on the OpenCL device.
+   *
+   *
+   * @tparam T type of data in the Eigen matrix
+   * @param A the Eigen matrix
+   *
+   * @throw <code>std::system_error</code> if the
+   * matrices do not have matching dimensions
+   */
+  template <int R, int C>
+  explicit matrix_cl(const Eigen::Map<const Eigen::Matrix<double, R, C>>& A)
+          : rows_(A.rows()), cols_(A.cols()) {
+    if (size() > 0) {
+      cl::Context& ctx = opencl_context.context();
+      cl::CommandQueue& queue = opencl_context.queue();
+      try {
+        // creates the OpenCL buffer to copy the Eigen
+        // matrix to the OpenCL device
+        oclBuffer_
+                = cl::Buffer(ctx, CL_MEM_READ_WRITE, sizeof(double) * A.size());
+        /**
+         * Writes the contents of A to the OpenCL buffer
+         * starting at the offset 0.
+         * CL_TRUE denotes that the call is blocking as
+         * we do not want to execute any further kernels
+         * on the device until we are sure that the data
+         * is finished transfering)
+         */
+        queue.enqueueWriteBuffer(oclBuffer_, CL_TRUE, 0,
+                                 sizeof(double) * A.size(), A.data());
+      } catch (const cl::Error& e) {
+        check_opencl_error("matrix constructor", e);
+      }
+    }
+  }
+
+    /**
+   * Constructor for the matrix_cl that contains a single value.
+   *
+   * @param A the value
+   *
+   * @throw <code>std::system_error</code> if the
+   * matrices do not have matching dimensions
+   */
+    explicit matrix_cl(double A)
+            : rows_(1), cols_(1) {
+      cl::Context& ctx = opencl_context.context();
+      cl::CommandQueue& queue = opencl_context.queue();
+      try {
+        // creates the OpenCL buffer to copy the Eigen
+        // matrix to the OpenCL device
+        oclBuffer_
+                = cl::Buffer(ctx, CL_MEM_READ_WRITE, sizeof(double));
+        /**
+         * Writes the contents of A to the OpenCL buffer
+         * starting at the offset 0.
+         * CL_TRUE denotes that the call is blocking as
+         * we do not want to execute any further kernels
+         * on the device until we are sure that the data
+         * is finished transfering)
+         */
+        queue.enqueueWriteBuffer(oclBuffer_, CL_TRUE, 0, sizeof(double), &A);
+      } catch (const cl::Error& e) {
+        check_opencl_error("matrix constructor", e);
+      }
+    }
+
+    /**
+   * Constructs a const matrix_cl that constains a copy of the Eigen matrix on the OpenCL device. If the matrix already has a cached copy on the device, the cache is used and no copying is done.
+   *
+   *
+   * @tparam R row type of input matrix
+   * @tparam C column type of input matrix
+   * @param A the Eigen matrix
+   */
+    template <int R, int C>
+    static const matrix_cl constant(const Eigen::Matrix<double, R, C>& A){
+#ifdef STAN_OPENCL_CACHE
+      if (A.opencl_buffer_() != NULL) {
+        return matrix_cl(A.opencl_buffer_ ,A.rows(), A.cols());
+      }
+      else{
+        return matrix_cl(A);
+      }
+#else
+      return matrix_cl(A);
+#endif
+    }
+
   matrix_cl& operator=(const matrix_cl& a) {
     check_size_match("assignment of (OpenCL) matrices", "source.rows()",
                      a.rows(), "destination.rows()", rows());

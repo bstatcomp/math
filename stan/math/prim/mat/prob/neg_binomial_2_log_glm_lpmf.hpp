@@ -138,7 +138,16 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   const auto& y_arr = as_array_or_scalar(y_val_vec);
   const auto& phi_arr = as_array_or_scalar(phi_val_vec);
 
-  Array<T_partials_return, Dynamic, 1> theta = value_of(x) * beta_val_vec;
+  Matrix<T_partials_return, Dynamic, 1> theta_mat(N);
+  auto theta = theta_mat.array();
+#ifdef STAN_OPENCL
+  const matrix_cl x_cl = matrix_cl::constant(x_val);
+  const matrix_cl beta_cl(beta_val_vec);
+  const matrix_cl product_cl = x_cl * beta_cl;
+  copy(theta_mat, product_cl);
+#else
+  theta = x_val * beta_val_vec;
+#endif
   theta += as_array_or_scalar(alpha_val_vec);
   for (size_t n = 0; n < N; ++n)
     check_finite(function, "Matrix of independent variables", theta[n]);
@@ -185,7 +194,15 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
       Matrix<T_partials_return, Dynamic, 1> theta_derivative
           = y_arr - theta_exp * y_plus_phi / (theta_exp + phi_arr);
       if (!is_constant_struct<T_beta>::value) {
+#ifdef STAN_OPENCL
+        const matrix_cl theta_derivative_cl(theta_derivative.transpose().eval());
+    const matrix_cl beta_derivative_cl = theta_derivative_cl * x_cl;
+    Eigen::RowVectorXd beta_derivative(M);
+    copy(beta_derivative, beta_derivative_cl);
+    ops_partials.edge3_.partials_ = std::move(beta_derivative);
+#else
         ops_partials.edge3_.partials_ = x_val.transpose() * theta_derivative;
+#endif
       }
       if (!is_constant_struct<T_x>::value) {
         ops_partials.edge1_.partials_

@@ -26,7 +26,7 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
          * @param[out] logp2_glob partially summed part of log probabiltiy (1 value per work group)
          * @param N number of cases
          * @param M number of attributes
-         * @param is_alpha_vector interpreted as boolean - whether alpha is a vector (alternatively it is a scalar)
+         * @param is_alpha_vector 0 or 1 - whether alpha is a vector (alternatively it is a scalar)
          * @param need_logp1 interpreted as boolean - whether logp1_glob needs to be computed
          * @param need_logp2 interpreted as boolean - whether logp2_glob needs to be computed
          */

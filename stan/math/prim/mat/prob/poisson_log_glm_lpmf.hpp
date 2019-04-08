@@ -19,6 +19,7 @@
 #include <stan/math/prim/arr/fun/as_scalar.hpp>
 #include <stan/math/prim/mat/fun/as_column_vector_or_scalar.hpp>
 #include <stan/math/prim/scal/fun/as_column_vector_or_scalar.hpp>
+#include <stan/math/opencl/kernels/poisson_log_glm_lpmf.hpp>
 #include <cmath>
 #include <limits>
 
@@ -94,43 +95,80 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   const auto& beta_val_vec = as_column_vector_or_scalar(beta_val);
   const auto& alpha_val_vec = as_column_vector_or_scalar(alpha_val);
 
-  Matrix<T_partials_return, Dynamic, 1> theta(N);
 #ifdef STAN_OPENCL
+  const int local_size = opencl_kernels::poisson_log_glm.make_functor.get_opts().at("LOCAL_SIZE_");
+  const int wgs = (N+local_size-1)/local_size;
+
+  const matrix_cl y_cl(y_val_vec);
   const matrix_cl x_cl = matrix_cl::constant(x_val);
   const matrix_cl beta_cl(beta_val_vec);
-  const matrix_cl product_cl = x_cl * beta_cl;
-  copy(theta, product_cl);
+  const matrix_cl alpha_cl(alpha_val_vec);
+
+  matrix_cl theta_derivative_cl(N,1);
+  matrix_cl theta_derivative_sum_cl(wgs,1);
+  const bool need_logp1 = include_summand<propto>::value;
+  matrix_cl logp1_cl(need_logp1 ? wgs : 0, 1);
+  const bool need_logp2 = include_summand<propto, T_partials_return>::value;
+  matrix_cl logp2_cl(need_logp2 ? wgs : 0, 1);
+
+  try{
+    opencl_kernels::poisson_log_glm(cl::NDRange(local_size*wgs),cl::NDRange(local_size),
+            y_cl.buffer(), x_cl.buffer(), alpha_cl.buffer(), beta_cl.buffer(),
+            theta_derivative_cl.buffer(), theta_derivative_sum_cl.buffer(), logp1_cl.buffer(), logp2_cl.buffer(),
+            N, M, length(alpha)!=1, need_logp1, need_logp2);
+  }
+  catch (const cl::Error& e) {
+    check_opencl_error(function, e);
+  }
+  Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
+  copy(theta_derivative, theta_derivative_cl);
+  Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
+  copy(theta_derivative_partial_sum, theta_derivative_sum_cl);
+  double theta_derivative_sum = sum(theta_derivative_partial_sum);
 #else
+  Matrix<T_partials_return, Dynamic, 1> theta(N);
   theta = x_val * beta_val_vec;
-#endif
   theta.array() += as_array_or_scalar(alpha_val_vec);
 
   Matrix<T_partials_return, Dynamic, 1> theta_derivative
       = as_array_or_scalar(y_val_vec) - exp(theta.array());
   double theta_derivative_sum = theta_derivative.sum();
+#endif
   if (!std::isfinite(theta_derivative_sum)) {
     check_finite(function, "Weight vector", beta);
     check_finite(function, "Intercept", alpha);
-    check_finite(function, "Matrix of independent variables", theta);
+    check_finite(function, "Matrix of independent variables", theta_derivative);
   }
   if (include_summand<propto>::value) {
     if (is_vector<T_y>::value) {
+#ifdef STAN_OPENCL
+      Eigen::VectorXd logp1_partial_sum(wgs);
+      copy(logp1_partial_sum, logp1_cl);
+      logp -= sum(logp1_partial_sum);
+#else
       logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1.0));
+#endif
     } else {
       logp -= lgamma(as_scalar(y_val) + 1.0);
     }
   }
   if (include_summand<propto, T_partials_return>::value) {
+#ifdef STAN_OPENCL
+    Eigen::VectorXd logp2_partial_sum(wgs);
+    copy(logp2_partial_sum, logp2_cl);
+    logp += sum(logp2_partial_sum);
+#else
     logp += (as_array_or_scalar(y_val_vec) * theta.array() - exp(theta.array()))
                 .sum();
+#endif
   }
 
   // Compute the necessary derivatives.
   operands_and_partials<T_x, T_alpha, T_beta> ops_partials(x, alpha, beta);
   if (!is_constant_struct<T_beta>::value) {
 #ifdef STAN_OPENCL
-    const matrix_cl theta_derivative_cl(theta_derivative.transpose().eval());
-    const matrix_cl beta_derivative_cl = theta_derivative_cl * x_cl;
+    const matrix_cl theta_derivative_transpose_cl(*const_cast<cl::Buffer*>(&theta_derivative_cl.buffer()), 1, theta_derivative_cl.rows()); //transposition of a vector can be done without copying
+    const matrix_cl beta_derivative_cl = theta_derivative_transpose_cl * x_cl;
     Eigen::RowVectorXd beta_derivative(M);
     copy(beta_derivative, beta_derivative_cl);
     ops_partials.edge3_.partials_ = std::move(beta_derivative);
@@ -156,6 +194,7 @@ inline typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     const T_y& y, const T_x& x, const T_alpha& alpha, const T_beta& beta) {
   return poisson_log_glm_lpmf<false>(y, x, alpha, beta);
 }
+
 }  // namespace math
 }  // namespace stan
 #endif

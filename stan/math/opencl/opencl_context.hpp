@@ -166,7 +166,9 @@ class opencl_context_base {
          {"UPPER_TO_LOWER", static_cast<int>(TriangularMapCL::UpperToLower)},
          {"LOWER_TO_UPPER", static_cast<int>(TriangularMapCL::LowerToUpper)},
          {"THREAD_BLOCK_SIZE", 32},
-         {"WORK_PER_THREAD", 8}};
+         {"WORK_PER_THREAD", 8},
+         {"LOCAL_SIZE_",64},
+         {"REDUCTION_STEP_SIZE",4}};
   // TODO(Steve): Make these tunable during warmup
   struct tuning_struct {
     // Used in stan/math/opencl/cholesky_decompose

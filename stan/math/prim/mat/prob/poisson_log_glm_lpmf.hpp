@@ -19,7 +19,9 @@
 #include <stan/math/prim/arr/fun/as_scalar.hpp>
 #include <stan/math/prim/mat/fun/as_column_vector_or_scalar.hpp>
 #include <stan/math/prim/scal/fun/as_column_vector_or_scalar.hpp>
+
 #include <stan/math/opencl/kernels/poisson_log_glm_lpmf.hpp>
+
 #include <cmath>
 #include <limits>
 
@@ -107,14 +109,13 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   matrix_cl theta_derivative_cl(N,1);
   matrix_cl theta_derivative_sum_cl(wgs,1);
   const bool need_logp1 = include_summand<propto>::value;
-  matrix_cl logp1_cl(need_logp1 ? wgs : 0, 1);
   const bool need_logp2 = include_summand<propto, T_partials_return>::value;
-  matrix_cl logp2_cl(need_logp2 ? wgs : 0, 1);
+  matrix_cl logp_cl((need_logp1 || need_logp2) ? wgs : 0, 1);
 
   try{
     opencl_kernels::poisson_log_glm(cl::NDRange(local_size*wgs),cl::NDRange(local_size),
             y_cl.buffer(), x_cl.buffer(), alpha_cl.buffer(), beta_cl.buffer(),
-            theta_derivative_cl.buffer(), theta_derivative_sum_cl.buffer(), logp1_cl.buffer(), logp2_cl.buffer(),
+            theta_derivative_cl.buffer(), theta_derivative_sum_cl.buffer(), logp_cl.buffer(),
             N, M, length(alpha)!=1, need_logp1, need_logp2);
   }
   catch (const cl::Error& e) {
@@ -125,6 +126,11 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
   copy(theta_derivative_partial_sum, theta_derivative_sum_cl);
   double theta_derivative_sum = sum(theta_derivative_partial_sum);
+  if(need_logp1 || need_logp2){
+    Eigen::VectorXd logp_partial_sum(wgs);
+    copy(logp_partial_sum, logp_cl);
+    logp += sum(logp_partial_sum);
+  }
 #else
   Matrix<T_partials_return, Dynamic, 1> theta(N);
   theta = x_val * beta_val_vec;
@@ -133,34 +139,23 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   Matrix<T_partials_return, Dynamic, 1> theta_derivative
       = as_array_or_scalar(y_val_vec) - exp(theta.array());
   double theta_derivative_sum = theta_derivative.sum();
-#endif
-  if (!std::isfinite(theta_derivative_sum)) {
-    check_finite(function, "Weight vector", beta);
-    check_finite(function, "Intercept", alpha);
-    check_finite(function, "Matrix of independent variables", theta_derivative);
-  }
+
   if (include_summand<propto>::value) {
     if (is_vector<T_y>::value) {
-#ifdef STAN_OPENCL
-      Eigen::VectorXd logp1_partial_sum(wgs);
-      copy(logp1_partial_sum, logp1_cl);
-      logp -= sum(logp1_partial_sum);
-#else
       logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1.0));
-#endif
     } else {
       logp -= lgamma(as_scalar(y_val) + 1.0);
     }
   }
   if (include_summand<propto, T_partials_return>::value) {
-#ifdef STAN_OPENCL
-    Eigen::VectorXd logp2_partial_sum(wgs);
-    copy(logp2_partial_sum, logp2_cl);
-    logp += sum(logp2_partial_sum);
-#else
     logp += (as_array_or_scalar(y_val_vec) * theta.array() - exp(theta.array()))
                 .sum();
+  }
 #endif
+  if (!std::isfinite(theta_derivative_sum)) {
+    check_finite(function, "Weight vector", beta);
+    check_finite(function, "Intercept", alpha);
+    check_finite(function, "Matrix of independent variables", x);
   }
 
   // Compute the necessary derivatives.

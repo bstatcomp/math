@@ -22,16 +22,15 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
          * @param[in] beta weight vector
          * @param[out] theta_derivative_glob intermediate variable used in the model
          * @param[out] theta_derivative_sum partially summed theta_derivative_glob (1 value per work group)
-         * @param[out] logp1_glob partially summed part of log probabiltiy (1 value per work group)
-         * @param[out] logp2_glob partially summed part of log probabiltiy (1 value per work group)
+         * @param[out] logp_glob partially summed part of log probabiltiy (1 value per work group)
          * @param N number of cases
          * @param M number of attributes
          * @param is_alpha_vector 0 or 1 - whether alpha is a vector (alternatively it is a scalar)
-         * @param need_logp1 interpreted as boolean - whether logp1_glob needs to be computed
-         * @param need_logp2 interpreted as boolean - whether logp2_glob needs to be computed
+         * @param need_logp1 interpreted as boolean - whether first part of logp_glob needs to be computed
+         * @param need_logp2 interpreted as boolean - whether second part of logp_glob needs to be computed
          */
         __kernel void poisson_log_glm(const __global double* y_glob, const __global double* x, const __global double* alpha, const __global double* beta,
-                                      __global double* theta_derivative_glob, __global double* theta_derivative_sum, __global double* logp1_glob, __global double* logp2_glob,
+                                      __global double* theta_derivative_glob, __global double* theta_derivative_sum, __global double* logp_glob,
                                       const int N, const int M, const int is_alpha_vector, const int need_logp1, const int need_logp2) {
           const int gid = get_global_id(0);
           const int lid = get_local_id(0);
@@ -41,8 +40,7 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
           __local double res_loc[LOCAL_SIZE_];
           double theta = 0;
           double theta_derivative = 0;
-          double logp1 = 0;
-          double logp2 = 0;
+          double logp = 0;
           if(gid<N){
             for (int i = 0, j = 0; i < M; i++, j += N) {
               theta += x[j + gid] * beta[i];
@@ -53,10 +51,10 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
             const double exp_theta = exp(theta);
             theta_derivative = y - exp_theta;
             if(need_logp1) {
-              logp1 = lgamma(y + 1);
+              logp = -lgamma(y + 1);
             }
             if(need_logp2){
-              logp2 = y*theta - exp_theta;
+              logp += y*theta - exp_theta;
             }
             theta_derivative_glob[gid] = theta_derivative;
             res_loc[lid] = theta_derivative;
@@ -77,10 +75,10 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
             theta_derivative_sum[wgid] = res_loc[0];
           }
 
-          if(need_logp1){
+          if(need_logp1 || need_logp2){
             barrier(CLK_LOCAL_MEM_FENCE);
             if(gid<N){
-              res_loc[lid] = logp1;
+              res_loc[lid] = logp;
             }
             else{
               res_loc[lid] = 0;
@@ -95,29 +93,7 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
               barrier(CLK_LOCAL_MEM_FENCE);
             }
             if (lid == 0) {
-              logp1_glob[wgid] = res_loc[0];
-            }
-          }
-
-          if(need_logp2){
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(gid<N){
-              res_loc[lid] = logp2;
-            }
-            else{
-              res_loc[lid] = 0;
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            for (int step = lsize / REDUCTION_STEP_SIZE; step > 0; step /= REDUCTION_STEP_SIZE) {
-              if (lid < step) {
-                for (int i = 1; i < REDUCTION_STEP_SIZE; i++) {
-                  res_loc[lid] += res_loc[lid + step * i];
-                }
-              }
-              barrier(CLK_LOCAL_MEM_FENCE);
-            }
-            if (lid == 0) {
-              logp2_glob[wgid] = res_loc[0];
+              logp_glob[wgid] = res_loc[0];
             }
           }
         }
@@ -128,7 +104,7 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const local_range_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int, int>
+const local_range_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, int, int, int, int, int>
         poisson_log_glm("poisson_log_glm", poisson_log_glm_kernel_code, {{"REDUCTION_STEP_SIZE",4},{"LOCAL_SIZE_", 64}});
 
 

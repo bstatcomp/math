@@ -158,7 +158,9 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
       || !is_constant_struct<T_alpha>::value) {
 #ifdef STAN_OPENCL
     Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
-    copy(theta_derivative, theta_derivative_cl);
+    if(!is_constant_struct<T_x>::value || (!is_constant_struct<T_alpha>::value && is_vector<T_alpha>::value)) {
+      copy(theta_derivative, theta_derivative_cl);
+    }
 #else
     Matrix<T_partials_return, Dynamic, 1> theta_derivative
         = (ytheta > cutoff)
@@ -185,7 +187,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
     }
     if (!is_constant_struct<T_alpha>::value) {
       if (is_vector<T_alpha>::value) {
-        ops_partials.edge2_.partials_ = theta_derivative;
+        ops_partials.edge2_.partials_ = std::move(theta_derivative);
       }
       else {
 #ifdef STAN_OPENCL

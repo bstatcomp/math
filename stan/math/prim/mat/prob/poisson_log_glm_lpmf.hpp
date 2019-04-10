@@ -182,7 +182,7 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   }
   if (!is_constant_struct<T_alpha>::value) {
     if (is_vector<T_alpha>::value)
-      ops_partials.edge2_.partials_ = theta_derivative;
+      ops_partials.edge2_.partials_ = std::move(theta_derivative);
     else
       ops_partials.edge2_.partials_[0] = theta_derivative_sum;
   }

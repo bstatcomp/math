@@ -245,7 +245,9 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
           && is_constant_struct<T_alpha>::value)) {
 #ifdef STAN_OPENCL
       Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
-      copy(theta_derivative, theta_derivative_cl);
+      if(!is_constant_struct<T_x>::value || (!is_constant_struct<T_alpha>::value && is_vector<T_alpha>::value)) {
+        copy(theta_derivative, theta_derivative_cl);
+      }
 #else
       Matrix<T_partials_return, Dynamic, 1> theta_derivative
           = y_arr - theta_exp * y_plus_phi / (theta_exp + phi_arr);
@@ -267,7 +269,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
       }
       if (!is_constant_struct<T_alpha>::value) {
         if (is_vector<T_alpha>::value)
-          ops_partials.edge2_.partials_ = theta_derivative;
+          ops_partials.edge2_.partials_ = std::move(theta_derivative);
         else {
 #ifdef STAN_OPENCL
           Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
@@ -284,7 +286,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
 #ifdef STAN_OPENCL
         Eigen::VectorXd phi_derivative(N);
         copy(phi_derivative, phi_derivative_cl);
-        ops_partials.edge4_.partials_ = phi_derivative;
+        ops_partials.edge4_.partials_ = std::move(phi_derivative);
 #else
         ops_partials.edge4_.partials_
             = 1 - y_plus_phi / (theta_exp + phi_arr) + log_phi

@@ -139,12 +139,12 @@ static const char *neg_binomial_2_log_glm_kernel_code = STRINGIFY(
             for (int i = 0, j = 0; i < M; i++, j += N) {
               theta += x[j + gid] * beta[i];
             }
-            if(!isfinite(theta)){
+            double phi = phi_glob[gid*is_phi_vector];
+            double y = y_glob[gid];
+            if(!isfinite(theta) || y < 0 || !isfinite(y) || !isfinite(phi)){
               logp=NAN;
             }
             theta += alpha[gid*is_alpha_vector];
-            double phi = phi_glob[gid*is_phi_vector];
-            double y = y_glob[gid];
             double log_phi = log(phi);
             double logsumexp_theta_logphi;
             if(theta > log_phi){

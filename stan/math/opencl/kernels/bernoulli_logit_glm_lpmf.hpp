@@ -17,7 +17,7 @@ static const char *bernoulli_logit_glm_kernel_code = STRINGIFY(
          * with Bernoulli distribution and logit link function.
          *
          * Must be run with at least N threads and local size equal to LOCAL_SIZE_.
-         * @param[in] y binary vector parameter
+         * @param[in] y_glob binary vector parameter
          * @param[in] x design matrix
          * @param[in] alpha intercept (in log odds)
          * @param[in] beta weight vector
@@ -30,7 +30,7 @@ static const char *bernoulli_logit_glm_kernel_code = STRINGIFY(
          * @param need_theta_derivative interpreted as boolean - whether theta_derivative needs to be computed
          * @param need_theta_derivative_sum interpreted as boolean - whether theta_derivative_sum needs to be computeds
          */
-        __kernel void bernoulli_logit_glm(const __global double* y, const __global double* x, const __global double* alpha, const __global double* beta,
+        __kernel void bernoulli_logit_glm(const __global double* y_glob, const __global double* x, const __global double* alpha, const __global double* beta,
                                           __global double* logp_glob, __global double* theta_derivative_glob, __global double* theta_derivative_sum,
                                           const int N, const int M, const int is_alpha_vector, const int need_theta_derivative, const int need_theta_derivative_sum) {
           const int gid = get_global_id(0);
@@ -47,23 +47,27 @@ static const char *bernoulli_logit_glm_kernel_code = STRINGIFY(
             for (int i = 0, j = 0; i < M; i++, j += N) {
               ytheta += x[j + gid] * beta[i];
             }
-            const double sign = 2 * y[gid] - 1;
+            const double y = y_glob[gid];
+            const double sign_ = 2 * y - 1;
             ytheta += alpha[gid*is_alpha_vector];
-            ytheta *= sign;
+            ytheta *= sign_;
+            if(y > 1 || y < 0 || !isfinite(ytheta)){
+              logp=NAN;
+            }
             const double exp_m_ytheta = exp(-ytheta);
 
             const double cutoff = 20.0;
             if(ytheta>cutoff){
-              logp = -exp_m_ytheta;
+              logp -= exp_m_ytheta;
               theta_derivative = -exp_m_ytheta;
             }
             else if (ytheta < -cutoff){
-              logp = ytheta;
-              theta_derivative = sign;
+              logp += ytheta;
+              theta_derivative = sign_;
             }
             else{
-              logp = -log1p(exp_m_ytheta);
-              theta_derivative = sign * exp_m_ytheta / (exp_m_ytheta+1);
+              logp += -log1p(exp_m_ytheta);
+              theta_derivative = sign_ * exp_m_ytheta / (exp_m_ytheta+1);
             }
 
             if(need_theta_derivative){

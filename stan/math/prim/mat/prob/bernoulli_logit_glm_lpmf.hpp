@@ -82,7 +82,9 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
   const size_t N = x.rows();
   const size_t M = x.cols();
 
+#ifndef STAN_OPENCL
   check_bounded(function, "Vector of dependent variables", y, 0, 1);
+#endif
   check_consistent_size(function, "Vector of dependent variables", y, N);
   check_consistent_size(function, "Weight vector", beta, M);
   if (is_vector<T_alpha>::value)
@@ -147,6 +149,9 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
               .sum();
 #endif
   if (!std::isfinite(logp)) {
+#ifdef STAN_OPENCL
+    check_bounded(function, "Vector of dependent variables", y, 0, 1);
+#endif
     check_finite(function, "Weight vector", beta);
     check_finite(function, "Intercept", alpha);
     check_finite(function, "Matrix of independent variables", x);

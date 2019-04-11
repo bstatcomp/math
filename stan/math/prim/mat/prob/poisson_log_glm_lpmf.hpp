@@ -78,7 +78,9 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   const size_t N = x.rows();
   const size_t M = x.cols();
 
+#ifndef STAN_OPENCL
   check_nonnegative(function, "Vector of dependent variables", y);
+#endif
   check_consistent_size(function, "Vector of dependent variables", y, N);
   check_consistent_size(function, "Weight vector", beta, M);
   if (is_vector<T_alpha>::value)
@@ -153,6 +155,9 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   }
 #endif
   if (!std::isfinite(theta_derivative_sum)) {
+#ifdef STAN_OPENCL
+    check_nonnegative(function, "Vector of dependent variables", y);
+#endif
     check_finite(function, "Weight vector", beta);
     check_finite(function, "Intercept", alpha);
     check_finite(function, "Matrix of independent variables", x);

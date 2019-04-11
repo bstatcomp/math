@@ -111,9 +111,11 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   const size_t N = x.rows();
   const size_t M = x.cols();
 
+#ifndef STAN_OPENCL
   check_nonnegative(function, "Failures variables", y);
   check_finite(function, "Weight vector", beta);
   check_finite(function, "Intercept", alpha);
+#endif
   check_positive_finite(function, "Precision parameter", phi);
   check_consistent_size(function, "Vector of dependent variables", y, N);
   check_consistent_size(function, "Weight vector", beta, M);
@@ -184,6 +186,9 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   copy(logp_partial_sum, logp_cl);
   double logp_sum = sum(logp_partial_sum);
   if(!std::isfinite(logp_sum)){
+    check_nonnegative(function, "Failures variables", y);
+    check_finite(function, "Weight vector", beta);
+    check_finite(function, "Intercept", alpha);
     check_finite(function, "Matrix of independent variables", x);
   }
   if(need_logp){

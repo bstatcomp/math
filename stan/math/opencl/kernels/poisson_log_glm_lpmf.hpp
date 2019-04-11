@@ -50,6 +50,9 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
             const double y = y_glob[gid];
             const double exp_theta = exp(theta);
             theta_derivative = y - exp_theta;
+            if(y<0 || !isfinite(y) || !isfinite(theta)){
+              theta_derivative=NAN;
+            }
             if(need_logp1) {
               logp = -lgamma(y + 1);
             }

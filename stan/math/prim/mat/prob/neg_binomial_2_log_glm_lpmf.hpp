@@ -130,7 +130,11 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     return 0.0;
 
   const auto& x_val = value_of_rec(x);
-  const auto& y_val = value_of_rec(y);
+#ifdef STAN_OPENCL
+  const auto &y_val = value_of(y);
+#else
+  const auto &y_val = value_of_rec(y);
+#endif
   const auto& beta_val = value_of_rec(beta);
   const auto& alpha_val = value_of_rec(alpha);
   const auto& phi_val = value_of_rec(phi);
@@ -149,7 +153,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   const int local_size = opencl_kernels::neg_binomial_2_log_glm.make_functor.get_opts().at("LOCAL_SIZE_");
   const int wgs = (N+local_size-1)/local_size;
 
-  const matrix_cl y_cl(y_val_vec);
+  const matrix_cl y_cl = matrix_cl::constant(y_val_vec);
   const matrix_cl x_cl = matrix_cl::constant(x_val);
   const matrix_cl beta_cl(beta_val_vec);
   const matrix_cl alpha_cl(alpha_val_vec);

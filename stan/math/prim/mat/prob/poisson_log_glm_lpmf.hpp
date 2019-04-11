@@ -91,7 +91,11 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     return 0.0;
 
   const auto& x_val = value_of_rec(x);
-  const auto& y_val = value_of_rec(y);
+#ifdef STAN_OPENCL
+  const auto &y_val = value_of(y);
+#else
+  const auto &y_val = value_of_rec(y);
+#endif
   const auto& beta_val = value_of_rec(beta);
   const auto& alpha_val = value_of_rec(alpha);
 
@@ -103,7 +107,7 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   const int local_size = opencl_kernels::poisson_log_glm.make_functor.get_opts().at("LOCAL_SIZE_");
   const int wgs = (N+local_size-1)/local_size;
 
-  const matrix_cl y_cl(y_val_vec);
+  const matrix_cl y_cl = matrix_cl::constant(y_val_vec);
   const matrix_cl x_cl = matrix_cl::constant(x_val);
   const matrix_cl beta_cl(beta_val_vec);
   const matrix_cl alpha_cl(alpha_val_vec);
@@ -123,8 +127,6 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   catch (const cl::Error& e) {
     check_opencl_error(function, e);
   }
-  Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
-  copy(theta_derivative, theta_derivative_cl);
   Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
   copy(theta_derivative_partial_sum, theta_derivative_sum_cl);
   double theta_derivative_sum = sum(theta_derivative_partial_sum);
@@ -176,15 +178,21 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     ops_partials.edge3_.partials_ = x_val.transpose() * theta_derivative;
 #endif
   }
-  if (!is_constant_struct<T_x>::value) {
-    ops_partials.edge1_.partials_
-        = (beta_val_vec * theta_derivative.transpose()).transpose();
-  }
-  if (!is_constant_struct<T_alpha>::value) {
-    if (is_vector<T_alpha>::value)
-      ops_partials.edge2_.partials_ = std::move(theta_derivative);
-    else
-      ops_partials.edge2_.partials_[0] = theta_derivative_sum;
+  if(!is_constant_struct<T_x>::value || !is_constant_struct<T_alpha>::value) {
+#ifdef STAN_OPENCL
+    Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
+    copy(theta_derivative, theta_derivative_cl);
+#endif
+    if (!is_constant_struct<T_x>::value) {
+      ops_partials.edge1_.partials_
+              = (beta_val_vec * theta_derivative.transpose()).transpose();
+    }
+    if (!is_constant_struct<T_alpha>::value) {
+      if (is_vector<T_alpha>::value)
+        ops_partials.edge2_.partials_ = std::move(theta_derivative);
+      else
+        ops_partials.edge2_.partials_[0] = theta_derivative_sum;
+    }
   }
   return ops_partials.build(logp);
 }

@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 
 /**
  *  @file stan/math/opencl/matrix_cl.hpp
@@ -168,7 +169,7 @@ class matrix_cl {
 
   /**
    * Constructor for the matrix_cl that
-   * creates a copy of the Eigen matrix on the OpenCL device.
+   * creates a copy of the Eigen matrix on the OpenCL device. If the matrix contains integers they will be converted to doubles.
    *
    * @tparam T type of matrix
    * @tparam R rows of matrix
@@ -178,8 +179,8 @@ class matrix_cl {
    * @throw <code>std::system_error</code> if the
    * matrices do not have matching dimensions
    */
-  template <int R, int C>
-  explicit matrix_cl(const Eigen::Matrix<double, R, C>& A)
+  template <typename T, int R, int C, typename Cond = std::enable_if<std::is_same<T,double>::value || std::is_same<T,int>::value>>
+  explicit matrix_cl(const Eigen::Matrix<T, R, C>& A)
       : rows_(A.rows()), cols_(A.cols()) {
     cl::Context& ctx = opencl_context.context();
     cl::CommandQueue& queue = opencl_context.queue();
@@ -192,7 +193,7 @@ class matrix_cl {
 
   /**
    * Constructor for the matrix_cl that
-   * creates a copy of the Eigen matrix on the OpenCL device.
+   * creates a copy of the Eigen matrix on the OpenCL device. If the matrix contains integers they will be converted to doubles.
    *
    *
    * @tparam T type of data in the Eigen matrix
@@ -201,8 +202,8 @@ class matrix_cl {
    * @throw <code>std::system_error</code> if the
    * matrices do not have matching dimensions
    */
-  template <int R, int C>
-  explicit matrix_cl(const Eigen::Map<const Eigen::Matrix<double, R, C>>& A)
+  template <typename T, int R, int C, typename Cond = std::enable_if<std::is_same<T,double>::value || std::is_same<T,int>::value>>
+  explicit matrix_cl(const Eigen::Map<const Eigen::Matrix<T, R, C>>& A)
           : rows_(A.rows()), cols_(A.cols()) {
     if (size() > 0) {
       cl::Context& ctx = opencl_context.context();
@@ -260,18 +261,19 @@ class matrix_cl {
     }
 
     /**
-   * Constructs a const matrix_cl that constains a copy of the Eigen matrix on the OpenCL device. If the matrix already has a cached copy on the device, the cache is used and no copying is done.
+   * Constructs a const matrix_cl that constains a copy of the Eigen matrix on the OpenCL device. If the matrix contains integers they will be converted to doubles.
+   * If the matrix already has a cached copy on the device, the cache is used and no copying is done.
    *
    *
    * @tparam R row type of input matrix
    * @tparam C column type of input matrix
    * @param A the Eigen matrix
    */
-    template <int R, int C>
-    static const matrix_cl constant(const Eigen::Matrix<double, R, C>& A){
+    template <typename T, int R, int C, typename Cond = std::enable_if<std::is_same<T,double>::value || std::is_same<T,int>::value>>
+    static const matrix_cl constant(const Eigen::Matrix<T, R, C>& A){
 #ifdef STAN_OPENCL_CACHE
       if (A.opencl_buffer_() != NULL) {
-        return matrix_cl(A.opencl_buffer_ ,A.rows(), A.cols());
+        return matrix_cl(A.opencl_buffer_, A.rows(), A.cols());
       }
       else{
         return matrix_cl(A);
@@ -279,6 +281,19 @@ class matrix_cl {
 #else
       return matrix_cl(A);
 #endif
+    }
+
+    /**
+      * Constructs a const matrix_cl that constains a single value on the OpenCL device.
+      *
+      *
+      * @tparam R row type of input matrix
+      * @tparam C column type of input matrix
+      * @param A the Eigen matrix
+      */
+      template<typename T>
+    static const matrix_cl constant(T A){
+      return matrix_cl(A);
     }
 
   matrix_cl& operator=(const matrix_cl& a) {

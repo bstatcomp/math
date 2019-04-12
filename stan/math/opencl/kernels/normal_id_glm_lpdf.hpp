@@ -86,9 +86,7 @@ static const char *normal_id_glm_kernel_code = STRINGIFY(
 
           if(need_mu_derivative_sum){
             barrier(CLK_LOCAL_MEM_FENCE);
-            if(gid<N){
-              res_loc[lid] = mu_derivative;
-            }
+            res_loc[lid] = mu_derivative;
             barrier(CLK_LOCAL_MEM_FENCE);
             for (int step = lsize / REDUCTION_STEP_SIZE; step > 0; step /= REDUCTION_STEP_SIZE) {
               if (lid < step) {
@@ -105,9 +103,7 @@ static const char *normal_id_glm_kernel_code = STRINGIFY(
 
           if(need_log_sigma_sum){
             barrier(CLK_LOCAL_MEM_FENCE);
-            if(gid<N){
-              res_loc[lid] = log_sigma;
-            }
+            res_loc[lid] = log_sigma;
             barrier(CLK_LOCAL_MEM_FENCE);
             for (int step = lsize / REDUCTION_STEP_SIZE; step > 0; step /= REDUCTION_STEP_SIZE) {
               if (lid < step) {

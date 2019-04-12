@@ -60,11 +60,8 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
               logp += y*theta - exp_theta;
             }
             theta_derivative_glob[gid] = theta_derivative;
-            res_loc[lid] = theta_derivative;
           }
-          else{
-            res_loc[lid] = 0;
-          }
+          res_loc[lid] = theta_derivative;
           barrier(CLK_LOCAL_MEM_FENCE);
           for (int step = lsize / REDUCTION_STEP_SIZE; step > 0; step /= REDUCTION_STEP_SIZE) {
             if (lid < step) {
@@ -80,12 +77,7 @@ static const char *poisson_log_glm_kernel_code = STRINGIFY(
 
           if(need_logp1 || need_logp2){
             barrier(CLK_LOCAL_MEM_FENCE);
-            if(gid<N){
-              res_loc[lid] = logp;
-            }
-            else{
-              res_loc[lid] = 0;
-            }
+            res_loc[lid] = logp;
             barrier(CLK_LOCAL_MEM_FENCE);
             for (int step = lsize / REDUCTION_STEP_SIZE; step > 0; step /= REDUCTION_STEP_SIZE) {
               if (lid < step) {

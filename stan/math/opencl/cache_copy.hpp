@@ -41,8 +41,12 @@ inline void cache_copy(cl::Buffer dst, const Eigen::Matrix<double, R, C>& src) {
     }
   }
 #else
-  queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * src.size(),
-                           src.data());
+  try {
+    queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * src.size(),
+                             src.data());
+  } catch (const cl::Error& e) {
+    check_opencl_error("copy Eigen->GPU", e);
+  }
 #endif
 }
 
@@ -77,10 +81,14 @@ inline void cache_copy(cl::Buffer& dst, const Eigen::Matrix<int, R, C>& src) {
     }
   }
 #else
-  cl::Buffer tmp(ctx, CL_MEM_READ_WRITE, sizeof(int) * src.size());
-  queue.enqueueWriteBuffer(tmp, CL_TRUE, 0, sizeof(double) * src.size(),
-                           src.data());
-  opencl_kernels::convert_int_to_double(cl::NDRange(src.size()),tmp, dst);
+  try{
+    cl::Buffer tmp(ctx, CL_MEM_READ_WRITE, sizeof(int) * src.size());
+    queue.enqueueWriteBuffer(tmp, CL_TRUE, 0, sizeof(int) * src.size(),
+                             src.data());
+    opencl_kernels::convert_int_to_double(cl::NDRange(src.size()),tmp, dst);
+  } catch (const cl::Error& e) {
+    check_opencl_error("copy Eigen->GPU", e);
+  }
 #endif
 }
 

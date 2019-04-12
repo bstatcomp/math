@@ -101,6 +101,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   using Eigen::Array;
   using Eigen::Dynamic;
   using Eigen::Matrix;
+  using Eigen::VectorXd;
 
   if (!(stan::length(y) && stan::length(x) && stan::length(beta)
         && stan::length(phi)))
@@ -186,7 +187,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     check_opencl_error(function, e);
   }
 
-  Eigen::VectorXd logp_partial_sum(wgs);
+  VectorXd logp_partial_sum(wgs);
   copy(logp_partial_sum, logp_cl);
   double logp_sum = sum(logp_partial_sum);
   if(!std::isfinite(logp_sum)){
@@ -293,7 +294,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     if (!is_constant_struct<T_precision>::value) {
       if (is_vector<T_precision>::value) {
 #ifdef STAN_OPENCL
-        Eigen::VectorXd phi_derivative(N);
+        VectorXd phi_derivative(N);
         copy(phi_derivative, phi_derivative_cl);
         ops_partials.edge4_.partials_ = std::move(phi_derivative);
 #else
@@ -304,7 +305,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
 #endif
       } else {
 #ifdef STAN_OPENCL
-        Eigen::VectorXd phi_derivative(wgs);
+        VectorXd phi_derivative(wgs);
         copy(phi_derivative, phi_derivative_cl);
         ops_partials.edge4_.partials_[0] = sum(phi_derivative);
 #else

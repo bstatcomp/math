@@ -75,6 +75,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
   using Eigen::Array;
   using Eigen::Dynamic;
   using Eigen::Matrix;
+  using Eigen::VectorXd;
   using std::exp;
 
   if (!(stan::length(y) && stan::length(x) && stan::length(beta)
@@ -140,7 +141,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
   catch (const cl::Error& e) {
     check_opencl_error(function, e);
   }
-  Eigen::VectorXd y_minus_mu_over_sigma_squared_partial_sum(wgs);
+  VectorXd y_minus_mu_over_sigma_squared_partial_sum(wgs);
   copy(y_minus_mu_over_sigma_squared_partial_sum, y_minus_mu_over_sigma_squared_sum_cl);
   double y_minus_mu_over_sigma_squared_sum = sum(y_minus_mu_over_sigma_squared_partial_sum);
 #else
@@ -191,7 +192,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
         ops_partials.edge3_.partials_ = mu_derivative;
       else {
 #ifdef STAN_OPENCL
-        Eigen::VectorXd mu_derivative_partial_sum(wgs);
+        VectorXd mu_derivative_partial_sum(wgs);
         copy(mu_derivative_partial_sum, mu_derivative_sum_cl);
         ops_partials.edge3_.partials_[0] = sum(mu_derivative_partial_sum);
 #else
@@ -202,7 +203,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
     if (!is_constant_struct<T_scale>::value) {
       if (is_vector<T_scale>::value) {
 #ifdef STAN_OPENCL
-        Eigen::VectorXd sigma_derivative(N);
+        VectorXd sigma_derivative(N);
         copy(sigma_derivative, sigma_derivative_cl);
         ops_partials.edge5_.partials_ = std::move(sigma_derivative);
 #else
@@ -245,7 +246,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
   if (include_summand<propto, T_scale>::value) {
     if (is_vector<T_scale>::value) {
 #ifdef STAN_OPENCL
-      Eigen::VectorXd log_sigma_partial_sum(wgs);
+      VectorXd log_sigma_partial_sum(wgs);
       copy(log_sigma_partial_sum, log_sigma_sum_cl);
       logp -= sum(log_sigma_partial_sum);
 #else

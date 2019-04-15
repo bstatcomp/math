@@ -58,6 +58,7 @@
 #include <stan/math/rev/mat/fun/trace_quad_form.hpp>
 #include <stan/math/rev/mat/fun/typedefs.hpp>
 #include <stan/math/rev/mat/fun/variance.hpp>
+#include <stan/math/rev/mat/fun/generalized_logistic_model.hpp>
 
 #include <stan/math/rev/mat/functor/adj_jac_apply.hpp>
 #include <stan/math/rev/mat/functor/algebra_solver.hpp>

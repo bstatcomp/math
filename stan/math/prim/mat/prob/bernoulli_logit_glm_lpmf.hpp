@@ -67,12 +67,12 @@ template <bool propto, typename T_y, typename T_x, typename T_alpha,
 typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
     const T_y &y, const T_x &x, const T_alpha &alpha, const T_beta &beta) {
   static const char *function = "bernoulli_logit_glm_lpmf";
-  typedef typename stan::partials_return_type<T_y, T_x, T_alpha, T_beta>::type
+  typedef typename partials_return_type<T_y, T_x, T_alpha, T_beta>::type
       T_partials_return;
   typedef typename std::conditional<
       is_vector<T_y>::value,
-      Eigen::Matrix<typename stan::partials_return_type<T_y>::type, -1, 1>,
-      typename stan::partials_return_type<T_y>::type>::type T_y_val;
+      Eigen::Matrix<typename partials_return_type<T_y>::type, -1, 1>,
+      typename partials_return_type<T_y>::type>::type T_y_val;
 
   using Eigen::Dynamic;
   using Eigen::Matrix;
@@ -151,10 +151,10 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
   // And compute the derivatives wrt theta.
   static const double cutoff = 20.0;
   Eigen::Array<T_partials_return, Dynamic, 1> exp_m_ytheta = exp(-ytheta);
-  logp += (ytheta > cutoff)
-              .select(-exp_m_ytheta,
-                      (ytheta < -cutoff).select(ytheta, -log1p(exp_m_ytheta)))
-              .sum();
+  logp += sum(
+      (ytheta > cutoff)
+          .select(-exp_m_ytheta,
+                  (ytheta < -cutoff).select(ytheta, -log1p(exp_m_ytheta))));
 #endif
   if (!std::isfinite(logp)) {
 #ifdef STAN_OPENCL
@@ -208,7 +208,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
         copy(theta_derivative_partial_sum, theta_derivative_sum_cl);
         ops_partials.edge2_.partials_[0] = sum(theta_derivative_partial_sum);
 #else
-        ops_partials.edge2_.partials_[0] = theta_derivative.sum();
+        ops_partials.edge2_.partials_[0] = sum(theta_derivative);
 #endif
       }
     }

@@ -59,12 +59,12 @@ template <bool propto, typename T_y, typename T_x, typename T_alpha,
 typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     const T_y& y, const T_x& x, const T_alpha& alpha, const T_beta& beta) {
   static const char* function = "poisson_log_glm_lpmf";
-  typedef typename stan::partials_return_type<T_y, T_x, T_alpha, T_beta>::type
+  typedef typename partials_return_type<T_y, T_x, T_alpha, T_beta>::type
       T_partials_return;
   typedef typename std::conditional<
       is_vector<T_alpha>::value,
-      Eigen::Array<typename stan::partials_return_type<T_alpha>::type, -1, 1>,
-      typename stan::partials_return_type<T_alpha>::type>::type T_alpha_val;
+      Eigen::Array<typename partials_return_type<T_alpha>::type, -1, 1>,
+      typename partials_return_type<T_alpha>::type>::type T_alpha_val;
 
   using Eigen::Dynamic;
   using Eigen::Matrix;
@@ -142,18 +142,22 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
 
   Matrix<T_partials_return, Dynamic, 1> theta_derivative
       = as_array_or_scalar(y_val_vec) - exp(theta.array());
-  double theta_derivative_sum = theta_derivative.sum();
-
+  double theta_derivative_sum = sum(theta_derivative);
+  if (!std::isfinite(theta_derivative_sum)) {
+    check_finite(function, "Weight vector", beta);
+    check_finite(function, "Intercept", alpha);
+    check_finite(function, "Matrix of independent variables", theta);
+  }
   if (include_summand<propto>::value) {
     if (is_vector<T_y>::value) {
-      logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1.0));
+      logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1));
     } else {
-      logp -= lgamma(as_scalar(y_val) + 1.0);
+      logp -= lgamma(as_scalar(y_val) + 1);
     }
   }
   if (include_summand<propto, T_partials_return>::value) {
-    logp += (as_array_or_scalar(y_val_vec) * theta.array() - exp(theta.array()))
-                .sum();
+    logp += sum(as_array_or_scalar(y_val_vec) * theta.array()
+                - exp(theta.array()));
   }
 #endif
   if (!std::isfinite(theta_derivative_sum)) {
@@ -202,7 +206,6 @@ inline typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     const T_y& y, const T_x& x, const T_alpha& alpha, const T_beta& beta) {
   return poisson_log_glm_lpmf<false>(y, x, alpha, beta);
 }
-
 }  // namespace math
 }  // namespace stan
 #endif

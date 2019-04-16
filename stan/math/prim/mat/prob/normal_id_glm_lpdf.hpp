@@ -69,8 +69,8 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
                                               T_scale>::type T_partials_return;
   typedef typename std::conditional<
       is_vector<T_scale>::value,
-      Eigen::Array<typename stan::partials_return_type<T_scale>::type, -1, 1>,
-      typename stan::partials_return_type<T_scale>::type>::type T_scale_val;
+      Eigen::Array<typename partials_return_type<T_scale>::type, -1, 1>,
+      typename partials_return_type<T_scale>::type>::type T_scale_val;
 
   using Eigen::Array;
   using Eigen::Dynamic;
@@ -196,7 +196,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
         copy(mu_derivative_partial_sum, mu_derivative_sum_cl);
         ops_partials.edge3_.partials_[0] = sum(mu_derivative_partial_sum);
 #else
-        ops_partials.edge3_.partials_[0] = mu_derivative.sum();
+        ops_partials.edge3_.partials_[0] = sum(mu_derivative);
 #endif
       }
     }
@@ -209,14 +209,14 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 #else
         Array<T_partials_return, Dynamic, 1> y_minus_mu_over_sigma_squared
             = y_minus_mu_over_sigma * y_minus_mu_over_sigma;
-        y_minus_mu_over_sigma_squared_sum = y_minus_mu_over_sigma_squared.sum();
+        y_minus_mu_over_sigma_squared_sum = sum(y_minus_mu_over_sigma_squared);
         ops_partials.edge5_.partials_
             = (y_minus_mu_over_sigma_squared - 1) * inv_sigma;
 #endif
       } else {
 #ifndef STAN_OPENCL
         y_minus_mu_over_sigma_squared_sum
-            = (y_minus_mu_over_sigma * y_minus_mu_over_sigma).sum();
+            = sum(y_minus_mu_over_sigma * y_minus_mu_over_sigma);
 #endif
         ops_partials.edge5_.partials_[0]
             = (y_minus_mu_over_sigma_squared_sum - N) * as_scalar(inv_sigma);
@@ -226,14 +226,11 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 #ifndef STAN_OPENCL
   else {
     y_minus_mu_over_sigma_squared_sum
-        = (y_minus_mu_over_sigma * y_minus_mu_over_sigma).sum();
+        = sum(y_minus_mu_over_sigma * y_minus_mu_over_sigma);
   }
 #endif
 
-  if (!std::isfinite(
-          y_minus_mu_over_sigma_squared_sum)) {  // only do potentially
-                                                 // expensive checks if they are
-                                                 // really needed
+  if (!std::isfinite(y_minus_mu_over_sigma_squared_sum)) {
     check_finite(function, "Vector of dependent variables", y);
     check_finite(function, "Weight vector", beta);
     check_finite(function, "Intercept", alpha);

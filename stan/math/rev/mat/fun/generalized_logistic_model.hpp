@@ -9,7 +9,7 @@
 namespace stan {
   namespace math {
     
-    stan::math::var model2_cpu(const std::vector<int>& IDp, const std::vector<int>& IDs, const vector_d& time, const vector_d& S, const vector_d& APOE4, const std::vector<int>& AGE,
+    stan::math::var generalized_logistic_model(const std::vector<int>& IDp, const std::vector<int>& IDs, const vector_d& time, const vector_d& S, const vector_d& APOE4, const std::vector<int>& AGE,
                           const std::vector<int>& SEX, const std::vector<int>& pbo_flag, const std::vector<int>& COMED, stan::math::var &theta_S0v, stan::math::var &theta_rv,
                           stan::math::var &tauv, stan::math::var &theta_AGEv, stan::math::var &theta_APOE4_rv, stan::math::var &theta_APOE4_bv, stan::math::var &theta_COMEDv,
                           stan::math::var &betav, stan::math::var &theta_SEXv, stan::math::var &beta_batemanv, stan::math::var &kelv, stan::math::var &keqv, 

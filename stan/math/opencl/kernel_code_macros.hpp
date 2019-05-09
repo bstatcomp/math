@@ -13,7 +13,7 @@
 #endif
 
 #ifndef COMMON_CODE
-#define COMMON_CODE(...) boost::replace_all_copy(std::string(STRINGIFY(__VA_ARGS__)),"enum class", "enum").c_str(); __VA_ARGS__
+#define COMMON_CODE(...) boost::replace_all_copy(std::string(STRINGIFY(__VA_ARGS__)),"enum class", "enum"); __VA_ARGS__
 #endif
 
 

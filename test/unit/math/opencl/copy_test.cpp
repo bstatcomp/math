@@ -12,8 +12,8 @@ TEST(MathMatrixOpenCL, matrix_cl_copy_cache) {
   auto m = stan::math::matrix_d::Random(100, 100).eval();
   auto m_back = stan::math::matrix_d(100, 100);
   stan::math::matrix_cl d11(100, 100);
-  stan::math::copy(d11, m);
-  stan::math::copy(m_back, d11);
+  d11 = stan::math::to_matrix_cl(m);
+  m_back = stan::math::from_matrix_cl(d11);
 }
 
 TEST(MathMatrixOpenCL, matrix_cl_var_copy) {
@@ -23,15 +23,15 @@ TEST(MathMatrixOpenCL, matrix_cl_var_copy) {
     for (int j = 0; j < 5; ++j)
       m(i, j) = pos_++;
 
-  stan::math::matrix_cl d1_gpu(5, 5);
-  stan::math::copy(d1_gpu, m);
+  stan::math::matrix_cl d1_cl(5, 5);
+  d1_cl = stan::math::to_matrix_cl(m);
   stan::math::matrix_d d1_cpu_return(5, 5);
-  stan::math::copy(d1_cpu_return, d1_gpu);
-  EXPECT_EQ(1.1, d1_cpu_return(0, 0));
-  EXPECT_EQ(6.1, d1_cpu_return(1, 0));
-  EXPECT_EQ(11.1, d1_cpu_return(2, 0));
-  EXPECT_EQ(16.1, d1_cpu_return(3, 0));
-  EXPECT_EQ(21.1, d1_cpu_return(4, 0));
+  d1_cpu_return = stan::math::from_matrix_cl(d1_cl);
+  EXPECT_EQ(m(0, 0), d1_cpu_return(0, 0));
+  EXPECT_EQ(m(1, 0), d1_cpu_return(1, 0));
+  EXPECT_EQ(m(2, 0), d1_cpu_return(2, 0));
+  EXPECT_EQ(m(3, 0), d1_cpu_return(3, 0));
+  EXPECT_EQ(m(4, 0), d1_cpu_return(4, 0));
 }
 
 TEST(MathMatrixOpenCL, matrix_cl_copy) {
@@ -53,16 +53,16 @@ TEST(MathMatrixOpenCL, matrix_cl_copy) {
   // vector
   stan::math::matrix_cl d11_cl(3, 1);
   stan::math::matrix_cl d111_cl(3, 1);
-  EXPECT_NO_THROW(d11_cl = stan::math::to_matrix_cl(d1_cpu));
+  EXPECT_NO_THROW(d11_cl = stan::math::to_matrix_cl(d1));
   EXPECT_NO_THROW(d111_cl = stan::math::copy_cl(d11_cl));
-  EXPECT_NO_THROW(d1_a_cpu = stan::math::from_matrix_cl(d11_cl));
-  EXPECT_NO_THROW(d1_b_cpu = stan::math::from_matrix_cl(d111_cl));
-  EXPECT_EQ(1, d1_a_cpu(0));
-  EXPECT_EQ(2, d1_a_cpu(1));
-  EXPECT_EQ(3, d1_a_cpu(2));
-  EXPECT_EQ(1, d1_b_cpu(0));
-  EXPECT_EQ(2, d1_b_cpu(1));
-  EXPECT_EQ(3, d1_b_cpu(2));
+  EXPECT_NO_THROW(d1_a = stan::math::from_matrix_cl(d11_cl));
+  EXPECT_NO_THROW(d1_b = stan::math::from_matrix_cl(d111_cl));
+  EXPECT_EQ(1, d1_a(0));
+  EXPECT_EQ(2, d1_a(1));
+  EXPECT_EQ(3, d1_a(2));
+  EXPECT_EQ(1, d1_b(0));
+  EXPECT_EQ(2, d1_b(1));
+  EXPECT_EQ(3, d1_b(2));
 }
 
 TEST(MathMatrixCL, matrix_cl_matrix_copy) {
@@ -184,4 +184,5 @@ TEST(MathMatrixCL, matrix_cl_pack_unpack_copy_exception) {
                    packed_mat, 1),
                std::invalid_argument);
 }
+
 #endif

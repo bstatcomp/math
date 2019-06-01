@@ -16,6 +16,7 @@
 #include <stan/math/rev/scal/fun/value_of_rec.hpp>
 #include <stan/math/prim/arr/fun/vec_concat.hpp>
 
+
 #include <CL/cl.hpp>
 #include <iostream>
 #include <vector>
@@ -42,6 +43,39 @@ inline matrix_cl to_matrix_cl(const Eigen::Matrix<double, R, C>& src) try {
     return dst;
   }
   internal::cache_copy(dst.buffer(), src);
+  return dst;
+} catch (const cl::Error& e) {
+  check_opencl_error("copy Eigen->(OpenCL)", e);
+  matrix_cl dst(src.rows(), src.cols());
+  return dst;
+}
+
+/**
+ * Copies the source primitive type Eigen matrix to
+ * the destination matrix that is stored
+ * on the OpenCL device.
+ *
+ * @tparam R Compile time rows of the Eigen matrix
+ * @tparam C Compile time columns of the Eigen matrix
+ * @param src source Eigen matrix
+ * @return matrix_cl with a copy of the data in the source matrix
+ */
+template <int R, int C>
+inline matrix_cl to_matrix_cl(const Eigen::Matrix<var, R, C>& src) try {
+  matrix_cl dst(src.rows(), src.cols());
+  if (src.size() == 0) {
+    return dst;
+  }
+  cl::Context& ctx = opencl_context.context();
+  cl::CommandQueue queue = opencl_context.queue();
+  Eigen::Matrix<double, R, C> temp_matrix(src.rows(), src.cols());
+  for(int i = 0; i < src.rows(); i++) {
+    for(int j = 0; j < src.cols(); j++) {
+      temp_matrix(i, j) = value_of_rec(src(i, j));
+    }
+  }
+  queue.enqueueWriteBuffer(dst.buffer(), CL_TRUE, 0, sizeof(double) * src.size(),
+                           temp_matrix.data());
   return dst;
 } catch (const cl::Error& e) {
   check_opencl_error("copy Eigen->(OpenCL)", e);
@@ -110,6 +144,7 @@ inline std::vector<double> packed_copy(const matrix_cl& src) try {
   return dst;
 } catch (const cl::Error& e) {
   check_opencl_error("packed_copy (OpenCL->std::vector)", e);
+  const int packed_size = src.rows() * (src.rows() + 1) / 2;
   std::vector<double> dst(packed_size);
   return dst;
 }
@@ -128,7 +163,7 @@ inline std::vector<double> packed_copy(const matrix_cl& src) try {
  * for the packed triangular matrix
  */
 template <TriangularViewCL triangular_view>
-inline matrix_cl packed_copy(const std::vector<double>& src, int rows) {
+inline matrix_cl packed_copy(const std::vector<double>& src, int rows) try {
   const int packed_size = rows * (rows + 1) / 2;
   check_size_match("copy (packed std::vector -> OpenCL)", "src.size()",
                    src.size(), "rows * (rows + 1) / 2", packed_size);
@@ -147,8 +182,7 @@ inline matrix_cl packed_copy(const std::vector<double>& src, int rows) {
                                      packed, dst.rows(), dst.rows(),
                                      triangular_view);
   return dst;
-}
-catch (const cl::Error& e) {
+} catch (const cl::Error& e) {
   check_opencl_error("packed_copy (std::vector->OpenCL)", e);
   matrix_cl dst(rows, rows);
   return dst;

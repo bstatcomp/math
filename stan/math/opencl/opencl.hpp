@@ -11,6 +11,7 @@
 #include <stan/math/opencl/identity.hpp>
 #include <stan/math/opencl/lower_tri_inverse.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/matrix_v_cl.hpp>
 #include <stan/math/opencl/multiply.hpp>
 #include <stan/math/opencl/multiply_transpose.hpp>
 #include <stan/math/opencl/sub_block.hpp>

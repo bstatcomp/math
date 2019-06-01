@@ -3,7 +3,6 @@
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/opencl_context.hpp>
-#include <stan/math/opencl/kernel_cl.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <CL/cl.hpp>
 

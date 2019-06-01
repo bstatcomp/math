@@ -70,13 +70,29 @@ class mdivide_left_tri_vv_vari : public vari {
         C_[pos++] = B(i, j).val();
       }
     }
+    Matrix<double, R1, C2> C(M_, N_);    
+#ifdef STAN_OPENCL
+    if (A.rows()
+        >= opencl_context.tuning_opts().tri_inverse_size_worth_transfer) {
+      matrix_cl A_cl(A_, M_, M_);
+      matrix_cl C_cl(C_, M_, N_);
+      if (TriView == Eigen::Lower) {
+        A_cl = tri_inverse<TriangularViewCL::Lower>(A_cl);
+      } else {
+        A_cl = tri_inverse<TriangularViewCL::Upper>(A_cl);
+      }
+      C_cl = A_cl * C_cl;
+      C = from_matrix_cl(C_cl);
+    } else {
+#endif
+      C = Map<Matrix<double, R1, C2> >(C_, M_, N_);
+      C = Map<Matrix<double, R1, C1> >(A_, M_, M_)
+                .template triangularView<TriView>()
+                .solve(C);
+#ifdef STAN_OPENCL
+    }
+#endif
 
-    Matrix<double, R1, C2> C(M_, N_);
-    C = Map<Matrix<double, R1, C2> >(C_, M_, N_);
-
-    C = Map<Matrix<double, R1, C1> >(A_, M_, M_)
-            .template triangularView<TriView>()
-            .solve(C);
 
     pos = 0;
     for (size_type j = 0; j < N_; j++) {
@@ -169,14 +185,29 @@ class mdivide_left_tri_dv_vari : public vari {
         C_[pos++] = B(i, j).val();
       }
     }
-
+    
     Matrix<double, R1, C2> C(M_, N_);
-    C = Map<Matrix<double, R1, C2> >(C_, M_, N_);
-
-    C = Map<Matrix<double, R1, C1> >(A_, M_, M_)
-            .template triangularView<TriView>()
-            .solve(C);
-
+#ifdef STAN_OPENCL
+    if (A.rows()
+        >= opencl_context.tuning_opts().tri_inverse_size_worth_transfer) {
+      matrix_cl A_cl(A_, M_, M_);
+      matrix_cl C_cl(C_, M_, N_);
+      if (TriView == Eigen::Lower) {
+        A_cl = tri_inverse<TriangularViewCL::Lower>(A_cl);
+      } else {
+        A_cl = tri_inverse<TriangularViewCL::Upper>(A_cl);
+      }
+      C_cl = A_cl * C_cl;
+      C = from_matrix_cl(C_cl);
+    } else {
+#endif
+      C = Map<Matrix<double, R1, C2> >(C_, M_, N_);
+      C = Map<Matrix<double, R1, C1> >(A_, M_, M_)
+              .template triangularView<TriView>()
+              .solve(C);
+#ifdef STAN_OPENCL
+    }
+#endif
     pos = 0;
     for (size_type j = 0; j < N_; j++) {
       for (size_type i = 0; i < M_; i++) {
@@ -257,12 +288,27 @@ class mdivide_left_tri_vd_vari : public vari {
         A_[pos++] = A(i, j).val();
       }
     }
-
-    Matrix<double, R1, C2> C(M_, N_);
+    Matrix<double, R1, C2> C(M_, N_);    
+#ifdef STAN_OPENCL
+    if (A.rows()
+        >= opencl_context.tuning_opts().tri_inverse_size_worth_transfer) {
+      matrix_cl A_cl(A_, M_, M_);
+      matrix_cl B_cl(B);
+      if (TriView == Eigen::Lower) {
+        A_cl = tri_inverse<TriangularViewCL::Lower>(A_cl);
+      } else {
+        A_cl = tri_inverse<TriangularViewCL::Upper>(A_cl);
+      }
+      B_cl = A_cl * B_cl;
+      C = from_matrix_cl(B_cl);
+    } else {
+#endif
     C = Map<Matrix<double, R1, C1> >(A_, M_, M_)
             .template triangularView<TriView>()
             .solve(B);
-
+#ifdef STAN_OPENCL
+    }
+#endif
     pos = 0;
     for (size_type j = 0; j < N_; j++) {
       for (size_type i = 0; i < M_; i++) {

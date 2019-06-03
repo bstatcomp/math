@@ -12,8 +12,8 @@ TEST(MathMatrixOpenCL, matrix_cl_copy_cache) {
   auto m = stan::math::matrix_d::Random(100, 100).eval();
   stan::math::matrix_cl d11(100, 100);
   stan::math::matrix_cl d12(100, 100);
-  stan::math::copy(d11, m);
-  stan::math::copy(d12, m);
+  d11 = stan::math::to_matrix_cl(m);
+  d12 = stan::math::to_matrix_cl(m);
   ASSERT_FALSE(m.opencl_buffer_() == NULL);
 }
 
@@ -24,11 +24,11 @@ TEST(MathMatrixOpenCL, matrix_cl_var_copy) {
     for (int j = 0; j < 5; ++j)
       m(i, j) = pos_++;
 
-  stan::math::matrix_cl d1_gpu(5, 5);
-  stan::math::copy(d1_gpu, m);
+  stan::math::matrix_cl d1_cl(5, 5);
+  d1_cl = stan::math::to_matrix_cl(m);
   EXPECT_TRUE(m.opencl_buffer_() == NULL);
   stan::math::matrix_d d1_cpu_return(5, 5);
-  stan::math::copy(d1_cpu_return, d1_gpu);
+  d1_cpu_return = stan::math::from_matrix_cl(d1_cl);
   EXPECT_EQ(1.1, d1_cpu_return(0, 0));
   EXPECT_EQ(6.1, d1_cpu_return(1, 0));
   EXPECT_EQ(11.1, d1_cpu_return(2, 0));
@@ -55,10 +55,10 @@ TEST(MathMatrixOpenCL, matrix_cl_copy) {
   // vector
   stan::math::matrix_cl d11(3, 1);
   stan::math::matrix_cl d111(3, 1);
-  EXPECT_NO_THROW(stan::math::copy(d11, d1));
-  EXPECT_NO_THROW(stan::math::copy(d111, d11));
-  EXPECT_NO_THROW(stan::math::copy(d1_a, d11));
-  EXPECT_NO_THROW(stan::math::copy(d1_b, d111));
+  EXPECT_NO_THROW(d11 = stan::math::to_matrix_cl(d1));
+  EXPECT_NO_THROW(d111 = stan::math::copy_cl(d11));
+  EXPECT_NO_THROW(d1_a = stan::math::from_matrix_cl(d11));
+  EXPECT_NO_THROW(d1_b = stan::math::from_matrix_cl(d111));
   EXPECT_EQ(1, d1_a(0));
   EXPECT_EQ(2, d1_a(1));
   EXPECT_EQ(3, d1_a(2));
@@ -70,10 +70,10 @@ TEST(MathMatrixOpenCL, matrix_cl_copy) {
   stan::math::matrix_cl d000;
   stan::math::matrix_cl d22(2, 3);
   stan::math::matrix_cl d222(2, 3);
-  EXPECT_NO_THROW(stan::math::copy(d22, d2));
-  EXPECT_NO_THROW(stan::math::copy(d222, d22));
-  EXPECT_NO_THROW(stan::math::copy(d2_a, d22));
-  EXPECT_NO_THROW(stan::math::copy(d2_b, d222));
+  EXPECT_NO_THROW(d22 = stan::math::to_matrix_cl(d2));
+  EXPECT_NO_THROW(d222 = stan::math::copy_cl(d22));
+  EXPECT_NO_THROW(d2_a = stan::math::from_matrix_cl(d22));
+  EXPECT_NO_THROW(d2_b = stan::math::from_matrix_cl(d222));
   EXPECT_EQ(1, d2_a(0, 0));
   EXPECT_EQ(2, d2_a(0, 1));
   EXPECT_EQ(3, d2_a(0, 2));
@@ -89,11 +89,11 @@ TEST(MathMatrixOpenCL, matrix_cl_copy) {
 
   // zero sized copy
   // cpu to gpu
-  EXPECT_NO_THROW(stan::math::copy(d00, d0));
+  EXPECT_NO_THROW(d00 = stan::math::to_matrix_cl(d0));
   // gpu to cpu
-  EXPECT_NO_THROW(stan::math::copy(d0, d00));
+  EXPECT_NO_THROW(d0 = stan::math::from_matrix_cl(d00));
   // gpu to gpu
-  EXPECT_NO_THROW(stan::math::copy(d000, d00));
+  EXPECT_NO_THROW(d000 = stan::math::copy_cl(d00));
 }
 
 TEST(MathMatrixOpenCL, barebone_buffer_copy) {

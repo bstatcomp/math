@@ -248,10 +248,9 @@ static const char *neg_binomial_2_log_glm_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const local_range_kernel<cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer, cl::Buffer,
+const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer, out_buffer, out_buffer, out_buffer,
                          int, int, int, int, int, int, int, int, int, int, int, int, int >
-        neg_binomial_2_log_glm("neg_binomial_2_log_glm", neg_binomial_2_log_glm_kernel_code, {{"REDUCTION_STEP_SIZE",4},{"LOCAL_SIZE_", 64}});
-
+        neg_binomial_2_log_glm("neg_binomial_2_log_glm", {neg_binomial_2_log_glm_kernel_code}, {{"REDUCTION_STEP_SIZE",4},{"LOCAL_SIZE_", 64}});
 
 }  // namespace opencl_kernels
 }  // namespace math

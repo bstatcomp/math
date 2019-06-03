@@ -8,6 +8,7 @@
 #include <stan/math/prim/scal/err/check_nonnegative.hpp>
 #include <stan/math/prim/scal/fun/constants.hpp>
 #include <stan/math/prim/scal/fun/lgamma.hpp>
+#include <stan/math/prim/scal/fun/size_zero.hpp>
 #include <stan/math/prim/mat/fun/value_of_rec.hpp>
 #include <stan/math/prim/arr/fun/value_of_rec.hpp>
 #include <stan/math/prim/scal/meta/include_summand.hpp>
@@ -59,21 +60,16 @@ template <bool propto, typename T_y, typename T_x, typename T_alpha,
 typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     const T_y& y, const T_x& x, const T_alpha& alpha, const T_beta& beta) {
   static const char* function = "poisson_log_glm_lpmf";
-  typedef typename stan::partials_return_type<T_y, T_x, T_alpha, T_beta>::type
+  typedef typename partials_return_type<T_y, T_x, T_alpha, T_beta>::type
       T_partials_return;
   typedef typename std::conditional<
       is_vector<T_alpha>::value,
-      Eigen::Array<typename stan::partials_return_type<T_alpha>::type, -1, 1>,
-      typename stan::partials_return_type<T_alpha>::type>::type T_alpha_val;
+      Eigen::Array<typename partials_return_type<T_alpha>::type, -1, 1>,
+      typename partials_return_type<T_alpha>::type>::type T_alpha_val;
 
   using Eigen::Dynamic;
   using Eigen::Matrix;
   using std::exp;
-
-  if (!(stan::length(y) && stan::length(x) && stan::length(beta)))
-    return 0.0;
-
-  T_partials_return logp(0.0);
 
   const size_t N = x.rows();
   const size_t M = x.cols();
@@ -86,9 +82,13 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   if (is_vector<T_alpha>::value)
     check_consistent_sizes(function, "Vector of intercepts", alpha,
                            "Vector of dependent variables", y);
+  if (size_zero(y, x, beta))
+    return 0;
 
   if (!include_summand<propto, T_x, T_alpha, T_beta>::value)
-    return 0.0;
+    return 0;
+
+  T_partials_return logp(0);
 
   const auto& x_val = value_of_rec(x);
 #ifdef STAN_OPENCL
@@ -146,14 +146,14 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
 
   if (include_summand<propto>::value) {
     if (is_vector<T_y>::value) {
-      logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1.0));
+      logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1));
     } else {
-      logp -= lgamma(as_scalar(y_val) + 1.0);
+      logp -= lgamma(as_scalar(y_val) + 1);
     }
   }
   if (include_summand<propto, T_partials_return>::value) {
-    logp += (as_array_or_scalar(y_val_vec) * theta.array() - exp(theta.array()))
-                .sum();
+    logp += sum(as_array_or_scalar(y_val_vec) * theta.array()
+                - exp(theta.array()));
   }
 #endif
   if (!std::isfinite(theta_derivative_sum)) {

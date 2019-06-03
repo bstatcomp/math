@@ -3,10 +3,8 @@
 
 #include <stan/math/prim/scal/meta/is_constant_struct.hpp>
 #include <stan/math/prim/scal/meta/partials_return_type.hpp>
-#include <stan/math/prim/scal/meta/broadcast_array.hpp>
 #include <stan/math/prim/scal/meta/operands_and_partials.hpp>
 #include <stan/math/prim/scal/err/check_consistent_sizes.hpp>
-#include <stan/math/prim/scal/err/check_consistent_size.hpp>
 #include <stan/math/prim/scal/err/check_bounded.hpp>
 #include <stan/math/prim/scal/err/check_finite.hpp>
 #include <stan/math/prim/scal/fun/constants.hpp>
@@ -22,7 +20,6 @@
 #include <stan/math/prim/mat/meta/is_vector.hpp>
 #include <stan/math/prim/scal/meta/scalar_seq_view.hpp>
 #include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <boost/random/variate_generator.hpp>
 #ifdef STAN_OPENCL
 #include <stan/math/prim/mat/fun/value_of.hpp>
 #include <stan/math/prim/arr/fun/value_of.hpp>
@@ -67,21 +64,16 @@ template <bool propto, typename T_y, typename T_x, typename T_alpha,
 typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
     const T_y &y, const T_x &x, const T_alpha &alpha, const T_beta &beta) {
   static const char *function = "bernoulli_logit_glm_lpmf";
-  typedef typename stan::partials_return_type<T_y, T_x, T_alpha, T_beta>::type
+  typedef typename partials_return_type<T_y, T_x, T_alpha, T_beta>::type
       T_partials_return;
   typedef typename std::conditional<
       is_vector<T_y>::value,
-      Eigen::Matrix<typename stan::partials_return_type<T_y>::type, -1, 1>,
-      typename stan::partials_return_type<T_y>::type>::type T_y_val;
+      Eigen::Matrix<typename partials_return_type<T_y>::type, -1, 1>,
+      typename partials_return_type<T_y>::type>::type T_y_val;
 
   using Eigen::Dynamic;
   using Eigen::Matrix;
   using std::exp;
-
-  if (size_zero(y, x, beta))
-    return 0.0;
-
-  T_partials_return logp(0.0);
 
   const size_t N = x.rows();
   const size_t M = x.cols();
@@ -95,9 +87,13 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
     check_consistent_sizes(function, "Vector of intercepts", alpha,
                            "Vector of dependent variables", y);
 
-  if (!include_summand<propto, T_x, T_alpha, T_beta>::value)
-    return 0.0;
+  if (size_zero(y, x, beta))
+    return 0;
 
+  if (!include_summand<propto, T_x, T_alpha, T_beta>::value)
+    return 0;
+
+  T_partials_return logp(0);
   const auto &x_val = value_of_rec(x);
 #ifdef STAN_OPENCL
   const auto &y_val = value_of(y);

@@ -12,7 +12,6 @@
 #include <stan/math/prim/scal/fun/multiply_log.hpp>
 #include <stan/math/prim/scal/fun/digamma.hpp>
 #include <stan/math/prim/mat/fun/lgamma.hpp>
-#include <stan/math/prim/scal/fun/log_sum_exp.hpp>
 #include <stan/math/prim/mat/fun/value_of_rec.hpp>
 #include <stan/math/prim/arr/fun/value_of_rec.hpp>
 #include <stan/math/prim/scal/meta/include_summand.hpp>
@@ -77,26 +76,13 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
                                           T_precision>::type T_partials_return;
   typedef typename std::conditional<
       is_vector<T_precision>::value,
-      typename std::conditional<
-          std::is_same<std::vector<typename scalar_type<T_precision>::type>,
-                       T_precision>::value,
-          std::vector<typename stan::partials_return_type<T_precision>::type>,
-          Eigen::Matrix<typename stan::partials_return_type<T_precision>::type,
-                        -1, 1>>::type,
-      typename stan::partials_return_type<T_precision>::type>::type
-      T_precision_mat;
-  typedef typename std::conditional<
-      is_vector<T_precision>::value,
-      Eigen::Array<typename stan::partials_return_type<T_precision>::type, -1,
-                   1>,
-      typename stan::partials_return_type<T_precision>::type>::type
-      T_precision_val;
+      Eigen::Array<typename partials_return_type<T_precision>::type, -1, 1>,
+      typename partials_return_type<T_precision>::type>::type T_precision_val;
   typedef typename std::conditional<
       is_vector<T_y>::value || is_vector<T_precision>::value,
-      Eigen::Array<typename stan::partials_return_type<T_y, T_precision>::type,
-                   -1, 1>,
-      typename stan::partials_return_type<T_y, T_precision>::type>::type
-      T_sum_val;
+      Eigen::Array<typename partials_return_type<T_y, T_precision>::type, -1,
+                   1>,
+      typename partials_return_type<T_y, T_precision>::type>::type T_sum_val;
 
   using Eigen::Array;
   using Eigen::Dynamic;
@@ -108,6 +94,8 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     return 0.0;
 
   T_partials_return logp(0.0);
+  using Eigen::exp;
+  using Eigen::log1p;
 
   const size_t N = x.rows();
   const size_t M = x.cols();
@@ -127,9 +115,13 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     check_consistent_sizes(function, "Vector of intercepts", alpha,
                            "Vector of dependent variables", y);
 
-  if (!include_summand<propto, T_x, T_alpha, T_beta, T_precision>::value)
-    return 0.0;
+  if (size_zero(y, x, beta, phi))
+    return 0;
 
+  if (!include_summand<propto, T_x, T_alpha, T_beta, T_precision>::value)
+    return 0;
+
+  T_partials_return logp(0);
   const auto& x_val = value_of_rec(x);
 #ifdef STAN_OPENCL
   const auto &y_val = value_of(y);
@@ -208,13 +200,12 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
 #else
   theta = x_val * beta_val_vec;
   theta += as_array_or_scalar(alpha_val_vec);
-  for (size_t n = 0; n < N; ++n)
-    check_finite(function, "Matrix of independent variables", theta[n]);
+  check_finite(function, "Matrix of independent variables", theta);
   T_precision_val log_phi = log(phi_arr);
   Array<T_partials_return, Dynamic, 1> logsumexp_theta_logphi
       = (theta > log_phi)
-            .select(theta + Eigen::log1p(Eigen::exp(log_phi - theta)),
-                    log_phi + Eigen::log1p(Eigen::exp(theta - log_phi)));
+            .select(theta + log1p(exp(log_phi - theta)),
+                    log_phi + log1p(exp(theta - log_phi)));
 
   T_sum_val y_plus_phi = y_arr + phi_arr;
 
@@ -234,9 +225,9 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
     }
   }
   if (include_summand<propto, T_x, T_alpha, T_beta, T_precision>::value)
-    logp -= (y_plus_phi * logsumexp_theta_logphi).sum();
+    logp -= sum(y_plus_phi * logsumexp_theta_logphi);
   if (include_summand<propto, T_x, T_alpha, T_beta>::value)
-    logp += (y_arr * theta).sum();
+    logp += sum(y_arr * theta);
   if (include_summand<propto, T_precision>::value) {
     logp += sum(lgamma(y_plus_phi));
   }

@@ -11,6 +11,7 @@
 #include <stan/math/prim/scal/meta/include_summand.hpp>
 #include <stan/math/prim/mat/meta/is_vector.hpp>
 #include <stan/math/prim/scal/meta/scalar_seq_view.hpp>
+#include <stan/math/prim/scal/fun/size_zero.hpp>
 #include <stan/math/prim/scal/fun/sum.hpp>
 #include <stan/math/prim/scal/meta/as_array_or_scalar.hpp>
 #include <stan/math/prim/scal/meta/as_scalar.hpp>
@@ -69,8 +70,8 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
                                               T_scale>::type T_partials_return;
   typedef typename std::conditional<
       is_vector<T_scale>::value,
-      Eigen::Array<typename stan::partials_return_type<T_scale>::type, -1, 1>,
-      typename stan::partials_return_type<T_scale>::type>::type T_scale_val;
+      Eigen::Array<typename partials_return_type<T_scale>::type, -1, 1>,
+      typename partials_return_type<T_scale>::type>::type T_scale_val;
 
   using Eigen::Array;
   using Eigen::Dynamic;
@@ -94,9 +95,11 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
   if (is_vector<T_alpha>::value)
     check_consistent_sizes(function, "Vector of intercepts", alpha,
                            "Vector of dependent variables", y);
+  if (size_zero(y, x, beta, sigma))
+    return 0;
 
   if (!include_summand<propto, T_y, T_x, T_alpha, T_beta, T_scale>::value)
-    return 0.0;
+    return 0;
 
   const auto &x_val = value_of_rec(x);
   const auto &beta_val = value_of_rec(beta);
@@ -209,7 +212,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 #else
         Array<T_partials_return, Dynamic, 1> y_minus_mu_over_sigma_squared
             = y_minus_mu_over_sigma * y_minus_mu_over_sigma;
-        y_minus_mu_over_sigma_squared_sum = y_minus_mu_over_sigma_squared.sum();
+        y_minus_mu_over_sigma_squared_sum = sum(y_minus_mu_over_sigma_squared);
         ops_partials.edge5_.partials_
             = (y_minus_mu_over_sigma_squared - 1) * inv_sigma;
 #endif
@@ -226,14 +229,11 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 #ifndef STAN_OPENCL
   else {
     y_minus_mu_over_sigma_squared_sum
-        = (y_minus_mu_over_sigma * y_minus_mu_over_sigma).sum();
+        = sum(y_minus_mu_over_sigma * y_minus_mu_over_sigma);
   }
 #endif
 
-  if (!std::isfinite(
-          y_minus_mu_over_sigma_squared_sum)) {  // only do potentially
-                                                 // expensive checks if they are
-                                                 // really needed
+  if (!std::isfinite(y_minus_mu_over_sigma_squared_sum)) {
     check_finite(function, "Vector of dependent variables", y);
     check_finite(function, "Weight vector", beta);
     check_finite(function, "Intercept", alpha);

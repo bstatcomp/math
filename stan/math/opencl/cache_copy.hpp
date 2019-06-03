@@ -17,8 +17,11 @@ inline void cache_copy(cl::Buffer dst, const Eigen::Matrix<double, R, C>& src) {
   cl::CommandQueue queue = opencl_context.queue();
 #ifdef STAN_OPENCL_CACHE
   if (src.opencl_buffer_() != NULL) {
+    cl::Event copy_event;
     queue.enqueueCopyBuffer(src.opencl_buffer_, dst, 0, 0,
-                            sizeof(double) * src.size());
+                            sizeof(double) * src.size(), NULL,
+                            &copy_event);
+    copy_event.wait();
   } else {
     try {
       src.opencl_buffer_
@@ -57,8 +60,11 @@ inline void cache_copy(cl::Buffer& dst, const Eigen::Matrix<int, R, C>& src) {
   cl::CommandQueue queue = opencl_context.queue();
 #ifdef STAN_OPENCL_CACHE
   if (src.opencl_buffer_() != NULL) {
+    cl::Event copy_event;
     queue.enqueueCopyBuffer(src.opencl_buffer_, dst, 0, 0,
-                            sizeof(double) * src.size());
+                            sizeof(double) * src.size(), NULL,
+                            &copy_event);
+    copy_event.wait();
   } else {
     try {
       src.opencl_buffer_
@@ -70,12 +76,19 @@ inline void cache_copy(cl::Buffer& dst, const Eigen::Matrix<int, R, C>& src) {
        * We do not want to execute any further kernels
        * on the device until we are sure that the data is transferred)
        */
+      /*
       cl::Event copy_event;
       cl::Buffer tmp(ctx, CL_MEM_READ_WRITE, sizeof(int) * src.size(), const_cast<int*>(src.data()));
       opencl_kernels::convert_int_to_double(cl::NDRange(src.size()), tmp, src.opencl_buffer_);
       queue.enqueueCopyBuffer(dst, src.opencl_buffer_, 0, 0, sizeof(double) * src.size(), NULL,
                               &copy_event);
       copy_event.wait();
+      */
+     Eigen::Matrix<double, R, C> tmp(src.rows(), src.cols());
+     for(int i = 0; i < src.size(); i++) 
+      tmp(i) = static_cast<double>((src(i));
+     queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * tmp.size(),
+                             tmp.data());
     } catch (const cl::Error& e) {
       check_opencl_error("copy int Eigen->GPU", e);
     }

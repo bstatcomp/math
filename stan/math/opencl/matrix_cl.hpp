@@ -374,45 +374,6 @@ class matrix_cl {
       check_opencl_error("matrix constructor", e);
     }
   }
-  /**
-   * Constructor for the matrix_cl that
-   * creates a copy of the double array representing a matrix
-   * on the OpenCL devioce.
-   *
-   * @param A the input double array
-   *
-   * @throw <code>std::system_error</code> if the
-   * matrices do not have matching dimensions
-   */
-  explicit matrix_cl(double *A, int rows, int cols)
-      : rows_(rows), cols_(cols) {
-    if (size() == 0) {
-      return;
-    }
-    cl::Context& ctx = opencl_context.context();
-    cl::CommandQueue& queue = opencl_context.queue();
-    try {
-      // creates the OpenCL buffer to copy the Eigen
-      // matrix to the OpenCL device
-      oclBuffer_
-          = cl::Buffer(ctx, CL_MEM_READ_WRITE, sizeof(double) * rows * cols);
-      /**
-       * Writes the contents of A to the OpenCL buffer
-       * starting at the offset 0.
-       * CL_TRUE denotes that the call is blocking as
-       * we do not want to execute any further kernels
-       * on the device until we are sure that the data
-       * is finished transfering)
-       */
-      cl::Event transfer_event;
-      queue.enqueueWriteBuffer(oclBuffer_, CL_FALSE, 0,
-                               sizeof(double) * rows * cols, A, NULL,
-                               &transfer_event);
-      this->add_write_event(transfer_event);
-    } catch (const cl::Error& e) {
-      check_opencl_error("matrix constructor", e);
-    }
-  }
   
   matrix_cl& operator=(const matrix_cl& a) {
     check_size_match("assignment of (OpenCL) matrices", "source.rows()",

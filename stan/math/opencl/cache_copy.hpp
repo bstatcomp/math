@@ -3,8 +3,8 @@
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/opencl_context.hpp>
-#include <stan/math/opencl/kernel_cl.hpp>
-#include <stan/math/opencl/kernels/convert_int_to _double.hpp>
+//#include <stan/math/opencl/kernel_cl.hpp>
+//#include <stan/math/opencl/kernels/convert_int_to _double.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <CL/cl.hpp>
 
@@ -86,7 +86,7 @@ inline void cache_copy(cl::Buffer& dst, const Eigen::Matrix<int, R, C>& src) {
       */
      Eigen::Matrix<double, R, C> tmp(src.rows(), src.cols());
      for(int i = 0; i < src.size(); i++) 
-      tmp(i) = static_cast<double>((src(i));
+      tmp(i) = static_cast<double>(src(i));
      queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * tmp.size(),
                              tmp.data());
     } catch (const cl::Error& e) {

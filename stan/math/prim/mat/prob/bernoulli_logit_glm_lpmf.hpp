@@ -124,8 +124,8 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
 
   try {
     opencl_kernels::bernoulli_logit_glm(cl::NDRange(local_size * wgs), cl::NDRange(local_size),
-                                        y_cl.buffer(), x_cl.buffer(), alpha_cl.buffer(), beta_cl.buffer(),
-                                        logp_cl.buffer(), theta_derivative_cl.buffer(), theta_derivative_sum_cl.buffer(),
+                                        y_cl, x_cl, alpha_cl, beta_cl,
+                                        logp_cl, theta_derivative_cl, theta_derivative_sum_cl,
                                         N, M, length(alpha) != 1, need_theta_derivative, need_theta_derivative_sum);
   }
   catch (const cl::Error& e) {
@@ -133,7 +133,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
   }
 
   Eigen::VectorXd logp_partial_sum(wgs);
-  copy(logp_partial_sum, logp_cl);
+  logp_partial_sum = from_matrix_cl(logp_cl);
   logp += sum(logp_partial_sum);
 #else
   T_y_val signs = 2 * as_array_or_scalar(y_val_vec) - 1;
@@ -168,7 +168,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
 #ifdef STAN_OPENCL
     Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
     if(!is_constant_struct<T_x>::value || (!is_constant_struct<T_alpha>::value && is_vector<T_alpha>::value)) {
-      copy(theta_derivative, theta_derivative_cl);
+      theta_derivative = from_matrix_cl(theta_derivative_cl);
     }
 #else
     Matrix<T_partials_return, Dynamic, 1> theta_derivative
@@ -184,7 +184,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
       const matrix_cl theta_derivative_transpose_cl(*const_cast<cl::Buffer*>(&theta_derivative_cl.buffer()), 1, theta_derivative_cl.rows()); //transposition of a vector can be done without copying
       const matrix_cl beta_derivative_cl = theta_derivative_transpose_cl * x_cl;
       Eigen::RowVectorXd beta_derivative(M);
-      copy(beta_derivative, beta_derivative_cl);
+      beta_derivative = from_matrix_cl(beta_derivative_cl);
       ops_partials.edge3_.partials_ = std::move(beta_derivative);
 #else
       ops_partials.edge3_.partials_ = x_val.transpose() * theta_derivative;
@@ -201,7 +201,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
       else {
 #ifdef STAN_OPENCL
         Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
-        copy(theta_derivative_partial_sum, theta_derivative_sum_cl);
+        theta_derivative_partial_sum = from_matrix_cl(theta_derivative_sum_cl);
         ops_partials.edge2_.partials_[0] = sum(theta_derivative_partial_sum);
 #else
         ops_partials.edge2_.partials_[0] = theta_derivative.sum();

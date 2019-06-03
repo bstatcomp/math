@@ -137,15 +137,15 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 
   try {
     opencl_kernels::normal_id_glm(cl::NDRange(local_size * wgs), cl::NDRange(local_size),
-                                  y_cl.buffer(), x_cl.buffer(), alpha_cl.buffer(), beta_cl.buffer(), sigma_cl.buffer(),
-                                  mu_derivative_cl.buffer(), mu_derivative_sum_cl.buffer(), y_minus_mu_over_sigma_squared_sum_cl.buffer(), sigma_derivative_cl.buffer(), log_sigma_sum_cl.buffer(),
+                                  y_cl, x_cl, alpha_cl, beta_cl, sigma_cl,
+                                  mu_derivative_cl, mu_derivative_sum_cl, y_minus_mu_over_sigma_squared_sum_cl, sigma_derivative_cl, log_sigma_sum_cl,
                                   N, M, length(alpha) != 1, length(sigma) != 1, need_mu_derivative, need_mu_derivative_sum, need_sigma_derivative, need_log_sigma_sum);
   }
   catch (const cl::Error& e) {
     check_opencl_error(function, e);
   }
   VectorXd y_minus_mu_over_sigma_squared_partial_sum(wgs);
-  copy(y_minus_mu_over_sigma_squared_partial_sum, y_minus_mu_over_sigma_squared_sum_cl);
+  y_minus_mu_over_sigma_squared_partial_sum = from_matrix_cl(y_minus_mu_over_sigma_squared_sum_cl);
   double y_minus_mu_over_sigma_squared_sum = sum(y_minus_mu_over_sigma_squared_partial_sum);
 #else
   y_minus_mu_over_sigma = x_val * beta_val_vec;
@@ -166,7 +166,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
 #ifdef STAN_OPENCL
     Matrix<T_partials_return, Dynamic, 1> mu_derivative(N);
     if(!is_constant_struct<T_y>::value || !is_constant_struct<T_x>::value || (!is_constant_struct<T_alpha>::value && is_vector<T_alpha>::value)) {
-      copy(mu_derivative, mu_derivative_cl);
+      mu_derivative = from_matrix_cl(mu_derivative_cl);
     }
 #else
     Matrix<T_partials_return, Dynamic, 1> mu_derivative
@@ -184,7 +184,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
       const matrix_cl mu_derivative_transpose_cl(*const_cast<cl::Buffer*>(&mu_derivative_cl.buffer()), 1, mu_derivative_cl.rows()); //transposition of a vector can be done without copying
       const matrix_cl beta_derivative_cl = mu_derivative_transpose_cl * x_cl;
       Eigen::RowVectorXd beta_derivative(M);
-      copy(beta_derivative, beta_derivative_cl);
+      beta_derivative = from_matrix_cl(beta_derivative_cl);
       ops_partials.edge4_.partials_ = std::move(beta_derivative);
 #else
       ops_partials.edge4_.partials_ = mu_derivative.transpose() * x_val;
@@ -196,7 +196,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
       else {
 #ifdef STAN_OPENCL
         VectorXd mu_derivative_partial_sum(wgs);
-        copy(mu_derivative_partial_sum, mu_derivative_sum_cl);
+        mu_derivative_partial_sum = from_matrix_cl(mu_derivative_sum_cl);
         ops_partials.edge3_.partials_[0] = sum(mu_derivative_partial_sum);
 #else
         ops_partials.edge3_.partials_[0] = mu_derivative.sum();
@@ -207,7 +207,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
       if (is_vector<T_scale>::value) {
 #ifdef STAN_OPENCL
         VectorXd sigma_derivative(N);
-        copy(sigma_derivative, sigma_derivative_cl);
+        sigma_derivative = from_matrix_cl(sigma_derivative_cl);
         ops_partials.edge5_.partials_ = std::move(sigma_derivative);
 #else
         Array<T_partials_return, Dynamic, 1> y_minus_mu_over_sigma_squared
@@ -247,7 +247,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
     if (is_vector<T_scale>::value) {
 #ifdef STAN_OPENCL
       VectorXd log_sigma_partial_sum(wgs);
-      copy(log_sigma_partial_sum, log_sigma_sum_cl);
+      log_sigma_partial_sum = from_matrix_cl(log_sigma_sum_cl);
       logp -= sum(log_sigma_partial_sum);
 #else
       logp -= sum(log(sigma_val_vec));

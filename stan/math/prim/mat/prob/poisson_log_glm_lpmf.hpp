@@ -20,6 +20,9 @@
 #include <stan/math/prim/arr/meta/as_scalar.hpp>
 #include <stan/math/prim/mat/meta/as_column_vector_or_scalar.hpp>
 #include <stan/math/prim/scal/meta/as_column_vector_or_scalar.hpp>
+
+#include <stan/math/opencl/kernels/poisson_log_glm_lpmf.hpp>
+
 #include <cmath>
 #include <limits>
 
@@ -71,7 +74,9 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   const size_t N = x.rows();
   const size_t M = x.cols();
 
+#ifndef STAN_OPENCL
   check_nonnegative(function, "Vector of dependent variables", y);
+#endif
   check_consistent_size(function, "Vector of dependent variables", y, N);
   check_consistent_size(function, "Weight vector", beta, M);
   if (is_vector<T_alpha>::value)
@@ -86,7 +91,11 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   T_partials_return logp(0);
 
   const auto& x_val = value_of_rec(x);
-  const auto& y_val = value_of_rec(y);
+#ifdef STAN_OPENCL
+  const auto &y_val = value_of(y);
+#else
+  const auto &y_val = value_of_rec(y);
+#endif
   const auto& beta_val = value_of_rec(beta);
   const auto& alpha_val = value_of_rec(alpha);
 
@@ -94,17 +103,47 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
   const auto& beta_val_vec = as_column_vector_or_scalar(beta_val);
   const auto& alpha_val_vec = as_column_vector_or_scalar(alpha_val);
 
-  Matrix<T_partials_return, Dynamic, 1> theta = x_val * beta_val_vec;
+#ifdef STAN_OPENCL
+  const int local_size = opencl_kernels::poisson_log_glm.make_functor.get_opts().at("LOCAL_SIZE_");
+  const int wgs = (N+local_size-1)/local_size;
+
+  const matrix_cl y_cl = matrix_cl::constant(y_val_vec);
+  const matrix_cl x_cl = matrix_cl::constant(x_val);
+  const matrix_cl beta_cl(beta_val_vec);
+  const matrix_cl alpha_cl(alpha_val_vec);
+
+  matrix_cl theta_derivative_cl(N,1);
+  matrix_cl theta_derivative_sum_cl(wgs,1);
+  const bool need_logp1 = include_summand<propto>::value;
+  const bool need_logp2 = include_summand<propto, T_partials_return>::value;
+  matrix_cl logp_cl((need_logp1 || need_logp2) ? wgs : 0, 1);
+
+  try{
+    opencl_kernels::poisson_log_glm(cl::NDRange(local_size*wgs),cl::NDRange(local_size),
+            y_cl, x_cl, alpha_cl, beta_cl,
+            theta_derivative_cl, theta_derivative_sum_cl, logp_cl,
+            N, M, length(alpha)!=1, need_logp1, need_logp2);
+  }
+  catch (const cl::Error& e) {
+    check_opencl_error(function, e);
+  }
+  Matrix<T_partials_return, Dynamic, 1> theta_derivative_partial_sum(wgs);
+  theta_derivative_partial_sum = from_matrix_cl(theta_derivative_sum_cl);
+  double theta_derivative_sum = sum(theta_derivative_partial_sum);
+  if(need_logp1 || need_logp2){
+    Eigen::VectorXd logp_partial_sum(wgs);
+    logp_partial_sum = from_matrix_cl(logp_cl);
+    logp += sum(logp_partial_sum);
+  }
+#else
+  Matrix<T_partials_return, Dynamic, 1> theta(N);
+  theta = x_val * beta_val_vec;
   theta.array() += as_array_or_scalar(alpha_val_vec);
 
   Matrix<T_partials_return, Dynamic, 1> theta_derivative
       = as_array_or_scalar(y_val_vec) - exp(theta.array());
-  double theta_derivative_sum = sum(theta_derivative);
-  if (!std::isfinite(theta_derivative_sum)) {
-    check_finite(function, "Weight vector", beta);
-    check_finite(function, "Intercept", alpha);
-    check_finite(function, "Matrix of independent variables", theta);
-  }
+  double theta_derivative_sum = theta_derivative.sum();
+
   if (include_summand<propto>::value) {
     if (is_vector<T_y>::value) {
       logp -= sum(lgamma(as_array_or_scalar(y_val_vec) + 1));
@@ -116,21 +155,44 @@ typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     logp += sum(as_array_or_scalar(y_val_vec) * theta.array()
                 - exp(theta.array()));
   }
+#endif
+  if (!std::isfinite(theta_derivative_sum)) {
+#ifdef STAN_OPENCL
+    check_nonnegative(function, "Vector of dependent variables", y);
+#endif
+    check_finite(function, "Weight vector", beta);
+    check_finite(function, "Intercept", alpha);
+    check_finite(function, "Matrix of independent variables", x);
+  }
 
   // Compute the necessary derivatives.
   operands_and_partials<T_x, T_alpha, T_beta> ops_partials(x, alpha, beta);
   if (!is_constant_struct<T_beta>::value) {
+#ifdef STAN_OPENCL
+    const matrix_cl theta_derivative_transpose_cl(*const_cast<cl::Buffer*>(&theta_derivative_cl.buffer()), 1, theta_derivative_cl.rows()); //transposition of a vector can be done without copying
+    const matrix_cl beta_derivative_cl = theta_derivative_transpose_cl * x_cl;
+    Eigen::RowVectorXd beta_derivative(M);
+    beta_derivative = from_matrix_cl(beta_derivative_cl);
+    ops_partials.edge3_.partials_ = std::move(beta_derivative);
+#else
     ops_partials.edge3_.partials_ = x_val.transpose() * theta_derivative;
+#endif
   }
-  if (!is_constant_struct<T_x>::value) {
-    ops_partials.edge1_.partials_
-        = (beta_val_vec * theta_derivative.transpose()).transpose();
-  }
-  if (!is_constant_struct<T_alpha>::value) {
-    if (is_vector<T_alpha>::value)
-      ops_partials.edge2_.partials_ = theta_derivative;
-    else
-      ops_partials.edge2_.partials_[0] = theta_derivative_sum;
+  if(!is_constant_struct<T_x>::value || !is_constant_struct<T_alpha>::value) {
+#ifdef STAN_OPENCL
+    Matrix<T_partials_return, Dynamic, 1> theta_derivative(N);
+    theta_derivative = from_matrix_cl(theta_derivative_cl);
+#endif
+    if (!is_constant_struct<T_x>::value) {
+      ops_partials.edge1_.partials_
+              = (beta_val_vec * theta_derivative.transpose()).transpose();
+    }
+    if (!is_constant_struct<T_alpha>::value) {
+      if (is_vector<T_alpha>::value)
+        ops_partials.edge2_.partials_ = std::move(theta_derivative);
+      else
+        ops_partials.edge2_.partials_[0] = theta_derivative_sum;
+    }
   }
   return ops_partials.build(logp);
 }
@@ -140,6 +202,7 @@ inline typename return_type<T_x, T_alpha, T_beta>::type poisson_log_glm_lpmf(
     const T_y& y, const T_x& x, const T_alpha& alpha, const T_beta& beta) {
   return poisson_log_glm_lpmf<false>(y, x, alpha, beta);
 }
+
 }  // namespace math
 }  // namespace stan
 #endif

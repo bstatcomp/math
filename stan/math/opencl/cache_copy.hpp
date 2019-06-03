@@ -3,6 +3,8 @@
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/opencl_context.hpp>
+//#include <stan/math/opencl/kernel_cl.hpp>
+//#include <stan/math/opencl/kernels/convert_int_to _double.hpp>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <CL/cl.hpp>
 
@@ -15,8 +17,11 @@ inline void cache_copy(cl::Buffer dst, const Eigen::Matrix<double, R, C>& src) {
   cl::CommandQueue queue = opencl_context.queue();
 #ifdef STAN_OPENCL_CACHE
   if (src.opencl_buffer_() != NULL) {
+    cl::Event copy_event;
     queue.enqueueCopyBuffer(src.opencl_buffer_, dst, 0, 0,
-                            sizeof(double) * src.size());
+                            sizeof(double) * src.size(), NULL,
+                            &copy_event);
+    copy_event.wait();
   } else {
     try {
       src.opencl_buffer_
@@ -39,10 +44,67 @@ inline void cache_copy(cl::Buffer dst, const Eigen::Matrix<double, R, C>& src) {
     }
   }
 #else
-  queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * src.size(),
-                           src.data());
+  try {
+    queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * src.size(),
+                             src.data());
+  } catch (const cl::Error& e) {
+    check_opencl_error("copy Eigen->GPU", e);
+  }
 #endif
 }
+
+
+template <int R, int C>
+inline void cache_copy(cl::Buffer& dst, const Eigen::Matrix<int, R, C>& src) {
+  cl::Context& ctx = opencl_context.context();
+  cl::CommandQueue queue = opencl_context.queue();
+#ifdef STAN_OPENCL_CACHE
+  if (src.opencl_buffer_() != NULL) {
+    cl::Event copy_event;
+    queue.enqueueCopyBuffer(src.opencl_buffer_, dst, 0, 0,
+                            sizeof(double) * src.size(), NULL,
+                            &copy_event);
+    copy_event.wait();
+  } else {
+    try {
+      src.opencl_buffer_
+              = cl::Buffer(ctx, CL_MEM_READ_WRITE, sizeof(double) * src.size());
+      /**
+       * Writes the contents of src to the OpenCL buffer
+       * starting at the offset 0
+       * CL_TRUE denotes that the call is blocking
+       * We do not want to execute any further kernels
+       * on the device until we are sure that the data is transferred)
+       */
+      /*
+      cl::Event copy_event;
+      cl::Buffer tmp(ctx, CL_MEM_READ_WRITE, sizeof(int) * src.size(), const_cast<int*>(src.data()));
+      opencl_kernels::convert_int_to_double(cl::NDRange(src.size()), tmp, src.opencl_buffer_);
+      queue.enqueueCopyBuffer(dst, src.opencl_buffer_, 0, 0, sizeof(double) * src.size(), NULL,
+                              &copy_event);
+      copy_event.wait();
+      */
+     Eigen::Matrix<double, R, C> tmp(src.rows(), src.cols());
+     for(int i = 0; i < src.size(); i++) 
+      tmp(i) = static_cast<double>(src(i));
+     queue.enqueueWriteBuffer(dst, CL_TRUE, 0, sizeof(double) * tmp.size(),
+                             tmp.data());
+    } catch (const cl::Error& e) {
+      check_opencl_error("copy int Eigen->GPU", e);
+    }
+  }
+#else
+  try{
+    cl::Buffer tmp(ctx, CL_MEM_READ_WRITE, sizeof(int) * src.size());
+    queue.enqueueWriteBuffer(tmp, CL_TRUE, 0, sizeof(int) * src.size(),
+                             src.data());
+    opencl_kernels::convert_int_to_double(cl::NDRange(src.size()),tmp, dst);
+  } catch (const cl::Error& e) {
+    check_opencl_error("copy Eigen->GPU", e);
+  }
+#endif
+}
+
 }  // namespace internal
 }  // namespace math
 }  // namespace stan

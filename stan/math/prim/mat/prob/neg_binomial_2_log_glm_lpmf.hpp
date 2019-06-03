@@ -93,7 +93,6 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
         && stan::length(phi)))
     return 0.0;
 
-  T_partials_return logp(0.0);
   using Eigen::exp;
   using Eigen::log1p;
 

@@ -2,12 +2,8 @@
 #define STAN_MATH_REV_MAT_FUN_MULTIPLY_HPP
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
-#include <stan/math/prim/mat/fun/typedefs.hpp>
-#include <stan/math/rev/scal/fun/value_of_rec.hpp>
-#include <stan/math/rev/scal/fun/value_of.hpp>
 #include <stan/math/rev/mat/fun/to_var.hpp>
 #include <stan/math/rev/core.hpp>
-#include <stan/math/prim/mat/fun/value_of_rec.hpp>
 #include <stan/math/prim/mat/err/check_multiplicable.hpp>
 #include <stan/math/prim/scal/err/check_not_nan.hpp>
 #include <boost/math/tools/promotion.hpp>
@@ -89,8 +85,23 @@ class multiply_mat_vari : public vari {
       variRefB_[i] = B.coeffRef(i).vi_;
       Bd_[i] = B.coeffRef(i).val();
     }
-    MatrixXd AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
+    MatrixXd AB(A_rows_, B_cols_);
+#ifdef STAN_OPENCL
+  if (((A_rows_ * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl Ad_cl(Ad_, A_rows_, A_cols_);
+    matrix_cl Bd_cl(Bd_, A_cols_, B_cols_);
+    matrix_cl AB_cl = Ad_cl * Bd_cl;
+    AB = from_matrix_cl(AB_cl);
+  } else {
+#endif
+    AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
                   * Map<MatrixXd>(Bd_, A_cols_, B_cols_);
+#ifdef STAN_OPENCL
+  }
+#endif
     for (size_type i = 0; i < AB.size(); ++i)
       variRefAB_[i] = new vari(AB.coeffRef(i), false);
   }
@@ -104,8 +115,25 @@ class multiply_mat_vari : public vari {
 
     for (size_type i = 0; i < adjAB.size(); ++i)
       adjAB(i) = variRefAB_[i]->adj_;
+#ifdef STAN_OPENCL
+  if (((adjAB.rows() * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl adjAB_cl(adjAB);
+    matrix_cl Bd_cl(Bd_, A_cols_, B_cols_);
+    matrix_cl Ad_cl(Ad_, A_rows_, A_cols_);
+    matrix_cl adjA_cl = adjAB_cl * transpose(Bd_cl);
+    matrix_cl adjB_cl = transpose(Ad_cl) * adjAB_cl;
+    adjA = from_matrix_cl(adjA_cl);
+    adjB = from_matrix_cl(adjB_cl);
+  } else {
+#endif
     adjA = adjAB * Map<MatrixXd>(Bd_, A_cols_, B_cols_).transpose();
     adjB = Map<MatrixXd>(Ad_, A_rows_, A_cols_).transpose() * adjAB;
+#ifdef STAN_OPENCL
+  }
+#endif    
     for (size_type i = 0; i < A_size_; ++i)
       variRefA_[i]->adj_ += adjA(i);
     for (size_type i = 0; i < B_size_; ++i)
@@ -262,8 +290,23 @@ class multiply_mat_vari<double, Ra, Ca, Tb, Cb> : public vari {
       variRefB_[i] = B.coeffRef(i).vi_;
       Bd_[i] = B.coeffRef(i).val();
     }
-    MatrixXd AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
+    MatrixXd AB(A_rows_, B_cols_);
+#ifdef STAN_OPENCL
+  if (((A_rows_ * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl Ad_cl(Ad_, A_rows_, A_cols_);
+    matrix_cl Bd_cl(Bd_, A_cols_, B_cols_);
+    matrix_cl AB_cl = Ad_cl * Bd_cl;
+    AB = from_matrix_cl(AB_cl);
+  } else {
+#endif
+    AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
                   * Map<MatrixXd>(Bd_, A_cols_, B_cols_);
+#ifdef STAN_OPENCL
+  }
+#endif
     for (size_type i = 0; i < AB.size(); ++i)
       variRefAB_[i] = new vari(AB.coeffRef(i), false);
   }
@@ -276,7 +319,22 @@ class multiply_mat_vari<double, Ra, Ca, Tb, Cb> : public vari {
 
     for (size_type i = 0; i < adjAB.size(); ++i)
       adjAB(i) = variRefAB_[i]->adj_;
+#ifdef STAN_OPENCL
+  if (((adjAB.rows() * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl adjAB_cl(adjAB);
+    matrix_cl Ad_cl(Ad_, A_rows_, A_cols_);
+    matrix_cl adjB_cl = transpose(Ad_cl) * adjAB_cl;
+    adjB = from_matrix_cl(adjB_cl);
+  } else {
+#endif
     adjB = Map<MatrixXd>(Ad_, A_rows_, A_cols_).transpose() * adjAB;
+#ifdef STAN_OPENCL
+  }
+#endif
+    
     for (size_type i = 0; i < B_size_; ++i)
       variRefB_[i]->adj_ += adjB(i);
   }
@@ -425,8 +483,23 @@ class multiply_mat_vari<Ta, Ra, Ca, double, Cb> : public vari {
     for (size_type i = 0; i < B_size_; ++i) {
       Bd_[i] = B.coeffRef(i);
     }
-    MatrixXd AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
+    MatrixXd AB(A_rows_, B_cols_);
+#ifdef STAN_OPENCL
+  if (((A_rows_ * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl Ad_cl(Ad_, A_rows_, A_cols_);
+    matrix_cl Bd_cl(Bd_, A_cols_, B_cols_);
+    matrix_cl AB_cl = Ad_cl * Bd_cl;
+    AB = from_matrix_cl(AB_cl);
+  } else {
+#endif
+    AB = Map<MatrixXd>(Ad_, A_rows_, A_cols_)
                   * Map<MatrixXd>(Bd_, A_cols_, B_cols_);
+#ifdef STAN_OPENCL
+  }
+#endif    
     for (size_type i = 0; i < AB.size(); ++i)
       variRefAB_[i] = new vari(AB.coeffRef(i), false);
   }
@@ -439,7 +512,21 @@ class multiply_mat_vari<Ta, Ra, Ca, double, Cb> : public vari {
 
     for (size_type i = 0; i < adjAB.size(); ++i)
       adjAB(i) = variRefAB_[i]->adj_;
+#ifdef STAN_OPENCL
+  if (((adjAB.rows() * B_cols_) >
+      opencl_context.tuning_opts().multiply_result_size_worth_transfer) &&
+      (A_cols_ >
+      opencl_context.tuning_opts().multiply_common_dim_worth_transfer)) {
+    matrix_cl adjAB_cl(adjAB);
+    matrix_cl Bd_cl(Bd_, A_cols_, B_cols_);
+    matrix_cl adjA_cl = adjAB_cl * transpose(Bd_cl);
+    adjA = from_matrix_cl(adjA_cl);
+  } else {
+#endif
     adjA = adjAB * Map<MatrixXd>(Bd_, A_cols_, B_cols_).transpose();
+#ifdef STAN_OPENCL
+  }
+#endif
     for (size_type i = 0; i < A_size_; ++i)
       variRefA_[i]->adj_ += adjA(i);
   }

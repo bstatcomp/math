@@ -10,8 +10,8 @@
 #error OPENCL_PLATFORM_ID_NOT_SET
 #endif
 
-#include <stan/math/prim/arr/err/check_opencl.hpp>
 #include <stan/math/opencl/constants.hpp>
+#include <stan/math/opencl/err/check_opencl.hpp>
 #include <stan/math/prim/scal/err/system_error.hpp>
 
 #include <CL/cl.hpp>
@@ -118,11 +118,19 @@ class opencl_context_base {
       }
       device_ = devices_[OPENCL_DEVICE_ID];
       // context and queue
-      context_ = cl::Context(device_);
-      command_queue_ = cl::CommandQueue(context_, device_,
-                                        CL_QUEUE_PROFILING_ENABLE, nullptr);
+      cl_command_queue_properties device_properties;
+      device_.getInfo<cl_command_queue_properties>(CL_DEVICE_QUEUE_PROPERTIES,
+                                                   &device_properties);
       device_.getInfo<size_t>(CL_DEVICE_MAX_WORK_GROUP_SIZE,
                               &max_thread_block_size_);
+
+      context_ = cl::Context(device_);
+      if (device_properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
+        command_queue_ = cl::CommandQueue(
+            context_, device_, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, nullptr);
+      } else {
+        command_queue_ = cl::CommandQueue(context_, device_, 0, nullptr);
+      }
       int thread_block_size_sqrt
           = static_cast<int>(sqrt(static_cast<double>(max_thread_block_size_)));
       // Does a compile time check of the maximum allowed
@@ -178,13 +186,22 @@ class opencl_context_base {
          {"LOCAL_SIZE_", 64}};
   // TODO(Steve): Make these tunable during warmup
   struct tuning_struct {
-    // Used in stan/math/opencl/cholesky_decompose
+    // Used in math/opencl/cholesky_decompose
     int cholesky_min_L11_size = 256;
     int cholesky_partition = 4;
     int cholesky_size_worth_transfer = 1250;
     // Used in math/rev/mat/fun/cholesky_decompose
     int cholesky_rev_min_block_size = 512;
     int cholesky_rev_block_partition = 8;
+    // used in math/opencl/multiply
+    int multiply_split_upper_limit = 2000000;
+    // used in math/prim/mat/fun/mdivide_left_tri
+    // and math/rev/mat/fun/mdivide_left_tri
+    int tri_inverse_size_worth_transfer = 100;
+    // used in math/prim/mat/fun/multiply
+    // used in math/rev/mat/fun/multiply
+    int multiply_result_size_worth_transfer = 250000;
+    int multiply_common_dim_worth_transfer = 100;
     // Used in stan/math/prim/mat/prob/bernoulli_logit_glm_lpdf
     double bernoulli_logit_glm_coeff1 = 6.35146510e-07;
     double bernoulli_logit_glm_coeff2 = 3.38899071e-05;

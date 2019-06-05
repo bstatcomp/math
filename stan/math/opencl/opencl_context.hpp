@@ -202,6 +202,18 @@ class opencl_context_base {
     // used in math/rev/mat/fun/multiply
     int multiply_result_size_worth_transfer = 250000;
     int multiply_common_dim_worth_transfer = 100;
+    // Used in stan/math/prim/mat/prob/bernoulli_logit_glm_lpdf
+    double bernoulli_logit_glm_coeff1 = 6.35146510e-07;
+    double bernoulli_logit_glm_coeff2 = 3.38899071e-05;
+    // Used in stan/math/prim/mat/prob/neg_binomial_2_log_glm_lpdf
+    double neg_binomial_2_log_glm_coeff1 = 6.68981521e-07;
+    double neg_binomial_2_log_glm_coeff2 = 9.19081003e-05;
+    // Used in stan/math/prim/mat/prob/normal_id_glm_lpdf
+    double normal_id_glm_coeff1 = 5.89929748e-07;
+    double normal_id_glm_coeff2 = 3.23325415e-06;
+    // Used in stan/math/prim/mat/prob/poisson_log_glm_lpdf
+    double poisson_log_glm_coeff1 = 6.25645902e-07;
+    double poisson_log_glm_coeff2 = 3.32469382e-05;
   } tuning_opts_;
 
   static opencl_context_base& getInstance() {

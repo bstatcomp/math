@@ -88,6 +88,8 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   using Eigen::Dynamic;
   using Eigen::Matrix;
   using Eigen::VectorXd;
+  using Eigen::exp;
+  using Eigen::log1p;
 
   if (!(stan::length(y) && stan::length(x) && stan::length(beta)
         && stan::length(phi)))
@@ -122,11 +124,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
 
   T_partials_return logp(0);
   const auto& x_val = value_of_rec(x);
-#ifdef STAN_OPENCL
-  const auto &y_val = value_of(y);
-#else
   const auto &y_val = value_of_rec(y);
-#endif
   const auto& beta_val = value_of_rec(beta);
   const auto& alpha_val = value_of_rec(alpha);
   const auto& phi_val = value_of_rec(phi);
@@ -145,7 +143,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
   const int local_size = opencl_kernels::neg_binomial_2_log_glm.make_functor.get_opts().at("LOCAL_SIZE_");
   const int wgs = (N+local_size-1)/local_size;
 
-  const matrix_cl y_cl = matrix_cl::constant(y_val_vec);
+  const matrix_cl y_cl(y_val_vec);
   const matrix_cl x_cl = matrix_cl::constant(x_val);
   const matrix_cl beta_cl(beta_val_vec);
   const matrix_cl alpha_cl(alpha_val_vec);
@@ -276,7 +274,7 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
           theta_derivative_partial_sum = from_matrix_cl(theta_derivative_sum_cl);
           ops_partials.edge2_.partials_[0] = sum(theta_derivative_partial_sum);
 #else
-          ops_partials.edge2_.partials_[0] = theta_derivative.sum();
+          ops_partials.edge2_.partials_[0] = sum(theta_derivative);
 #endif
         }
       }
@@ -300,18 +298,17 @@ neg_binomial_2_log_glm_lpmf(const T_y& y, const T_x& x, const T_alpha& alpha,
         ops_partials.edge4_.partials_[0] = sum(phi_derivative);
 #else
         ops_partials.edge4_.partials_[0]
-            = (1 - y_plus_phi / (theta_exp + phi_arr) + log_phi
-               - logsumexp_theta_logphi
-               + as_array_or_scalar(digamma(y_plus_phi))
-               - as_array_or_scalar(digamma(phi_val_vec)))
-                  .sum();
+            = N
+              + sum(-y_plus_phi / (theta_exp + phi_arr) + log_phi
+                    - logsumexp_theta_logphi
+                    + as_array_or_scalar(digamma(y_plus_phi))
+                    - as_array_or_scalar(digamma(phi_val_vec)));
 #endif
       }
     }
   }
   return ops_partials.build(logp);
 }
-
 
 template <typename T_y, typename T_x, typename T_alpha, typename T_beta,
           typename T_precision>

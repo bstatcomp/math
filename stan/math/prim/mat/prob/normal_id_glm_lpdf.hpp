@@ -199,7 +199,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
         mu_derivative_partial_sum = from_matrix_cl(mu_derivative_sum_cl);
         ops_partials.edge3_.partials_[0] = sum(mu_derivative_partial_sum);
 #else
-        ops_partials.edge3_.partials_[0] = mu_derivative.sum();
+        ops_partials.edge3_.partials_[0] = sum(mu_derivative);
 #endif
       }
     }
@@ -219,7 +219,7 @@ normal_id_glm_lpdf(const T_y &y, const T_x &x, const T_alpha &alpha,
       } else {
 #ifndef STAN_OPENCL
         y_minus_mu_over_sigma_squared_sum
-            = (y_minus_mu_over_sigma * y_minus_mu_over_sigma).sum();
+            = sum(y_minus_mu_over_sigma * y_minus_mu_over_sigma);
 #endif
         ops_partials.edge5_.partials_[0]
             = (y_minus_mu_over_sigma_squared_sum - N) * as_scalar(inv_sigma);

@@ -95,11 +95,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
 
   T_partials_return logp(0);
   const auto &x_val = value_of_rec(x);
-#ifdef STAN_OPENCL
-  const auto &y_val = value_of(y);
-#else
   const auto &y_val = value_of_rec(y);
-#endif
   const auto &beta_val = value_of_rec(beta);
   const auto &alpha_val = value_of_rec(alpha);
 
@@ -111,7 +107,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
   const int local_size = opencl_kernels::bernoulli_logit_glm.make_functor.get_opts().at("LOCAL_SIZE_");
   const int wgs = (N+local_size-1)/local_size;
 
-  const matrix_cl y_cl = matrix_cl::constant(y_val_vec);
+  const matrix_cl y_cl(y_val_vec);
   const matrix_cl x_cl = matrix_cl::constant(x_val);
   const matrix_cl beta_cl(beta_val_vec);
   const matrix_cl alpha_cl(alpha_val_vec);
@@ -147,10 +143,10 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
   // And compute the derivatives wrt theta.
   static const double cutoff = 20.0;
   Eigen::Array<T_partials_return, Dynamic, 1> exp_m_ytheta = exp(-ytheta);
-  logp += (ytheta > cutoff)
-              .select(-exp_m_ytheta,
-                      (ytheta < -cutoff).select(ytheta, -log1p(exp_m_ytheta)))
-              .sum();
+  logp += sum(
+      (ytheta > cutoff)
+          .select(-exp_m_ytheta,
+                  (ytheta < -cutoff).select(ytheta, -log1p(exp_m_ytheta))));
 #endif
   if (!std::isfinite(logp)) {
 #ifdef STAN_OPENCL
@@ -204,7 +200,7 @@ typename return_type<T_x, T_alpha, T_beta>::type bernoulli_logit_glm_lpmf(
         theta_derivative_partial_sum = from_matrix_cl(theta_derivative_sum_cl);
         ops_partials.edge2_.partials_[0] = sum(theta_derivative_partial_sum);
 #else
-        ops_partials.edge2_.partials_[0] = theta_derivative.sum();
+        ops_partials.edge2_.partials_[0] = sum(theta_derivative);
 #endif
       }
     }

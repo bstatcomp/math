@@ -404,6 +404,19 @@ class matrix_cl {
 #endif
     }
 
+    /**
+      * Constructs a const matrix_cl that constains a single value on the OpenCL device.
+      *
+      *
+      * @tparam R row type of input matrix
+      * @tparam C column type of input matrix
+      * @param A the Eigen matrix
+      */
+      template<typename T>
+    static const matrix_cl constant(T A){
+      return matrix_cl(A);
+    }
+
   /**
    * Constructor for the matrix_cl that
    * creates a copy of a var type Eigen matrix on the GPU.

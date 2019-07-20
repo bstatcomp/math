@@ -27,7 +27,7 @@ namespace math {
  */
 template <typename T>
 template <TriangularMapCL triangular_map, typename>
-inline void matrix_cl<T>::triangular_transpose() try {
+inline void matrix_cl<T, enable_if_arithmetic<T>>::triangular_transpose() try {
   if (size() == 0 || size() == 1) {
     return;
   }

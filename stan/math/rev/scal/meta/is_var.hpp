@@ -14,5 +14,11 @@ struct is_var<stan::math::var> {
   enum { value = true };
 };
 
+template <typename T>
+struct is_vari : std::false_type {};
+
+template <>
+struct is_vari<stan::math::vari> : std::true_type {};
+
 }  // namespace stan
 #endif

@@ -5,10 +5,8 @@
 #include <stan/math/opencl/opencl_context.hpp>
 #include <stan/math/opencl/constants.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
-#include <stan/math/opencl/err/check_opencl.hpp>
-#include <stan/math/opencl/kernels/zeros.hpp>
-#include <stan/math/prim/meta.hpp>
-#include <stan/math/prim/scal/err/domain_error.hpp>
+#include <stan/math/opencl/rev/matrix_cl.hpp>
+#include <stan/math/opencl/zeros.hpp>
 
 #include <CL/cl.hpp>
 
@@ -24,14 +22,11 @@ namespace math {
  * the entire matrix, lower triangular or upper triangular. The
  * value must be of type TriangularViewCL
  */
-template <typename T>
-template <TriangularViewCL triangular_view, typename>
-inline void matrix_cl<T, enable_if_arithmetic<T>>::zeros() try {
-  if (size() == 0)
-    return;
-  cl::CommandQueue cmdQueue = opencl_context.queue();
-  opencl_kernels::zeros(cl::NDRange(this->rows(), this->cols()), *this,
-                        this->rows(), this->cols(), triangular_view);
+template <typename T, enable_if_var_or_vari<T>>
+template <TriangularViewCL triangular_view = TriangularViewCL::Entire, typename = enable_if_var_or_vari<T>>
+inline void matrix_cl<T, enable_if_var_or_vari<T>>::zeros() try {
+  this->val().zeros<triangular_view>()
+  this->adj().zeros<triangular_view>()
 } catch (const cl::Error& e) {
   check_opencl_error("zeros", e);
 }

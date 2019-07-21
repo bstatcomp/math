@@ -1,13 +1,10 @@
 #ifndef STAN_MATH_OPENCL_REV_MATRIX_CL_HPP
 #define STAN_MATH_OPENCL_REV_MATRIX_CL_HPP
 #ifdef STAN_OPENCL
-#include <stan/math/opencl/constants.hpp>
-#include <stan/math/opencl/opencl_context.hpp>
-#include <stan/math/opencl/buffer_types.hpp>
+
+#include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/err/check_opencl.hpp>
-#include <stan/math/prim/mat/fun/Eigen.hpp>
-#include <stan/math/prim/arr/fun/vec_concat.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <stan/math/prim/scal/err/domain_error.hpp>
@@ -24,8 +21,8 @@
 namespace stan {
 namespace math {
 
-template <typename T>
-class matrix_cl<T, enable_if_var_or_vari<T>> {
+template <>
+class matrix_cl<var> {
  private:
   /**
    * cl::Buffer provides functionality for working with the OpenCL buffer.
@@ -38,39 +35,44 @@ class matrix_cl<T, enable_if_var_or_vari<T>> {
   mutable matrix_cl<double> adj_;
   mutable TriangularViewCL triangular_view_;
  public:
-  int rows() const { return rows_; }
+  int rows() const { return this->rows_; }
 
-  int cols() const { return cols_; }
+  int cols() const { return this->cols_; }
 
   int size() const { return rows_ * cols_; }
-  matrix_cl<double>& val() const {return val_;}
-  matrix_cl<double>& adj() const {return adj_;}
+  matrix_cl<double>& val() const {return this->val_;}
+  matrix_cl<double>& adj() const {return this->adj_;}
   explicit matrix_cl() : rows_(0), cols_(0) {}
 
-  template <TriangularViewCL triangular_view = TriangularViewCL::Entire, typename = enable_if_var_or_vari<T>>
+  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
   void zeros();
-  template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper, typename = enable_if_var_or_vari<T>>
+  template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
   void triangular_transpose();
-  template <TriangularViewCL triangular_view = TriangularViewCL::Entire, typename = enable_if_var_or_vari<T>>
-  void sub_block(const matrix_cl<T, enable_if_var_or_vari<T>>& A, size_t A_i, size_t A_j, size_t this_i,
+  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
+  void sub_block(const matrix_cl<var>& A, size_t A_i, size_t A_j, size_t this_i,
                  size_t this_j, size_t nrows, size_t ncols);
 
   template <int R, int C>
-  explicit matrix_cl(const Eigen::Matrix<T, R, C>& A)
+  explicit matrix_cl(const Eigen::Matrix<var, R, C>& A)
       : rows_(A.rows()), cols_(A.cols()),
       val_(A.val().eval()),
       adj_(A.adj().eval()) {}
 
+  template <int R, int C>
+  explicit matrix_cl(const Eigen::Matrix<vari*, R, C>& A)
+      : rows_(A.rows()), cols_(A.cols()),
+      val_(A.val().eval()),
+      adj_(A.adj().eval()) {}
 
   explicit matrix_cl(vari** A, const int& R, const int& C) :
-    rows_(R), cols_(C), adj_(Eigen::Map<const matrix_vi>(A, R, C).adj().eval()),
-    val_(Eigen::Map<const matrix_vi>(A, R, C).val().eval()) {
+    rows_(R), cols_(C), adj_(Eigen::Map<matrix_vi>(A, R, C).adj().eval()),
+    val_(Eigen::Map<matrix_vi>(A, R, C).val().eval()) {
   }
 
   explicit matrix_cl(const int& rows, const int& cols) :
   rows_(rows), cols_(cols), val_(rows, cols), adj_(rows, cols) {}
 
-  matrix_cl<T> operator=(const matrix_cl<T>& A) {
+  matrix_cl<var> operator=(const matrix_cl<var>& A) {
     val_ = A.val();
     adj_ = A.adj();
     return *this;

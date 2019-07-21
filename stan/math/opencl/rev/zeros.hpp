@@ -1,5 +1,5 @@
-#ifndef STAN_MATH_OPENCL_ZEROS_HPP
-#define STAN_MATH_OPENCL_ZEROS_HPP
+#ifndef STAN_MATH_OPENCL_REV_ZEROS_HPP
+#define STAN_MATH_OPENCL_REV_ZEROS_HPP
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/opencl_context.hpp>
@@ -22,11 +22,10 @@ namespace math {
  * the entire matrix, lower triangular or upper triangular. The
  * value must be of type TriangularViewCL
  */
-template <typename T, enable_if_var_or_vari<T>>
-template <TriangularViewCL triangular_view = TriangularViewCL::Entire, typename = enable_if_var_or_vari<T>>
-inline void matrix_cl<T, enable_if_var_or_vari<T>>::zeros() try {
-  this->val().zeros<triangular_view>()
-  this->adj().zeros<triangular_view>()
+template <TriangularViewCL triangular_view>
+inline void matrix_cl<var>::zeros() try {
+  this->val().template zeros<triangular_view>();
+  this->adj().template zeros<triangular_view>();
 } catch (const cl::Error& e) {
   check_opencl_error("zeros", e);
 }

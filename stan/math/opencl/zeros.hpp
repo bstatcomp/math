@@ -25,7 +25,7 @@ namespace math {
  * value must be of type TriangularViewCL
  */
 template <typename T>
-template <TriangularViewCL triangular_view, typename>
+template <TriangularViewCL triangular_view>
 inline void matrix_cl<T, enable_if_arithmetic<T>>::zeros() try {
   if (size() == 0)
     return;

@@ -7,7 +7,6 @@
 
 namespace stan {
 namespace math {
-
   template <TriangularViewCL triangular_view>
   inline void matrix_cl<var>::sub_block(const matrix_cl<var>& A, size_t A_i, size_t A_j,
                                    size_t this_i, size_t this_j, size_t nrows,

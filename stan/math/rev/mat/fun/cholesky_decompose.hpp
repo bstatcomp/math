@@ -15,7 +15,13 @@
 
 #ifdef STAN_OPENCL
 #include <stan/math/opencl/opencl.hpp>
+#include <stan/math/opencl/rev/matrix_cl.hpp>
+#include <stan/math/opencl/rev/copy.hpp>
+#include <stan/math/opencl/rev/zeros.hpp>
+#include <stan/math/opencl/rev/sub_block.hpp>
+#include <stan/math/opencl/rev/triangular_transpose.hpp>
 #endif
+
 
 #include <algorithm>
 #include <vector>

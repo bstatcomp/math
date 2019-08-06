@@ -33,46 +33,63 @@ class matrix_cl<var> {
   const int cols_;
   mutable matrix_cl<double> val_;
   mutable matrix_cl<double> adj_;
-  mutable TriangularViewCL triangular_view_;
+  matrix_cl_view view_;  // Holds info on if matrix is a special type
  public:
+  typedef var type;
+  // Forward declare the methods that work in place on the matrix
+  template <matrix_cl_view matrix_view = matrix_cl_view::Entire>
+  void zeros();
+  template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
+  void triangular_transpose();
+  void sub_block(const matrix_cl<var>& A, size_t A_i, size_t A_j, size_t this_i,
+                 size_t this_j, size_t nrows, size_t ncols);
+
   int rows() const { return this->rows_; }
 
   int cols() const { return this->cols_; }
 
-  int size() const { return rows_ * cols_; }
+  int size() const { return this->rows_ * this->cols_; }
   matrix_cl<double>& val() const {return this->val_;}
   matrix_cl<double>& adj() const {return this->adj_;}
+
+  const matrix_cl_view& view() const { return view_; }
+  void view(const matrix_cl_view& view) { view_ = view; }
+
   explicit matrix_cl() : rows_(0), cols_(0) {}
 
-  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
-  void zeros();
-  template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
-  void triangular_transpose();
-  template <TriangularViewCL triangular_view = TriangularViewCL::Entire>
-  void sub_block(const matrix_cl<var>& A, size_t A_i, size_t A_j, size_t this_i,
-                 size_t this_j, size_t nrows, size_t ncols);
+  matrix_cl(const matrix_cl<var>& A)
+      : rows_(A.rows()), cols_(A.cols()), view_(A.view()),
+        val_(A.val()), adj_(A.adj()){}
 
   template <int R, int C>
-  explicit matrix_cl(const Eigen::Matrix<var, R, C>& A)
-      : rows_(A.rows()), cols_(A.cols()),
-      val_(A.val().eval()),
-      adj_(A.adj().eval()) {}
+  explicit matrix_cl(const Eigen::Matrix<var, R, C>& A,
+                     matrix_cl_view partial_view = matrix_cl_view::Entire)
+      : rows_(A.rows()), cols_(A.cols()), view_(partial_view),
+        val_(A.val().eval()), adj_(A.adj().eval()) {}
 
   template <int R, int C>
-  explicit matrix_cl(const Eigen::Matrix<vari*, R, C>& A)
-      : rows_(A.rows()), cols_(A.cols()),
-      val_(A.val().eval()),
-      adj_(A.adj().eval()) {}
+  explicit matrix_cl(const Eigen::Matrix<vari*, R, C>& A,
+                     matrix_cl_view partial_view = matrix_cl_view::Entire)
+      : rows_(A.rows()), cols_(A.cols()), view_(partial_view),
+        val_(A.val().eval(), partial_view), adj_(A.adj().eval(), partial_view) {}
 
-  explicit matrix_cl(vari** A, const int& R, const int& C) :
-    rows_(R), cols_(C), adj_(Eigen::Map<matrix_vi>(A, R, C).adj().eval()),
-    val_(Eigen::Map<matrix_vi>(A, R, C).val().eval()) {
-  }
+  explicit matrix_cl(vari** A, const int& R, const int& C,
+                     matrix_cl_view partial_view = matrix_cl_view::Entire) :
+    rows_(R), cols_(C), view_(partial_view),
+    adj_(Eigen::Map<matrix_vi>(A, R, C).adj().eval(), partial_view),
+    val_(Eigen::Map<matrix_vi>(A, R, C).val().eval(), partial_view) {}
 
-  explicit matrix_cl(const int& rows, const int& cols) :
-  rows_(rows), cols_(cols), val_(rows, cols), adj_(rows, cols) {}
+
+  matrix_cl(const int& rows, const int& cols,
+            matrix_cl_view partial_view = matrix_cl_view::Entire)
+      : rows_(rows), cols_(cols), view_(partial_view), val_(rows, cols),
+       adj_(rows, cols){}
 
   matrix_cl<var> operator=(const matrix_cl<var>& A) {
+    check_size_match("assignment of (OpenCL) matrices", "source.rows()",
+                     A.rows(), "destination.rows()", this->rows());
+    check_size_match("assignment of (OpenCL) matrices", "source.cols()",
+                     A.cols(), "destination.cols()", this->cols());
     val_ = A.val();
     adj_ = A.adj();
     return *this;

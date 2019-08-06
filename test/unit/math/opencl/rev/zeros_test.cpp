@@ -8,23 +8,23 @@
 
 TEST(MathMatrixCL, zero_m_exception_pass) {
   using stan::math::matrix_cl;
-  using stan::math::TriangularViewCL;
+  using stan::math::matrix_cl_view;
   using stan::math::var;
   matrix_cl<var> m(1, 1);
 
-  EXPECT_NO_THROW(m.zeros<TriangularViewCL::Entire>());
-  EXPECT_NO_THROW(m.zeros<TriangularViewCL::Lower>());
-  EXPECT_NO_THROW(m.zeros<TriangularViewCL::Upper>());
+  EXPECT_NO_THROW(m.zeros<matrix_cl_view::Entire>());
+  EXPECT_NO_THROW(m.zeros<matrix_cl_view::Lower>());
+  EXPECT_NO_THROW(m.zeros<matrix_cl_view::Upper>());
 
   matrix_cl<double> m0;
-  EXPECT_NO_THROW(m0.zeros<TriangularViewCL::Entire>());
-  EXPECT_NO_THROW(m0.zeros<TriangularViewCL::Lower>());
-  EXPECT_NO_THROW(m0.zeros<TriangularViewCL::Upper>());
+  EXPECT_NO_THROW(m0.zeros<matrix_cl_view::Entire>());
+  EXPECT_NO_THROW(m0.zeros<matrix_cl_view::Lower>());
+  EXPECT_NO_THROW(m0.zeros<matrix_cl_view::Upper>());
 }
 
 TEST(MathMatrixCL, zero_m_value_check) {
   using stan::math::matrix_cl;
-  using stan::math::TriangularViewCL;
+  using stan::math::matrix_cl_view;
   using stan::math::matrix_d;
   using stan::math::matrix_v;
   using stan::math::var;
@@ -34,9 +34,9 @@ TEST(MathMatrixCL, zero_m_value_check) {
   matrix_cl<var> m_upper(m0);
   matrix_cl<var> m_lower(m0);
 
-  EXPECT_NO_THROW(m.zeros<TriangularViewCL::Entire>());
-  EXPECT_NO_THROW(m_lower.zeros<TriangularViewCL::Lower>());
-  EXPECT_NO_THROW(m_upper.zeros<TriangularViewCL::Upper>());
+  EXPECT_NO_THROW(m.zeros<matrix_cl_view::Entire>());
+  EXPECT_NO_THROW(m_lower.zeros<matrix_cl_view::Lower>());
+  EXPECT_NO_THROW(m_upper.zeros<matrix_cl_view::Upper>());
   matrix_d m0_dst = from_matrix_cl(m.val());
   EXPECT_EQ(0, m0_dst(0, 0));
   EXPECT_EQ(0, m0_dst(0, 1));

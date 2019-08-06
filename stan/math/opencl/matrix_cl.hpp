@@ -234,7 +234,7 @@ class matrix_cl<T, enable_if_arithmetic<T>> {
        */
       cl::Event write_event;
       queue.enqueueWriteBuffer(
-          buffer_cl_, CL_FALSE, sizeof(double) * offset_size,
+          buffer_cl_, opencl_context.blocking(), sizeof(double) * offset_size,
           sizeof(double) * rows_, A[i].data(), NULL, &write_event);
       this->add_write_event(write_event);
     }

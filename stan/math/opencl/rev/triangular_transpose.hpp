@@ -2,8 +2,9 @@
 #define STAN_MATH_OPENCL_REV_TRIANGULAR_TRANSPOSE_HPP
 #ifdef STAN_OPENCL
 
-#include <stan/math/opencl/rev/matrix_cl.hpp>
+#include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/triangular_transpose.hpp>
+#include <stan/math/opencl/rev/matrix_cl.hpp>
 
 namespace stan {
 namespace math {
@@ -18,7 +19,7 @@ namespace math {
  * @throw <code>std::invalid_argument</code> if the matrix is not square.
  *
  */
-template <TriangularMapCL triangular_map>
+template <TriangularMapCL triangular_map = TriangularMapCL::LowerToUpper>
 inline void matrix_cl<var>::triangular_transpose() try {
   this->val().template triangular_transpose<triangular_map>();
   this->adj().template triangular_transpose<triangular_map>();

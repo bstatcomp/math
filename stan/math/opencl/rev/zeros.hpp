@@ -3,7 +3,7 @@
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/opencl_context.hpp>
-#include <stan/math/opencl/constants.hpp>
+#include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/rev/matrix_cl.hpp>
 #include <stan/math/opencl/zeros.hpp>
@@ -18,14 +18,14 @@ namespace math {
  * Supports writing zeroes to the lower and upper triangular or
  * the whole matrix.
  *
- * @tparam triangular_view Specifies if zeros are assigned to
+ * @tparam partial_view Specifies if zeros are assigned to
  * the entire matrix, lower triangular or upper triangular. The
- * value must be of type TriangularViewCL
+ * value must be of type matrix_cl_view
  */
-template <TriangularViewCL triangular_view>
+template <matrix_cl_view matrix_view = matrix_cl_view::Entire>
 inline void matrix_cl<var>::zeros() try {
-  this->val().template zeros<triangular_view>();
-  this->adj().template zeros<triangular_view>();
+  this->val().template zeros<matrix_view>();
+  this->adj().template zeros<matrix_view>();
 } catch (const cl::Error& e) {
   check_opencl_error("zeros", e);
 }

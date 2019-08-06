@@ -71,8 +71,11 @@ class matrix_cl<var> {
   template <int R, int C>
   explicit matrix_cl(const Eigen::Matrix<var, R, C>& A,
                      matrix_cl_view partial_view = matrix_cl_view::Entire)
-      : rows_(A.rows()), cols_(A.cols()), view_(partial_view),
-        val_(A.val().eval(), partial_view), adj_(A.adj().eval(), partial_view) {}
+      : rows_(A.rows()),
+        cols_(A.cols()),
+        view_(partial_view),
+        val_(A.val().eval(), partial_view),
+        adj_(A.adj().eval(), partial_view) {}
 
   template <int R, int C>
   explicit matrix_cl(const Eigen::Matrix<vari*, R, C>& A,

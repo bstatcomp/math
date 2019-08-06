@@ -45,13 +45,15 @@ inline matrix_cl<var> to_matrix_cl(const Eigen::Matrix<var, R, C>& src) {
 inline Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> from_matrix_cl(
     const matrix_cl<var>& src) {
   if (src.size() == 0) {
-    Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst(src.rows(), src.cols());
+    Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst(src.rows(),
+                                                           src.cols());
     return dst;
   }
-  Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst = from_matrix_cl(src.val());
+  Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst
+      = from_matrix_cl(src.val());
   Eigen::MatrixXd adjs = from_matrix_cl(src.adj());
   for (int i = 0; i < dst.size(); i++) {
-      dst(i).vi_->adj_ = adjs(i);
+    dst(i).vi_->adj_ = adjs(i);
   }
   return dst;
 }
@@ -106,8 +108,8 @@ inline matrix_cl<var> packed_copy(const std::vector<var>& src, int rows) {
   std::vector<double> adj(packed_size);
 
   for (int i = 0; i < packed_size; i++) {
-      val[i] = src[i].vi_->val_;
-      adj[i] = src[i].vi_->val_;
+    val[i] = src[i].vi_->val_;
+    adj[i] = src[i].vi_->val_;
   }
   dst.val() = packed_copy<partial_view>(val, rows);
   dst.adj() = packed_copy<partial_view>(adj, rows);
@@ -138,8 +140,8 @@ inline matrix_cl<var> packed_copy(vari** src, int rows) {
   std::vector<double> adj(packed_size);
 
   for (int i = 0; i < packed_size; i++) {
-      val[i] = src[i]->val_;
-      adj[i] = src[i]->adj_;
+    val[i] = src[i]->val_;
+    adj[i] = src[i]->adj_;
   }
   dst.val() = packed_copy<partial_view>(val, rows);
   dst.adj() = packed_copy<partial_view>(adj, rows);
@@ -164,8 +166,8 @@ void packed_copy(const matrix_cl<var>& src, vari** dst) {
   const int packed_size = src.rows() * (src.rows() + 1) / 2;
   std::vector<var> vec_dst = packed_copy<partial_view>(src);
   for (int i = 0; i < packed_size; i++) {
-      dst[i]->val_ = vec_dst[i].vi_->val_;
-      dst[i]->adj_ = vec_dst[i].vi_->adj_;
+    dst[i]->val_ = vec_dst[i].vi_->val_;
+    dst[i]->adj_ = vec_dst[i].vi_->adj_;
   }
   return;
 }
@@ -188,7 +190,6 @@ inline matrix_cl<var> copy_cl(const matrix_cl<var>& src) {
   dst.adj() = src.adj();
   return dst;
 }
-
 
 }  // namespace math
 }  // namespace stan

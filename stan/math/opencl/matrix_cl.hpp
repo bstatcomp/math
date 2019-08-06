@@ -349,7 +349,7 @@ class matrix_cl<T, enable_if_arithmetic<T>> {
    * Assign a \c matrix_cl of one arithmetic type to another
    */
   template <typename U, typename = enable_if_arithmetic<U>>
-  matrix_cl<T, enable_if_arithmetic<T>>& operator=(const matrix_cl<U>& a) {
+  matrix_cl<T, enable_if_arithmetic<T>>& operator=(const matrix_cl<U, enable_if_arithmetic<U>>& a) {
     check_size_match("assignment of (OpenCL) matrices", "source.rows()",
                      a.rows(), "destination.rows()", rows());
     check_size_match("assignment of (OpenCL) matrices", "source.cols()",

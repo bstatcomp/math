@@ -49,41 +49,55 @@ class matrix_cl<var> {
   int cols() const { return this->cols_; }
 
   int size() const { return this->rows_ * this->cols_; }
-  matrix_cl<double>& val() const {return this->val_;}
-  matrix_cl<double>& adj() const {return this->adj_;}
+  matrix_cl<double>& val() const { return this->val_; }
+  matrix_cl<double>& adj() const { return this->adj_; }
 
   const matrix_cl_view& view() const { return view_; }
-  void view(const matrix_cl_view& view) { view_ = view; }
+  void view(const matrix_cl_view& view) {
+    view_ = view;
+    this->val_.view(view);
+    this->adj_.view(view);
+  }
 
   explicit matrix_cl() : rows_(0), cols_(0) {}
 
   matrix_cl(const matrix_cl<var>& A)
-      : rows_(A.rows()), cols_(A.cols()), view_(A.view()),
-        val_(A.val()), adj_(A.adj()){}
+      : rows_(A.rows()),
+        cols_(A.cols()),
+        view_(A.view()),
+        val_(A.val()),
+        adj_(A.adj()) {}
 
   template <int R, int C>
   explicit matrix_cl(const Eigen::Matrix<var, R, C>& A,
                      matrix_cl_view partial_view = matrix_cl_view::Entire)
       : rows_(A.rows()), cols_(A.cols()), view_(partial_view),
-        val_(A.val().eval()), adj_(A.adj().eval()) {}
+        val_(A.val().eval(), partial_view), adj_(A.adj().eval(), partial_view) {}
 
   template <int R, int C>
   explicit matrix_cl(const Eigen::Matrix<vari*, R, C>& A,
                      matrix_cl_view partial_view = matrix_cl_view::Entire)
-      : rows_(A.rows()), cols_(A.cols()), view_(partial_view),
-        val_(A.val().eval(), partial_view), adj_(A.adj().eval(), partial_view) {}
+      : rows_(A.rows()),
+        cols_(A.cols()),
+        view_(partial_view),
+        val_(A.val().eval(), partial_view),
+        adj_(A.adj().eval(), partial_view) {}
 
   explicit matrix_cl(vari** A, const int& R, const int& C,
-                     matrix_cl_view partial_view = matrix_cl_view::Entire) :
-    rows_(R), cols_(C), view_(partial_view),
-    adj_(Eigen::Map<matrix_vi>(A, R, C).adj().eval(), partial_view),
-    val_(Eigen::Map<matrix_vi>(A, R, C).val().eval(), partial_view) {}
-
+                     matrix_cl_view partial_view = matrix_cl_view::Entire)
+      : rows_(R),
+        cols_(C),
+        view_(partial_view),
+        adj_(Eigen::Map<matrix_vi>(A, R, C).adj().eval(), partial_view),
+        val_(Eigen::Map<matrix_vi>(A, R, C).val().eval(), partial_view) {}
 
   matrix_cl(const int& rows, const int& cols,
             matrix_cl_view partial_view = matrix_cl_view::Entire)
-      : rows_(rows), cols_(cols), view_(partial_view), val_(rows, cols),
-       adj_(rows, cols){}
+      : rows_(rows),
+        cols_(cols),
+        view_(partial_view),
+        val_(rows, cols, partial_view),
+        adj_(rows, cols, partial_view) {}
 
   matrix_cl<var> operator=(const matrix_cl<var>& A) {
     check_size_match("assignment of (OpenCL) matrices", "source.rows()",
@@ -92,12 +106,13 @@ class matrix_cl<var> {
                      A.cols(), "destination.cols()", this->cols());
     val_ = A.val();
     adj_ = A.adj();
+    view_ = A.view();
     return *this;
   }
 };
 
-}
-}
+}  // namespace math
+}  // namespace stan
 
 #endif
 #endif

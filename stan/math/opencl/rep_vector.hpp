@@ -9,16 +9,15 @@
 
 namespace stan {
 namespace math {
-template <typename T, typename = enable_if_arithmetic<T>>
-inline matrix_cl<T> rep_vector_cl(double val, int n) {
+inline matrix_cl<double> rep_vector_cl(double val, int n) {
+  matrix_cl<double> res(n, 1);
   try {
-    matrix_cl<T> res(n, 1);
     opencl_kernels::constants(cl::NDRange(n, 1), res, val,
                               n, 1, matrix_cl_view::Entire);
-    return res;
   } catch (const cl::Error& e) {
     check_opencl_error("rep_vector_cl", e);
   }
+  return res;
 }
 }
 }

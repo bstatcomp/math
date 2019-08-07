@@ -25,7 +25,7 @@ static const char *diag_matrix_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/diag_matrix.hpp diag_matrix() \endlink
  */
-const kernel_cl<out_buffer, in_buffer, int, int>
+const kernel_cl<out_buffer, in_buffer, int>
         diag_matrix("diag_matrix",
                  {diag_matrix_kernel_code});
 

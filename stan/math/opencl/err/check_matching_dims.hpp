@@ -11,17 +11,17 @@ namespace math {
  *
  * @param function Function name (for error messages)
  * @param name1 Variable name for the first matrix (for error messages)
- * @param y1 First <code>matrix_cl</code>
+ * @param y1 First <code>matrix_cl</code> or expression
  * @param name2 Variable name for the second matrix (for error messages)
- * @param y2 Second <code>matrix_cl</code>
+ * @param y2 Second <code>matrix_cl</code> or expression
  *
  * @throw <code>std::invalid_argument</code>
- * if the dimensions of the matrices do not match
+ * if the dimensions of the inputs do not match
  */
-template <typename T>
+template <typename T1, typename T2>
 inline void check_matching_dims(const char* function, const char* name1,
-                                const matrix_cl<T>& y1, const char* name2,
-                                const matrix_cl<T>& y2) {
+                                const T1& y1, const char* name2,
+                                const T2& y2) {
   check_size_match(function, "Rows of ", name1, y1.rows(), "rows of ", name2,
                    y2.rows());
   check_size_match(function, "Columns of ", name1, y1.cols(), "columns of ",

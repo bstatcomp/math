@@ -17,7 +17,7 @@ template<typename T>
 class constant__ : public operation<constant__<T>, T>{
 public:
     static_assert(std::is_arithmetic<T>::value, "std::is_arithmetic<T> must be true for constants!");
-
+    using ReturnScalar = T;
     using base = operation<constant__<T>, T>;
     using base::var_name;
 

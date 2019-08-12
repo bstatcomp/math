@@ -14,13 +14,15 @@ namespace stan {
 namespace math {
 
 template<typename Derived, typename T_a, typename T_b>
-class binary_operation : public operation<Derived, return_type_t<T_a, T_b>> {
+class binary_operation : public operation<Derived, typename std::common_type<typename T_a::ReturnScalar, typename T_b::ReturnScalar>::type> {
 public:
   static_assert(std::is_base_of<operation_base,T_a>::value, "binary_operation: a must be an operation!");
   static_assert(std::is_base_of<operation_base,T_b>::value, "binary_operation: b must be an operation!");
-  using T = return_type_t<T_a, T_b>;
+
+  using ReturnScalar = typename std::common_type<typename T_a::ReturnScalar, typename T_b::ReturnScalar>::type;
   using base = operation<Derived, return_type_t<T_a, T_b>>;
-//  using operation<Derived, T>::ReturnScalar;
+  using base::var_name;
+
   binary_operation(const T_a& a, const T_b& b, const std::string& op) : a_(a), b_(b), op_(op) {
       const std::string function = "binary_operator" + op;
       if(a.rows()!=base::dynamic && b.rows()!=base::dynamic) {
@@ -35,7 +37,7 @@ public:
     kernel_parts a_parts = a_.generate(i, j);
     kernel_parts b_parts = b_.generate(i, j);
     kernel_parts res;
-    res.body = a_parts.body + b_parts.body + type_str<T>::name + " " + this->var_name + " = " + a_.var_name + op_ + b_.var_name + ";\n";
+    res.body = a_parts.body + b_parts.body + type_str<ReturnScalar>::name + " " + var_name + " = " + a_.var_name + op_ + b_.var_name + ";\n";
     res.args = a_parts.args + b_parts.args;
     return res;
   }
@@ -113,7 +115,6 @@ auto elewise_multiplication(const T_a& a, const T_b& b) -> const elewise_multipl
 template<typename T_a, typename T_b>
 class elewise_division__ : public binary_operation<elewise_division__<T_a, T_b>, T_a, T_b> {
 public:
-  using T = return_type_t<T_a, T_b>;
   elewise_division__(const T_a& a, const T_b& b) : binary_operation<elewise_division__<T_a, T_b>, T_a, T_b>(a,b,"/") {}
 
   matrix_cl_view view()  const{

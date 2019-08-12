@@ -14,8 +14,8 @@ namespace math {
 template<typename T>
 class load__ : public operation<load__<T>, T>{
 public:
+    using ReturnScalar = T;
     using operation<load__<T>, T>::var_name;
-//    using operation<load__<T>, T>::ReturnScalar;
     load__(const matrix_cl<T>& a) : a_(a) {}
 
     kernel_parts generate(const std::string& i, const std::string& j) const{

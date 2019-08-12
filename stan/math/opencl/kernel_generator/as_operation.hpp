@@ -12,7 +12,7 @@ namespace stan {
 namespace math {
 
 template<typename T, typename Cond = std::enable_if_t<std::is_base_of<operation_base, T>::value>>
-const T& as_operation(const T& a){
+const T as_operation(const T& a){ //TODO: return ref, separate type deduction
   return a;
 }
 

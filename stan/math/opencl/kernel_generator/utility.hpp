@@ -1,5 +1,6 @@
 #ifndef STAN_MATH_OPENCL_KERNEL_GENERATOR_UTILITY_HPP
 #define STAN_MATH_OPENCL_KERNEL_GENERATOR_UTILITY_HPP
+#ifdef STAN_OPENCL
 
 #include <string>
 
@@ -8,14 +9,6 @@ inline std::string get_variable_name(){
   i++;
   return "var" + std::to_string(i);
 }
-
-//struct name_generator{
-//  std::string operator() (){
-//    static int i=0;
-//    i++;
-//    return "var" + std::to_string(i);
-//  }
-//};
 
 template<typename T>
 struct type_str{
@@ -28,4 +21,5 @@ ADD_TYPE_TO_TYPE_STR(int)
 ADD_TYPE_TO_TYPE_STR(bool)
 #undef ADD_TYPE_TO_TYPE_STR
 
-#endif //STAN_MATH_OPENCL_KERNEL_GENERATOR_UTILITY_HPP
+#endif
+#endif

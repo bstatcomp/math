@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/tgamma.hpp>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -28,7 +29,7 @@ struct tgamma_fun {
  * @return Gamma function applied to each value in x.
  * @throw std::domain_error if any value is 0 or a negative integer
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<tgamma_fun, T>::enabled>>
 inline typename apply_scalar_unary<tgamma_fun, T>::return_t tgamma(const T& x) {
   return apply_scalar_unary<tgamma_fun, T>::apply(x);
 }

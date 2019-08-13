@@ -1,5 +1,6 @@
 #ifdef STAN_OPENCL
 
+//#include <stan/math/opencl/add.hpp>
 #include <stan/math/opencl/kernel_generator/binary_operation.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/copy.hpp>
@@ -15,15 +16,14 @@ using stan::math::matrix_cl;
     EXPECT_NEAR(A(i), B(i), DELTA);
 
 TEST(MathMatrixCL, addition_test){
-  using stan::math::addition;
   MatrixXd m1(3, 3);
   m1 << 1, 2.5, 3, 4, 5, 6.3, 7, -8, -9.5;
-  MatrixXi m2(3, 3);
+  MatrixXd m2(3, 3);
   m2 << 10, 100, 1000, 0, -10, -12, 2, 4, 8;
   
   matrix_cl<double> m1_cl(m1);
-  matrix_cl<int> m2_cl(m2);
-  auto tmp = addition(m1_cl, m2_cl);
+  matrix_cl<double> m2_cl(m2);
+  auto tmp = m1_cl + m2_cl;
   matrix_cl<double> res_cl = tmp;
 
   MatrixXd res = stan::math::from_matrix_cl(res_cl);
@@ -32,7 +32,6 @@ TEST(MathMatrixCL, addition_test){
 }
 
 TEST(MathMatrixCL, subtraction_test){
-  using stan::math::subtraction;
   MatrixXd m1(3, 3);
   m1 << 1, 2.5, 3, 4, 5, 6.3, 7, -8, -9.5;
   MatrixXi m2(3, 3);
@@ -40,7 +39,7 @@ TEST(MathMatrixCL, subtraction_test){
 
   matrix_cl<double> m1_cl(m1);
   matrix_cl<int> m2_cl(m2);
-  auto tmp = subtraction(m1_cl, m2_cl);
+  auto tmp = m1_cl - m2_cl;
   matrix_cl<double> res_cl = tmp;
 
   MatrixXd res = stan::math::from_matrix_cl(res_cl);
@@ -49,7 +48,6 @@ TEST(MathMatrixCL, subtraction_test){
 }
 
 TEST(MathMatrixCL, elewise_multiplication_test){
-  using stan::math::elewise_multiplication;
   MatrixXd m1(3, 3);
   m1 << 1, 2.5, 3, 4, 5, 6.3, 7, -8, -9.5;
   MatrixXi m2(3, 3);
@@ -67,7 +65,6 @@ TEST(MathMatrixCL, elewise_multiplication_test){
 
 
 TEST(MathMatrixCL, elewise_division_test){
-  using stan::math::elewise_division;
   MatrixXd m1(3, 3);
   m1 << 1, 2.5, 3, 4, 5, 6.3, 7, -8, -9.5;
   MatrixXi m2(3, 3);
@@ -84,8 +81,6 @@ TEST(MathMatrixCL, elewise_division_test){
 }
 
 TEST(MathMatrixCL, multiple_operations){
-  using stan::math::addition;
-  using stan::math::subtraction;
   MatrixXd m1(3, 3);
   m1 << 1, 2, 3, 4, 5, 6, 7, 8, 9;
   MatrixXi m2(3, 3);
@@ -96,7 +91,7 @@ TEST(MathMatrixCL, multiple_operations){
   matrix_cl<double> m1_cl(m1);
   matrix_cl<int> m2_cl(m2);
   matrix_cl<int> m3_cl(m3);
-  auto tmp = subtraction(m1_cl, addition(m2_cl, m3_cl));
+  auto tmp = m1_cl - (m2_cl + m3_cl);
   matrix_cl<double> res_cl = tmp;
 
   MatrixXd res = stan::math::from_matrix_cl(res_cl);

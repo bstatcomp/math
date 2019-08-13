@@ -7,6 +7,7 @@
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/opencl/kernel_generator/operation.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
+#include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
 #include <string>
 #include <type_traits>
 
@@ -20,7 +21,7 @@ public:
   static_assert(std::is_base_of<operation_base,T_b>::value, "binary_operation: b must be an operation!");
 
   using ReturnScalar = typename std::common_type<typename T_a::ReturnScalar, typename T_b::ReturnScalar>::type;
-  using base = operation<Derived, return_type_t<T_a, T_b>>;
+  using base = operation<Derived, ReturnScalar>;
   using base::var_name;
 
   binary_operation(const T_a& a, const T_b& b, const std::string& op) : a_(a), b_(b), op_(op) {
@@ -77,8 +78,8 @@ public:
   addition__(const T_a& a, const T_b& b) : binary_operation<addition__<T_a, T_b>, T_a, T_b>(a,b,"+") {}
 };
 
-template<typename T_a, typename T_b>
-auto addition(const T_a& a, const T_b& b) -> const addition__<decltype(as_operation(a)),decltype(as_operation(b))>{
+template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
+auto operator+(const T_a& a, const T_b& b) -> const addition__<decltype(as_operation(a)),decltype(as_operation(b))>{
   return {as_operation(a), as_operation(b)};
 }
 
@@ -89,8 +90,8 @@ public:
   subtraction__(const T_a& a, const T_b& b) : binary_operation<subtraction__<T_a, T_b>, T_a, T_b>(a,b,"-") {}
 };
 
-template<typename T_a, typename T_b>
-auto subtraction(const T_a& a, const T_b& b) -> const subtraction__<decltype(as_operation(a)),decltype(as_operation(b))>{
+template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
+auto operator-(const T_a& a, const T_b& b) -> const subtraction__<decltype(as_operation(a)),decltype(as_operation(b))>{
   return {as_operation(a), as_operation(b)};
 }
 

@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/log1p.hpp>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -34,7 +35,7 @@ struct log1p_fun {
  * @param x Container.
  * @return Elementwise log1p of members of container.
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<log1p_fun, T>::enabled>>
 inline typename apply_scalar_unary<log1p_fun, T>::return_t log1p(const T& x) {
   return apply_scalar_unary<log1p_fun, T>::apply(x);
 }

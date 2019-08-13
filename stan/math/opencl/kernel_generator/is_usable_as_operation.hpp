@@ -4,6 +4,7 @@
 
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/kernel_generator/operation.hpp>
+#include <stan/math/prim/meta.hpp>
 #include <type_traits>
 
 namespace stan {
@@ -18,8 +19,10 @@ template<typename T>
 struct is_usable_as_operation<matrix_cl<T>> : std::true_type{};
 
 template<typename T>
-using enable_if_is_usable_as_operation = typename std::enable_if<is_usable_as_operation<T>::value>::type;
+using enable_if_is_usable_as_operation = typename std::enable_if_t<is_usable_as_operation<T>::value>;
 
+template<typename... Types>
+using enable_if_all_usable_as_operation = typename std::enable_if_t<math::conjunction<is_usable_as_operation<Types>...>::value>;
 }
 }
 

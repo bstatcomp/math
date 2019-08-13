@@ -71,38 +71,52 @@ auto fun(const T& a) -> fun##__<decltype(as_operation(a))>{ \
   return fun##__<decltype(as_operation(a))>(as_operation(a)); \
 }
 
-//#define ADD_UNARY_FUNCTION_PASS_ZERO(fun) \
-//template<typename T> \
-//class fun##__ : public unary_function<fun##__<T>, T>{ \
-//public: \
-//    explicit fun##__(const T& a) : unary_function<fun##__<T>, T>(a,#fun){} \
-//}; \
-//\
-//template<typename T, typename Cond = typename std::enable_if<is_usable_as_operation<T>::value>::type> \
-//auto fun(const T& a) -> fun##__<decltype(as_operation(a))>{ \
-//  return fun##__<decltype(as_operation(a))>(as_operation(a)); \
-//}
+#define ADD_UNARY_FUNCTION_PASS_ZERO(fun) \
+template<typename T> \
+class fun##__ : public unary_function<fun##__<T>, T>{ \
+public: \
+    explicit fun##__(const T& a) : unary_function<fun##__<T>, T>(a,#fun){} \
+}; \
+\
+template<typename T, typename Cond = typename std::enable_if<is_usable_as_operation<T>::value>::type> \
+auto fun(const T& a) -> fun##__<decltype(as_operation(a))>{ \
+  return fun##__<decltype(as_operation(a))>(as_operation(a)); \
+}
 
-//ADD_UNARY_FUNCTION(sqrt)
-//ADD_UNARY_FUNCTION(cbrt)
-//
-//ADD_UNARY_FUNCTION(exp)
-//ADD_UNARY_FUNCTION(exp2)
-//ADD_UNARY_FUNCTION_PASS_ZERO(expm1)
-//ADD_UNARY_FUNCTION(log)
-//ADD_UNARY_FUNCTION_PASS_ZERO(log1p)
-//
-//ADD_UNARY_FUNCTION_PASS_ZERO(sin)
-//ADD_UNARY_FUNCTION_PASS_ZERO(sinh)
-//ADD_UNARY_FUNCTION(cos)
-//ADD_UNARY_FUNCTION(cosh)
-//ADD_UNARY_FUNCTION_PASS_ZERO(tan)
-//ADD_UNARY_FUNCTION_PASS_ZERO(tanh)
-//
-//ADD_UNARY_FUNCTION(tgamma)
-//ADD_UNARY_FUNCTION(lgamma)
-//ADD_UNARY_FUNCTION_PASS_ZERO(erf)
-//ADD_UNARY_FUNCTION(erfc)
+ADD_UNARY_FUNCTION(rsqrt)
+ADD_UNARY_FUNCTION_PASS_ZERO(sqrt)
+ADD_UNARY_FUNCTION_PASS_ZERO(cbrt)
+
+ADD_UNARY_FUNCTION(exp)
+ADD_UNARY_FUNCTION(exp2)
+ADD_UNARY_FUNCTION_PASS_ZERO(expm1)
+ADD_UNARY_FUNCTION(log)
+ADD_UNARY_FUNCTION(log2)
+ADD_UNARY_FUNCTION(log10)
+ADD_UNARY_FUNCTION_PASS_ZERO(log1p)
+
+ADD_UNARY_FUNCTION_PASS_ZERO(sin)
+ADD_UNARY_FUNCTION_PASS_ZERO(sinh)
+ADD_UNARY_FUNCTION(cos)
+ADD_UNARY_FUNCTION(cosh)
+ADD_UNARY_FUNCTION_PASS_ZERO(tan)
+ADD_UNARY_FUNCTION_PASS_ZERO(tanh)
+
+ADD_UNARY_FUNCTION_PASS_ZERO(asin)
+ADD_UNARY_FUNCTION_PASS_ZERO(asinh)
+ADD_UNARY_FUNCTION(acos)
+ADD_UNARY_FUNCTION(acosh)
+ADD_UNARY_FUNCTION_PASS_ZERO(atan)
+ADD_UNARY_FUNCTION_PASS_ZERO(atanh)
+
+ADD_UNARY_FUNCTION(tgamma)
+ADD_UNARY_FUNCTION(lgamma)
+ADD_UNARY_FUNCTION_PASS_ZERO(erf)
+ADD_UNARY_FUNCTION(erfc)
+
+ADD_UNARY_FUNCTION_PASS_ZERO(floor)
+ADD_UNARY_FUNCTION_PASS_ZERO(round)
+ADD_UNARY_FUNCTION_PASS_ZERO(ceil)
 
 #undef ADD_UNARY_FUNCTION
 #undef ADD_UNARY_FUNCTION_PASS_ZERO

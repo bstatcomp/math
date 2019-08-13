@@ -7,6 +7,11 @@
 namespace stan {
 namespace math {
 
+
+template <typename F, typename T>
+struct apply_scalar_unary {
+    enum { enabled = 0 };
+};
 /**
  * Base template class for vectorization of unary scalar functions
  * defined by a template class <code>F</code> to a scalar,
@@ -31,19 +36,19 @@ namespace math {
  * @tparam F Type of function to apply.
  * @tparam T Type of argument to which function is applied.
  */
-template <typename F, typename T>
-struct apply_scalar_unary {
+template <typename F, typename Scalar, int R, int C>
+struct apply_scalar_unary<F, Eigen::Matrix<Scalar,R,C> > {
+  enum{ enabled = 1};
   /**
    * Type of underlying scalar for the matrix type T.
    */
-  typedef typename Eigen::internal::traits<T>::Scalar scalar_t;
+  typedef Scalar scalar_t;
 
   /**
    * Return type for applying the function elementwise to a matrix
    * expression template of type T.
    */
-  typedef Eigen::Matrix<scalar_t, T::RowsAtCompileTime, T::ColsAtCompileTime>
-      return_t;
+  typedef Eigen::Matrix<Scalar, R, C> return_t;
 
   /**
    * Return the result of applying the function defined by the
@@ -53,7 +58,7 @@ struct apply_scalar_unary {
    * @return Componentwise application of the function specified
    * by F to the specified matrix.
    */
-  static inline return_t apply(const T& x) {
+  static inline return_t apply(const Eigen::Matrix<Scalar,R,C>& x) {
     return x.unaryExpr(
         [](scalar_t x) { return apply_scalar_unary<F, scalar_t>::apply(x); });
   }
@@ -67,6 +72,7 @@ struct apply_scalar_unary {
  */
 template <typename F>
 struct apply_scalar_unary<F, double> {
+  enum{ enabled = 1};
   /**
    * The return type, double.
    */
@@ -94,6 +100,7 @@ struct apply_scalar_unary<F, double> {
  */
 template <typename F>
 struct apply_scalar_unary<F, int> {
+  enum{ enabled = 1};
   /**
    * The return type, double.
    */
@@ -122,6 +129,7 @@ struct apply_scalar_unary<F, int> {
  */
 template <typename F, typename T>
 struct apply_scalar_unary<F, std::vector<T> > {
+  enum{ enabled = apply_scalar_unary<F, T>::enabled };
   /**
    * Return type, which is calculated recursively as a standard
    * vector of the return type of the contained type T.

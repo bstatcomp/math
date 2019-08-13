@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/lgamma.hpp>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -29,7 +30,7 @@ struct lgamma_fun {
  *         applied to each value in x.
  * @throw std::domain_error if any value is a negative integer or 0.
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<lgamma_fun, T>::enabled>>
 inline typename apply_scalar_unary<lgamma_fun, T>::return_t lgamma(const T& x) {
   return apply_scalar_unary<lgamma_fun, T>::apply(x);
 }

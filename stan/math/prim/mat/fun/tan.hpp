@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <cmath>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -27,7 +28,7 @@ struct tan_fun {
  * @tparam T Container type.
  * @return Tangent of each value in x.
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<tan_fun, T>::enabled>>
 inline typename apply_scalar_unary<tan_fun, T>::return_t tan(const T& x) {
   return apply_scalar_unary<tan_fun, T>::apply(x);
 }

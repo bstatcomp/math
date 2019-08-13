@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <cmath>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -27,7 +28,7 @@ struct sinh_fun {
  * @tparam T Container type.
  * @return Hyperbolic sine of each variable in x.
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<sinh_fun, T>::enabled>>
 inline typename apply_scalar_unary<sinh_fun, T>::return_t sinh(const T& x) {
   return apply_scalar_unary<sinh_fun, T>::apply(x);
 }

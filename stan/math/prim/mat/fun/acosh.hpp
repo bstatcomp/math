@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/acosh.hpp>
+#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -34,7 +35,7 @@ struct acosh_fun {
  * @param x Container.
  * @return Elementwise acosh of members of container.
  */
-template <typename T>
+template <typename T, typename = std::enable_if_t<apply_scalar_unary<acosh_fun, T>::enabled>>
 inline typename apply_scalar_unary<acosh_fun, T>::return_t acosh(const T& x) {
   return apply_scalar_unary<acosh_fun, T>::apply(x);
 }

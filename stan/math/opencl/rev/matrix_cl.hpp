@@ -31,10 +31,11 @@ class matrix_cl<var> {
    */
   const int rows_;
   const int cols_;
-  mutable matrix_cl<double> val_;
-  mutable matrix_cl<double> adj_;
   matrix_cl_view view_;  // Holds info on if matrix is a special type
  public:
+
+  mutable matrix_cl<double> val_;
+  mutable matrix_cl<double> adj_;
   typedef var type;
   // Forward declare the methods that work in place on the matrix
   template <matrix_cl_view matrix_view = matrix_cl_view::Entire>

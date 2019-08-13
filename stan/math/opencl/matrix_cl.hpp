@@ -184,6 +184,7 @@ class matrix_cl<T, enable_if_arithmetic<T>> {
       : rows_(A.rows()), cols_(A.cols()), view_(A.view()) {
     if (A.size() == 0)
       return;
+    std::cout << "is it me?" << std::endl;
     cl::Context& ctx = opencl_context.context();
     cl::CommandQueue queue = opencl_context.queue();
     try {

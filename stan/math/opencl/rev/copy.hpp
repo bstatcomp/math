@@ -44,40 +44,40 @@ inline matrix_cl<var> to_matrix_cl(const Eigen::Matrix<var, R, C>& src) {
  */
 inline Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> from_matrix_cl(
     const matrix_cl<var>& src) {
-  if (src.size() == 0) {
-    Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst(src.rows(),
+  Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst(src.rows(),
                                                            src.cols());
+  if (src.size() == 0) {    
     return dst;
   }
-  Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> dst
-      = from_matrix_cl(src.val());
+  Eigen::MatrixXd vals = from_matrix_cl(src.val_);
   Eigen::MatrixXd adjs = from_matrix_cl(src.adj());
   for (int i = 0; i < dst.size(); i++) {
+    std::cout << vals(i) << std::endl;
+    dst(i) = var(vals(i));
     dst(i).vi_->adj_ = adjs(i);
   }
   return dst;
 }
 
 /**
- * Packs the flat triagnular matrix on the OpenCL device and
+ * Packs the flat triangular matrix on the OpenCL device and
  * copies it to the std::vector.
  *
- * @tparam partial_view the triangularity of the source matrix
  * @param src the flat triangular source matrix on the OpenCL device
  * @return the packed std::vector
  */
-template <matrix_cl_view partial_view>
 inline std::vector<var> packed_copy(const matrix_cl<var>& src) {
   const int packed_size = src.rows() * (src.rows() + 1) / 2;
   std::vector<var> dst(packed_size);
   if (packed_size == 0) {
     return dst;
   }
-  std::vector<double> val = packed_copy<partial_view>(src.val());
-  std::vector<double> adj = packed_copy<partial_view>(src.adj());
+  std::vector<double> val = packed_copy(src.val());
+  std::vector<double> adj = packed_copy(src.adj());
   for (int i = 0; i < packed_size; i++) {
-    dst[i].vi_->val_ = val[i];
-    dst[i].vi_->adj_ = adj[i];
+    vari* temp = new vari(val[i]);
+    temp->adj_ = adj[i];
+    dst[i] = var(temp);
   }
   return dst;
 }
@@ -100,7 +100,7 @@ inline matrix_cl<var> packed_copy(const std::vector<var>& src, int rows) {
   const int packed_size = rows * (rows + 1) / 2;
   check_size_match("copy (packed std::vector -> OpenCL)", "src.size()",
                    src.size(), "rows * (rows + 1) / 2", packed_size);
-  matrix_cl<var> dst(rows, rows);
+  matrix_cl<var> dst(rows, rows, partial_view);
   if (rows == 0) {
     return dst;
   }
@@ -131,6 +131,7 @@ inline matrix_cl<var> packed_copy(const std::vector<var>& src, int rows) {
  */
 template <matrix_cl_view partial_view>
 inline matrix_cl<var> packed_copy(vari** src, int rows) {
+  std::cout << "this?" << std::endl;
   const int packed_size = rows * (rows + 1) / 2;
   matrix_cl<var> dst(rows, rows);
   if (rows == 0) {
@@ -162,14 +163,15 @@ inline matrix_cl<var> packed_copy(vari** src, int rows) {
  * for the packed triangular matrix
  */
 template <matrix_cl_view partial_view>
-void packed_copy(const matrix_cl<var>& src, vari** dst) {
+vari** packed_copy(const matrix_cl<var>& src) {
   const int packed_size = src.rows() * (src.rows() + 1) / 2;
-  std::vector<var> vec_dst = packed_copy<partial_view>(src);
+  vari** varis
+      = ChainableStack::instance_->memalloc_.alloc_array<vari*>(packed_size);
+  std::vector<var> vec_dst = packed_copy(src);
   for (int i = 0; i < packed_size; i++) {
-    dst[i]->val_ = vec_dst[i].vi_->val_;
-    dst[i]->adj_ = vec_dst[i].vi_->adj_;
+    varis[i] = vec_dst[i].vi_;
   }
-  return;
+  return varis;
 }
 /**
  * Copies the source matrix to the

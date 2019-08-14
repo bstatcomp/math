@@ -175,16 +175,6 @@ inline matrix_cl<return_type_t<T1, T2>> operator*(const matrix_cl<T1>& A,
                                                   const matrix_cl<T2>& B) {
   return opencl::multiply(A, B);
 }
-template <typename T1, typename T2, typename = enable_if_all_arithmetic<T1, T2>>
-inline matrix_cl<return_type_t<T1, T2>> operator*(const matrix_cl<T1>& B,
-                                                  const T2 scalar) {
-  return multiply(B, scalar);
-}
-template <typename T1, typename T2, typename = enable_if_all_arithmetic<T1, T2>>
-inline matrix_cl<return_type_t<T1, T2>> operator*(const T1 scalar,
-                                                  const matrix_cl<T2>& B) {
-  return multiply(scalar, B);
-}
 }  // namespace math
 }  // namespace stan
 

@@ -11,19 +11,19 @@
 namespace stan {
 namespace math {
 
-template<typename T, typename Cond = std::enable_if_t<std::is_base_of<operation_base, T>::value>>
-const T as_operation(const T& a){ //TODO: return ref, separate type deduction
+template<typename T, typename = std::enable_if_t<std::is_base_of<operation_base, std::remove_reference_t<T>>::value>>
+T as_operation(T&& a){ //TODO: return ref, separate type deduction
   return a;
 }
 
-template<typename T, typename Cond = std::enable_if_t<std::is_arithmetic<T>::value>>
-const constant__<T> as_operation(const T a){
+template<typename T, typename = enable_if_arithmetic<T>>
+constant__<T> as_operation(const T a){
   return constant__<T>(a);
 }
 
-template<typename T>
-const load__<T> as_operation(const matrix_cl<T>& a){
-  return load__<T>(a);
+template<typename T, typename = std::enable_if_t<std::is_base_of<matrix_cl<typename std::remove_reference_t<T>::type>,typename std::remove_reference_t<T>>::value>>
+load__<T> as_operation(T&& a){
+  return load__<T>(std::forward<T>(a));
 }
 
 }

@@ -89,5 +89,30 @@ TEST_FUNCTION(floor)
 TEST_FUNCTION(round)
 TEST_FUNCTION(ceil)
 
+TEST(MathMatrixCL, multiple_operations_test){
+  MatrixXd m1(3, 3);
+  m1 << 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9;
 
+  matrix_cl<double> m1_cl(m1);
+  auto tmp = stan::math::exp(stan::math::sin(m1_cl));
+  matrix_cl<double> res_cl = tmp;
+
+  MatrixXd res = stan::math::from_matrix_cl(res_cl);
+  MatrixXd correct = stan::math::exp(stan::math::sin(m1));
+  EXPECT_MATRIX_NEAR(correct,res,1e-9);
+}
+
+TEST(MathMatrixCL, multiple_operations_accepts_lvalue_test){
+  MatrixXd m1(3, 3);
+  m1 << 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9;
+
+  matrix_cl<double> m1_cl(m1);
+  auto tmp = stan::math::sin(m1_cl);
+  auto tmp2 = stan::math::exp(tmp);
+  matrix_cl<double> res_cl = tmp2;
+
+  MatrixXd res = stan::math::from_matrix_cl(res_cl);
+  MatrixXd correct = stan::math::exp(stan::math::sin(m1));
+  EXPECT_MATRIX_NEAR(correct,res,1e-9);
+}
 #endif

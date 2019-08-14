@@ -11,12 +11,11 @@ using Eigen::MatrixXi;
 using stan::math::matrix_cl;
 
 TEST(MathMatrixCL, constant_test){
-  using stan::math::addition;
   MatrixXd m1(3, 3);
   m1 << 1, 2, 3, 4, 5, 6, 7, 8, 9;
 
   matrix_cl<double> m1_cl(m1);
-  auto tmp = addition(m1_cl, 0.1234);
+  auto tmp = m1_cl + 0.1234;
   matrix_cl<double> res_cl = tmp;
 
   MatrixXd res = stan::math::from_matrix_cl(res_cl);

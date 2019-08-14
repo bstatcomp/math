@@ -5,34 +5,49 @@
 #include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/err/check_matching_dims.hpp>
 #include <stan/math/prim/meta.hpp>
+#include <stan/math/opencl/kernel_generator/type_str.hpp>
+#include <stan/math/opencl/kernel_generator/name_generator.hpp>
 #include <stan/math/opencl/kernel_generator/operation.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
 #include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
 #include <string>
 #include <type_traits>
+#include <set>
+#include <utility>
 
 namespace stan {
 namespace math {
 
 template<typename Derived, typename T>
-class unary_function : public operation<Derived, typename T::ReturnScalar> {
+class unary_function : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
 public:
-    static_assert(std::is_floating_point<typename T::ReturnScalar>::value, "unary_function: argument must be expression with floating point type!");
-    using ReturnScalar = typename T::ReturnScalar;
-    using base = operation<Derived, typename T::ReturnScalar>;
+    using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
+    static_assert(std::is_floating_point<ReturnScalar>::value, "unary_function: argument must be expression with floating point return type!");
+    using base = operation<Derived, ReturnScalar>;
     using base::var_name;
-    unary_function(const T& a, const std::string& fun) : a_(a), fun_(fun) {}
+    using base::instance;
+    unary_function(T&& a, const std::string& fun) : a_(std::forward<T>(a)), fun_(fun) {}
 
-    kernel_parts generate(const std::string& i, const std::string& j) const{
-      kernel_parts a_parts = a_.generate(i, j);
-      kernel_parts res;
-      res.body = a_parts.body + type_str<ReturnScalar>::name + " " + var_name + " = " + fun_ + "(" + a_.var_name + ");\n";
-      res.args = a_parts.args;
-      return res;
+    kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+      if(generated.count(instance)==0) {
+        kernel_parts a_parts = a_.generate(ng, generated, i, j);
+        generated.insert(instance);
+        var_name = ng.generate();
+        kernel_parts res;
+        res.body = a_parts.body + type_str<ReturnScalar>::name + " " + var_name + " = " + fun_ + "(" + a_.var_name + ");\n";
+        res.args = a_parts.args;
+        return res;
+      }
+      else{
+        return {};
+      }
     }
 
-    void set_args(cl::Kernel& kernel, int& arg_num) const{
-      a_.set_args(kernel,arg_num);
+    void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
+      if(generated.count(instance)==0) {
+        generated.insert(instance);
+        a_.set_args(generated, kernel, arg_num);
+      }
     }
 
     void add_event(cl::Event& e) const{
@@ -60,27 +75,27 @@ protected:
 template<typename T> \
 class fun##__ : public unary_function<fun##__<T>, T>{ \
 public: \
-    explicit fun##__(const T& a) : unary_function<fun##__<T>, T>(a,#fun){} \
+    explicit fun##__(T&& a) : unary_function<fun##__<T>, T>(std::forward<T>(a),#fun){} \
     matrix_cl_view view() const{ \
       return matrix_cl_view::Entire; \
     } \
 }; \
 \
-template<typename T, typename Cond = typename std::enable_if<stan::math::is_usable_as_operation<T>::value>::type> \
-auto fun(const T& a) -> fun##__<decltype(as_operation(a))>{ \
-  return fun##__<decltype(as_operation(a))>(as_operation(a)); \
+template<typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>> \
+auto fun(T&& a) -> fun##__<decltype(as_operation(std::forward<T>(a)))>{ \
+  return fun##__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a))); \
 }
 
 #define ADD_UNARY_FUNCTION_PASS_ZERO(fun) \
 template<typename T> \
 class fun##__ : public unary_function<fun##__<T>, T>{ \
 public: \
-    explicit fun##__(const T& a) : unary_function<fun##__<T>, T>(a,#fun){} \
+    explicit fun##__(T&& a) : unary_function<fun##__<T>, T>(std::forward<T>(a),#fun){} \
 }; \
 \
-template<typename T, typename Cond = typename std::enable_if<is_usable_as_operation<T>::value>::type> \
-auto fun(const T& a) -> fun##__<decltype(as_operation(a))>{ \
-  return fun##__<decltype(as_operation(a))>(as_operation(a)); \
+template<typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>> \
+auto fun(T&& a) -> fun##__<decltype(as_operation(std::forward<T>(a)))>{ \
+  return fun##__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a))); \
 }
 
 ADD_UNARY_FUNCTION(rsqrt)

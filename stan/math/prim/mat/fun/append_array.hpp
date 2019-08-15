@@ -47,7 +47,7 @@ append_array(const std::vector<T1>& x, const std::vector<T2>& y) {
 namespace internal {
 template<typename T>
 void append_elements(std::vector<T>& x, const std::vector<T>& y) {
-    for (auto& e : y) v1.push_back(e);
+    for (auto& e : y) x.push_back(e);
 }
 
 template<typename T, typename... A>
@@ -58,7 +58,7 @@ void append_array_helper(std::vector<T>& x, const std::vector<T>& y) {
 template<typename T, typename... A>
 void append_array_helper(std::vector<T>& x, const std::vector<T>& y, const A&... zs) {
     if (!x.empty() && !y.empty()) {
-      std::vector<int> xdims = dims(x), y = dims(y);
+      std::vector<int> xdims = dims(x), ydims = dims(y);
       check_matching_sizes("append_array", "dimension of x", xdims,
                           "dimension of y", ydims);
       for (size_t i = 1; i < xdims.size(); ++i) {
@@ -66,8 +66,8 @@ void append_array_helper(std::vector<T>& x, const std::vector<T>& y, const A&...
                         ydims[i]);
       }
     }
-    append_elements(x, vy);
-    append_array_helper(x, vr...);
+    append_elements(x, y);
+    append_array_helper(x, zs...);
 }
 } // namespace internal
 

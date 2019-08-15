@@ -44,35 +44,39 @@ append_array(const std::vector<T1>& x, const std::vector<T2>& y) {
   return z;
 }
 
-/**
- * Return the concatenation of two specified vectors in the order of
- *   the arguments.
- *
- * @tparam T1 Type of vectors
- * @param x First vector
- * @param y Second vector
- * @return A vector of x and y concatenated together (in that order)
- */
-template <typename T1>
-inline std::vector<T1> append_array(const std::vector<T1>& x,
-                                    const std::vector<T1>& y) {
-  std::vector<T1> z;
-
-  if (!x.empty() && !y.empty()) {
-    std::vector<int> xdims = dims(x), ydims = dims(y);
-    check_matching_sizes("append_array", "dimension of x", xdims,
-                         "dimension of y", ydims);
-    for (size_t i = 1; i < xdims.size(); ++i) {
-      check_size_match("append_array", "shape of x", xdims[i], "shape of y",
-                       ydims[i]);
-    }
-  }
-
-  z.reserve(x.size() + y.size());
-  z.insert(z.end(), x.begin(), x.end());
-  z.insert(z.end(), y.begin(), y.end());
-  return z;
+namespace internal {
+template<typename T>
+void append_elements(std::vector<T>& x, const std::vector<T>& y) {
+    for (auto& e : y) v1.push_back(e);
 }
+
+template<typename T, typename... A>
+void append_array_helper(std::vector<T>& x, const std::vector<T>& y) {
+    append_elements(x, y);
+}
+
+template<typename T, typename... A>
+void append_array_helper(std::vector<T>& x, const std::vector<T>& y, const A&... zs) {
+    if (!x.empty() && !y.empty()) {
+      std::vector<int> xdims = dims(x), y = dims(y);
+      check_matching_sizes("append_array", "dimension of x", xdims,
+                          "dimension of y", ydims);
+      for (size_t i = 1; i < xdims.size(); ++i) {
+        check_size_match("append_array", "shape of x", xdims[i], "shape of y",
+                        ydims[i]);
+      }
+    }
+    append_elements(x, vy);
+    append_array_helper(x, vr...);
+}
+} // namespace internal
+
+template<typename T, typename... A>
+std::vector<T> append_array(std::vector<T> x, const A&... ys) {
+    internal::append_array_helper(x, ys...);
+    return x;
+}
+
 }  // namespace math
 }  // namespace stan
 #endif

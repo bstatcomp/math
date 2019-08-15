@@ -3,6 +3,40 @@
 #include <limits>
 #include <vector>
 
+TEST(MathFunctions, append_array_variadic_test) {
+  double nan = std::numeric_limits<double>::quiet_NaN();
+  std::vector<double> x(3), y(2), z(8), w(11), xx(12), yy(50), result;
+  size_t expected_size = x.size() + y.size() + z.size() +  w.size() + xx.size() + yy.size();
+  int i=0;
+  for(int j=0;j<x.size();j++) {
+    x[j] = i;
+    i++;
+  }
+  for(int j=0;j<y.size();j++) {
+    y[j] = i;
+    i++;
+  }
+  for(int j=0;j<z.size();j++) {
+    z[j] = i;
+    i++;
+  }
+  for(int j=0;j<w.size();j++) {
+    w[j] = i;
+    i++;
+  }
+  for(int j=0;j<xx.size();j++) {
+    xx[j] = i;
+    i++;
+  }
+  for(int j=0;j<yy.size();j++) {
+    yy[j] = i;
+    i++;
+  }
+  EXPECT_NO_THROW(result = stan::math::append_array(x, y, z, w, xx, yy));
+  EXPECT_EQ(expected_size, result.size());
+}
+
+
 TEST(MathFunctions, append_array_nan) {
   double nan = std::numeric_limits<double>::quiet_NaN();
   std::vector<double> x(3), y(2), result;

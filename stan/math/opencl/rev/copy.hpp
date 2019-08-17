@@ -49,7 +49,7 @@ inline Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic> from_matrix_cl(
   if (src.size() == 0) {    
     return dst;
   }
-  Eigen::MatrixXd vals = from_matrix_cl(src.val_);
+  Eigen::MatrixXd vals = from_matrix_cl(src.val());
   Eigen::MatrixXd adjs = from_matrix_cl(src.adj());
   for (int i = 0; i < dst.size(); i++) {
     std::cout << vals(i) << std::endl;

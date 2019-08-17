@@ -21,6 +21,7 @@ TEST(MathMatrixGPU, matrix_cl_vector_copy) {
   d1_cpu << 1, 2, 3;
   // vector
   matrix_cl<var> d11_cl(d1_cpu);
+
   // matrix_cl<var> d11_cl(3, 1);
   // matrix_cl<var> d111_cl(3, 1);
   // EXPECT_NO_THROW(d11_cl = to_matrix_cl(d1_cpu));

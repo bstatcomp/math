@@ -8,37 +8,45 @@
 
 namespace stan {
   namespace math {
+	  
+	inline double dbeta(double x, double a, double b) {
+
+	return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
+
+	}  
     
-    double generalized_logistic_model(const std::vector<int>& IDp, const std::vector<int>& IDs, const vector_d& time, const vector_d& S, const vector_d& APOE4, const std::vector<int>& AGE,
-                 const std::vector<int>& SEX, const std::vector<int>& pbo_flag, const std::vector<int>& COMED, const double &theta_S0, double &theta_r, double &tau,
-                 double &theta_AGE, double &theta_APOE4_r, double &theta_APOE4_b, double &theta_COMED, double &beta, double &theta_SEX, double &beta_bateman,
-                 double &kel, double &keq, 
-                 Eigen::Matrix<double, -1, -1> eta_pb, Eigen::Matrix<double, -1, -1> eta_pr,
-                 Eigen::Matrix<double, -1, -1> eta_sb, Eigen::Matrix<double, -1, -1> eta_sr) {
-        int N= IDp.size();
+    double generalized_logistic_model(const std::vector<int>& IDp, const std::vector<int>& IDs, const std::vector<int>& is_pbo, const vector_d& time, const vector_d& score, const int &multiplicative_s, const int &multiplicative_r, 
+				 const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& X_s, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& X_r,
+				 double &tau, double &beta, double &beta_pbo, double &k_el, double &k_eq,
+				 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> theta_r, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> theta_s,
+                 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eta_pr, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eta_sr,
+                 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eta_ps, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> eta_ss,
+				 double &base_s, double &base_r
+				 ) {
+        int N = IDp.size();
         double tgt = 0;
-        for (int i = 0; i < N; i++) {
-          //preload all data
-          double APOE4i = APOE4[i];
-          int AGEi = AGE[i];
-          int SEXi = SEX[i];
-          double timei = time[i];
-          double Si = S[i];
-          int flagi = pbo_flag[i];
-          int COMEDi = COMED[i];
-          //-----------compute function
-          double tmp_exp1 = exp(eta_pb(IDp[i]-1) + eta_sb(IDs[i]-1));
-          double logsi1 = log(1 - Si);
-          double logsi = log(Si);
-          double r = theta_r*(1 + theta_AGE*(AGEi - 75))*(1 + theta_APOE4_r*(APOE4i - 0.72))*(1 + theta_COMED*COMEDi) + eta_pr(IDp[i]-1) + eta_sr(IDs[i]-1);
-          double S0 = theta_S0* (1 + theta_SEX*SEXi) * (1 + theta_APOE4_b * (APOE4i - 0.72))*tmp_exp1;
-          double tmp_exp = exp(-(5 * beta + 5)*r*timei);
-          double tmp_pow = std::pow(S0, (5 * beta + 5));
-          double pbo = exp(beta_bateman - 3.5)*(exp(-exp(kel + 0.46)*timei) - exp(-exp(keq + 1.88)*timei));
-          double muS = S0 / std::pow(tmp_pow + ((1 - tmp_pow) * tmp_exp), (1 / (5 * beta + 5)))-flagi*pbo;
-          tgt = tgt + (muS*(80 * tau + 80) - 1) * logsi + ((1 - muS)*(80 * tau + 80) - 1) * logsi1 - lbeta(muS*(80 * tau + 80), (1 - muS)*(80 * tau + 80));
-        }      
-        return tgt;
+        double cov_s = 0;
+		double cov_r = 0;
+		std::vector<double> muS(N);
+	
+		for(int i = 0; i < N; i++)
+		{
+			cov_s = base_s + eta_ps(IDp[i]-1) + eta_ss(IDs[i]-1);
+			cov_r = base_r + eta_pr(IDp[i]-1) + eta_sr(IDs[i]-1);
+			if (!theta_s.rows()==0) cov_s = cov_s + (X_s.row(i) * theta_s)(0,0);
+			if (!theta_r.rows()==0) cov_r = cov_r + (X_r.row(i) * theta_r)(0,0);
+			if (multiplicative_s == 1) cov_s = exp(cov_s);
+			if (multiplicative_r == 1) cov_s = exp(cov_r);
+			double S0 = 1 / (1 + exp(-cov_s));
+			double pbo_eff = beta_pbo * (k_eq / (k_eq - k_el)) * (exp(-k_el * time[i]) - exp(-k_eq * time[i]));
+			muS[i] = S0 / pow((pow(S0, beta) + (1 - pow(S0, beta))* exp(-beta * cov_r * time[i])), 1.0 / beta) - is_pbo[IDs[i]-1] * pbo_eff;
+
+		}
+		for (int i = 0; i < N; i++) {
+			tgt += dbeta(score[i], muS[i] * tau, (1 - muS[i])*tau);
+		}
+
+		return tgt;
     }
   }
 }

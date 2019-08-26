@@ -43,15 +43,19 @@ namespace stan {
         double  d_beta = 0;
         double  d_base_s = 0;
         double  d_base_r = 0;
-        std::vector<double> d_eta_pr(*std::max_element(IDp.begin(), IDp.end())+1);
-        std::vector<double> d_eta_sr(*std::max_element(IDs.begin(), IDs.end())+1);
-        std::vector<double> d_eta_ps(*std::max_element(IDp.begin(), IDp.end())+1);
-        std::vector<double> d_eta_ss(*std::max_element(IDs.begin(), IDs.end())+1);
+        std::vector<double> d_eta_pr(*std::max_element(IDp.begin(), IDp.end()));
+        std::vector<double> d_eta_sr(*std::max_element(IDs.begin(), IDs.end()));
+        std::vector<double> d_eta_ps(*std::max_element(IDp.begin(), IDp.end()));
+        std::vector<double> d_eta_ss(*std::max_element(IDs.begin(), IDs.end()));
         std::vector<double> d_theta_s(2);
         std::vector<double> d_theta_r(2);
         
-        int r_size=d_eta_pr.size();
-        int s_size=d_eta_ps.size();
+        int p_size=d_eta_pr.size();
+        int s_size=d_eta_sr.size();
+        
+        
+        int theta_s_size=X_s.cols(); 
+        int theta_r_size=X_r.cols();
         
         //Main loop
         double cov_s = 0;
@@ -86,14 +90,16 @@ namespace stan {
             if (multiplicative_r == 1) tmp_r = tmp_r * cov_r;
 
             d_base_s += tmp_s;
-            d_theta_s[0] += tmp_s * X_s(i,0);
-            d_theta_s[1] += tmp_s * X_s(i,1);
+            for ( int c = 0; c < X_s.cols();c++)
+                d_theta_s[c] += tmp_s * X_s(i,c);
+            
             d_eta_ps[IDp[i]-1] = d_eta_ps[IDp[i]-1] + tmp_s;
             d_eta_ss[IDs[i]-1] = d_eta_ss[IDs[i]-1] + tmp_s;
 		
             d_base_r += tmp_r;
-            d_theta_r[0] += tmp_r * X_r(i,0);
-            d_theta_r[1] += tmp_r * X_r(i,1);
+            for ( int c = 0; c < X_r.cols();c++)
+                d_theta_r[c] += tmp_r * X_r(i,c);
+
             d_eta_pr[IDp[i]-1] = d_eta_pr[IDp[i]-1] + tmp_r;
             d_eta_sr[IDs[i]-1] = d_eta_sr[IDs[i]-1] + tmp_r;
 
@@ -110,7 +116,7 @@ namespace stan {
 		}
  
       //stack it up
-      vari** varis  = ChainableStack::instance().memalloc_.alloc_array<vari*>(7+4+r_size+r_size+s_size+s_size);
+      vari** varis  = ChainableStack::instance().memalloc_.alloc_array<vari*>(7+theta_r_size+theta_s_size+p_size+p_size+s_size+s_size);
       varis[0] = tauv.vi_;
       varis[1] = betav.vi_;;
       varis[2] = beta_pbov.vi_;
@@ -144,41 +150,42 @@ namespace stan {
         varis[k]=eta_ss(i).vi_;
         k++;
       }
-      double* gradients = ChainableStack::instance().memalloc_.alloc_array<double>(7+4+r_size+r_size+s_size+s_size);
+      double* gradients = ChainableStack::instance().memalloc_.alloc_array<double>(7+theta_r_size+theta_s_size+p_size+p_size+s_size+s_size);
       gradients[0] = d_tau;
       gradients[1] = d_beta; 
       gradients[2] = d_beta_pbo;
       gradients[3] = d_k_el; 
       gradients[4] = d_k_eq; 
-      gradients[5] = d_base_r;
-      gradients[6] = d_base_s; 
+      gradients[5] = d_base_s;
+      gradients[6] = d_base_r; 
       
       k=7;
-      for(int i=0;i<2;i++){
+      for(int i=0;i<theta_r.size();i++){
         gradients[k]=d_theta_r[i];
         k++;
       }
-      for(int i=0;i<2;i++){
+      for(int i=0;i<theta_s.size();i++){
         gradients[k]=d_theta_s[i];
         k++;
       }
-      for(int i=0;i<r_size;i++){
+      for(int i=0;i<p_size;i++){
         gradients[k]=d_eta_pr[i];
         k++;
       }
-      for(int i=0;i<r_size;i++){
+      for(int i=0;i<s_size;i++){
         gradients[k]=d_eta_sr[i];
         k++;
       }
-      for(int i=0;i<s_size;i++){
+      for(int i=0;i<p_size;i++){
         gradients[k]=d_eta_ps[i];
         k++;
       }
       for(int i=0;i<s_size;i++){
         gradients[k]=d_eta_ss[i];
         k++;
-      }      
-      return var(new precomputed_gradients_vari(tgt, 7+4+r_size+r_size+s_size+s_size,  varis, gradients));
+      }
+      return var(new precomputed_gradients_vari(tgt, 7+theta_r_size+theta_s_size+p_size+p_size+s_size+s_size,  varis, gradients));
+      //return NULL;
     }
   }
 }

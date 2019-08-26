@@ -1,6 +1,6 @@
 #ifdef STAN_OPENCL
 
-#include <stan/math/opencl/kernel_generator/utility.hpp>
+#include <stan/math/opencl/kernel_generator/type_str.hpp>
 #include <gtest/gtest.h>
 
 TEST(MathMatrixCL, type_str){

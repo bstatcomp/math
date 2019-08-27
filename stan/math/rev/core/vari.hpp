@@ -73,7 +73,7 @@ class vari {
    *
    * @throw Logic exception always.
    */
-  virtual ~vari() {} // deletes members but delete below does not unallocate
+  virtual ~vari() = default; // deletes members but delete below does not unallocate
 
   /**
    * Apply the chain rule to this variable based on the variables

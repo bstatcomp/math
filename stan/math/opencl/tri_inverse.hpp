@@ -64,7 +64,7 @@ inline matrix_cl<T> tri_inverse(const matrix_cl<T>& A) {
 
   // pad the input matrix
   int A_rows_padded
-      = ((A.rows() + thread_block_size_1D - 1) / min(thread_block_size_1D, 1))
+      = ((A.rows() + thread_block_size_1D - 1) / fmin(thread_block_size_1D, 1))
         * thread_block_size_1D;
 
   matrix_cl<T> temp(A_rows_padded, A_rows_padded);

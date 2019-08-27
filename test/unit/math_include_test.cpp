@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Dense>
 #include <cmath>
+#include <utility>
 #include <vector>
 
 // This test fixture swallows output to std::cout
@@ -84,7 +85,7 @@ using Eigen::Matrix;
 struct normal_ll {
   const Matrix<double, Dynamic, 1> y_;
 
-  explicit normal_ll(const Matrix<double, Dynamic, 1>& y) : y_(y) {}
+  explicit normal_ll(Matrix<double, Dynamic, 1>  y) : y_(std::move(y)) {}
 
   template <typename T>
   T operator()(const Matrix<T, Dynamic, 1>& theta) const {
@@ -122,7 +123,7 @@ using Eigen::Matrix;
 struct functor {
   const Matrix<double, Dynamic, 1> y_;
 
-  explicit functor(const Matrix<double, Dynamic, 1>& y) : y_(y) {}
+  explicit functor(Matrix<double, Dynamic, 1>  y) : y_(std::move(y)) {}
 
   template <typename T>
   Matrix<T, Dynamic, 1> operator()(const Matrix<T, Dynamic, 1>& theta) const {

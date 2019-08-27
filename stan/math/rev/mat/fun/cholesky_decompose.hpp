@@ -50,7 +50,7 @@ class cholesky_block : public vari {
  public:
   int M_;
   int block_size_;
-  typedef Eigen::Block<Eigen::MatrixXd> Block_;
+  using Block_ = Eigen::Block<Eigen::MatrixXd>;
   vari** vari_ref_A_;
   vari** vari_ref_L_;
 
@@ -407,7 +407,7 @@ inline Eigen::Matrix<var, -1, -1> cholesky_decompose(
   vari* dummy = new vari(0.0, false);
   Eigen::Matrix<var, -1, -1> L(A.rows(), A.cols());
   if (L_A.rows() <= 35) {
-    cholesky_scalar* baseVari = new cholesky_scalar(A, L_A);
+    auto* baseVari = new cholesky_scalar(A, L_A);
     size_t accum = 0;
     size_t accum_i = accum;
     for (size_type j = 0; j < L.cols(); ++j) {
@@ -425,10 +425,10 @@ inline Eigen::Matrix<var, -1, -1> cholesky_decompose(
 #ifdef STAN_OPENCL
     if (L_A.rows()
         > opencl_context.tuning_opts().cholesky_size_worth_transfer) {
-      cholesky_opencl* baseVari = new cholesky_opencl(A, L_A);
+      auto* baseVari = new cholesky_opencl(A, L_A);
       internal::set_lower_tri_coeff_ref(L, baseVari->vari_ref_L_);
     } else {
-      cholesky_block* baseVari = new cholesky_block(A, L_A);
+      auto* baseVari = new cholesky_block(A, L_A);
       internal::set_lower_tri_coeff_ref(L, baseVari->vari_ref_L_);
     }
 #else

@@ -64,11 +64,11 @@ class LDLT_factor {
  public:
   typedef Eigen::Matrix<T, Eigen::Dynamic, 1> vector_t;
   typedef Eigen::Matrix<T, R, C> matrix_t;
-  typedef Eigen::LDLT<matrix_t> ldlt_t;
-  typedef size_t size_type;
-  typedef double value_type;
+  using ldlt_t = Eigen::LDLT<matrix_t>;
+  using size_type = size_t;
+  using value_type = double;
 
-  LDLT_factor() : N_(0), ldltP_(new ldlt_t()) {}
+  LDLT_factor() :  ldltP_(new ldlt_t()) {}
 
   explicit LDLT_factor(const matrix_t& A) : N_(0), ldltP_(new ldlt_t()) {
     compute(A);
@@ -116,7 +116,7 @@ class LDLT_factor {
   inline size_t rows() const { return N_; }
   inline size_t cols() const { return N_; }
 
-  size_t N_;
+  size_t N_{0};
   boost::shared_ptr<ldlt_t> ldltP_;
 };
 

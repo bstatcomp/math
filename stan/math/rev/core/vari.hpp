@@ -73,9 +73,7 @@ class vari {
    *
    * @throw Logic exception always.
    */
-  virtual ~vari() {
-    // this will never get called
-  }
+  virtual ~vari() {} // deletes members but delete below does not unallocate
 
   /**
    * Apply the chain rule to this variable based on the variables

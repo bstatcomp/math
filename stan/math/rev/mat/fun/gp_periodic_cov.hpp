@@ -315,7 +315,7 @@ gp_periodic_cov(const std::vector<T_x> &x, const var &sigma, const var &l,
   if (x_size == 0)
     return cov;
 
-  gp_periodic_cov_vari<T_x, var, var, var> *baseVari
+  auto *baseVari
       = new gp_periodic_cov_vari<T_x, var, var, var>(x, sigma, l, p);
 
   size_t pos = 0;
@@ -367,7 +367,7 @@ gp_periodic_cov(const std::vector<T_x> &x, double sigma, const var &l,
   if (x_size == 0)
     return cov;
 
-  gp_periodic_cov_vari<T_x, double, var, var> *baseVari
+  auto *baseVari
       = new gp_periodic_cov_vari<T_x, double, var, var>(x, sigma, l, p);
 
   size_t pos = 0;

@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <test/unit/math/rev/mat/fun/util.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <utility>
+#include <utility>
 #include <vector>
 
 #ifdef STAN_OPENCL
@@ -18,7 +20,7 @@ std::vector<T_x> fill_vec(Eigen::Matrix<T_x, -1, 1> inp) {
 }
 
 template <typename T>
-Eigen::Matrix<T, -1, -1> create_mat(Eigen::VectorXd inp, T alpha, T len,
+Eigen::Matrix<T, -1, -1> create_mat(const Eigen::VectorXd& inp, T alpha, T len,
                                     T jitter) {
   std::vector<double> test_inp = fill_vec(inp);
   Eigen::Matrix<T, -1, -1> test_mat_dense
@@ -31,7 +33,7 @@ Eigen::Matrix<T, -1, -1> create_mat(Eigen::VectorXd inp, T alpha, T len,
 struct gp_chol {
   Eigen::VectorXd inp, mean, y;
   gp_chol(Eigen::VectorXd inp_, Eigen::VectorXd mean_, Eigen::VectorXd y_)
-      : inp(inp_), mean(mean_), y(y_) {}
+      : inp(std::move(std::move(inp_))), mean(std::move(std::move(mean_))), y(std::move(std::move(y_))) {}
   template <typename T>
   T operator()(Eigen::Matrix<T, -1, 1> x) const {
     Eigen::Matrix<T, -1, -1> x_c = create_mat(inp, x[0], x[1], x[2]);
@@ -59,7 +61,7 @@ struct chol_functor {
 struct chol_functor_mult_scal {
   int K;
   Eigen::VectorXd vec;
-  chol_functor_mult_scal(int K_, Eigen::VectorXd vec_) : K(K_), vec(vec_) {}
+  chol_functor_mult_scal(int K_, Eigen::VectorXd vec_) : K(K_), vec(std::move(std::move(vec_))) {}
   template <typename T>
   T operator()(Eigen::Matrix<T, -1, 1> x) const {
     using stan::math::cholesky_decompose;
@@ -115,7 +117,7 @@ struct chol_functor_simple {
 struct chol_functor_simple_vec {
   int K;
   Eigen::VectorXd vec;
-  chol_functor_simple_vec(int K_, Eigen::VectorXd vec_) : K(K_), vec(vec_) {}
+  chol_functor_simple_vec(int K_, Eigen::VectorXd vec_) : K(K_), vec(std::move(std::move(vec_))) {}
   template <typename T>
   T operator()(Eigen::Matrix<T, -1, 1> x) const {
     using stan::math::cholesky_decompose;

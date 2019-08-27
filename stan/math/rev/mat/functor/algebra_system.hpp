@@ -6,6 +6,7 @@
 #include <stan/math/rev/mat/functor/jacobian.hpp>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace stan {
@@ -36,13 +37,13 @@ struct system_functor {
   /** stream message */
   std::ostream* msgs_;
 
-  system_functor() {}
+  system_functor() = default;
 
   system_functor(const F& f, const Eigen::Matrix<T0, Eigen::Dynamic, 1>& x,
                  const Eigen::Matrix<T1, Eigen::Dynamic, 1>& y,
-                 const std::vector<double>& dat,
-                 const std::vector<int>& dat_int, std::ostream* msgs)
-      : f_(f), x_(x), y_(y), dat_(dat), dat_int_(dat_int), msgs_(msgs) {}
+                 std::vector<double>  dat,
+                 std::vector<int>  dat_int, std::ostream* msgs)
+      : f_(f), x_(x), y_(y), dat_(std::move(dat)), dat_int_(std::move(dat_int)), msgs_(msgs) {}
 
   /**
    * An operator that takes in an independent variable. The

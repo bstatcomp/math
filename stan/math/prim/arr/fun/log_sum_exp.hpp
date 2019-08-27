@@ -33,9 +33,9 @@ inline double log_sum_exp(const std::vector<double>& x) {
       max = xx;
 
   double sum = 0.0;
-  for (size_t ii = 0; ii < x.size(); ii++)
-    if (x[ii] != -numeric_limits<double>::infinity())
-      sum += exp(x[ii] - max);
+  for (double ii : x)
+    if (ii != -numeric_limits<double>::infinity())
+      sum += exp(ii - max);
 
   return max + log(sum);
 }

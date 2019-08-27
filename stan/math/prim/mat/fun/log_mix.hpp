@@ -213,7 +213,7 @@ return_type_t<T_theta, std::vector<std::vector<T_lam> > > log_mix(
 
   typedef typename Eigen::Matrix<T_partials_return, -1, -1> T_partials_mat;
 
-  typedef typename std::vector<std::vector<T_lam> > T_lamvec_type;
+  using T_lamvec_type = typename std::vector<std::vector<T_lam> >;
 
   const int N = length(lambda);
   const int M = theta.size();

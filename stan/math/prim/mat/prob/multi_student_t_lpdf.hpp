@@ -32,7 +32,7 @@ return_type_t<T_y, T_dof, T_loc, T_scale> multi_student_t_lpdf(
     const T_y& y, const T_dof& nu, const T_loc& mu, const T_scale& Sigma) {
   static const char* function = "multi_student_t";
   using std::log;
-  typedef typename scalar_type<T_scale>::type T_scale_elem;
+  using T_scale_elem = typename scalar_type<T_scale>::type;
   typedef return_type_t<T_y, T_dof, T_loc, T_scale> lp_type;
 
   check_not_nan(function, "Degrees of freedom parameter", nu);

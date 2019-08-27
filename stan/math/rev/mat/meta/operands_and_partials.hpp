@@ -15,8 +15,8 @@ namespace internal {
 template <>
 class ops_partials_edge<double, std::vector<var> > {
  public:
-  typedef std::vector<var> Op;
-  typedef Eigen::VectorXd partials_t;
+  using Op = std::vector<var>;
+  using partials_t = Eigen::VectorXd;
   partials_t partials_;                       // For univariate use-cases
   broadcast_array<partials_t> partials_vec_;  // For multivariate
   explicit ops_partials_edge(const Op& op)
@@ -118,8 +118,8 @@ class ops_partials_edge<double, std::vector<Eigen::Matrix<var, R, C> > > {
 template <>
 class ops_partials_edge<double, std::vector<std::vector<var> > > {
  public:
-  typedef std::vector<std::vector<var> > Op;
-  typedef std::vector<double> partial_t;
+  using Op = std::vector<std::vector<var> >;
+  using partial_t = std::vector<double>;
   std::vector<partial_t> partials_vec_;
   explicit ops_partials_edge(const Op& ops)
       : partials_vec_(length(ops)), operands_(ops) {
@@ -135,17 +135,17 @@ class ops_partials_edge<double, std::vector<std::vector<var> > > {
 
   void dump_partials(double* partials) {
     int p_i = 0;
-    for (size_t i = 0; i < this->partials_vec_.size(); ++i) {
-      for (size_t j = 0; j < this->partials_vec_[i].size(); ++j, ++p_i) {
-        partials[p_i] = this->partials_vec_[i][j];
+    for (auto & i : this->partials_vec_) {
+      for (size_t j = 0; j < i.size(); ++j, ++p_i) {
+        partials[p_i] = i[j];
       }
     }
   }
   void dump_operands(vari** varis) {
     int p_i = 0;
-    for (size_t i = 0; i < this->operands_.size(); ++i) {
-      for (size_t j = 0; j < this->operands_[i].size(); ++j, ++p_i) {
-        varis[p_i] = this->operands_[i][j].vi_;
+    for (const auto & operand : this->operands_) {
+      for (size_t j = 0; j < operand.size(); ++j, ++p_i) {
+        varis[p_i] = operand[j].vi_;
       }
     }
   }

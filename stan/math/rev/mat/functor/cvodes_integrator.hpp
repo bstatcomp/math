@@ -29,7 +29,7 @@ namespace math {
 template <int Lmm>
 class cvodes_integrator {
  public:
-  cvodes_integrator() {}
+  cvodes_integrator() = default;
 
   /**
    * Return the solutions for the specified system of ordinary
@@ -80,8 +80,8 @@ class cvodes_integrator {
             std::ostream* msgs, double relative_tolerance,
             double absolute_tolerance,
             long int max_num_steps) {  // NOLINT(runtime/int)
-    typedef stan::is_var<T_initial> initial_var;
-    typedef stan::is_var<T_param> param_var;
+    using initial_var = stan::is_var<T_initial>;
+    using param_var = stan::is_var<T_param>;
 
     const char* fun = "integrate_ode_cvodes";
 

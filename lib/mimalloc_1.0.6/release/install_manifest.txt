@@ -1,0 +1,9 @@
+/usr/local/lib/mimalloc-1.0/libmimalloc.so
+/usr/local/lib/mimalloc-1.0/libmimalloc.a
+/usr/local/lib/mimalloc-1.0/include/mimalloc.h
+/usr/local/lib/mimalloc-1.0/cmake/mimalloc-config.cmake
+/usr/local/lib/mimalloc-1.0/cmake/mimalloc-config-version.cmake
+/usr/local/lib/mimalloc-1.0/cmake/mimalloc.cmake
+/usr/local/lib/mimalloc-1.0/cmake/mimalloc-release.cmake
+/usr/local/lib/libmimalloc.so
+/usr/local/lib/mimalloc-1.0/mimalloc.o

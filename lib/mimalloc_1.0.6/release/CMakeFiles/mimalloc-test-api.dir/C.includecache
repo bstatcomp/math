@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/mimalloc-internal.h
+mimalloc-types.h
+../include/mimalloc-types.h
+windows.h
+-
+
+../include/mimalloc-types.h
+stdlib.h
+-
+stddef.h
+-
+stdint.h
+-
+
+../include/mimalloc.h
+stdlib.h
+-
+stdbool.h
+-
+stdio.h
+-
+
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/test/test-api.c
+stdio.h
+-
+assert.h
+-
+stdbool.h
+-
+stdint.h
+-
+errno.h
+-
+mimalloc.h
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/test/mimalloc.h
+mimalloc-internal.h
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/test/mimalloc-internal.h
+

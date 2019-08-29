@@ -1,0 +1,12 @@
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/mimalloc-test-api.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/mimalloc-test-stress.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/install/local.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/mimalloc.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/rebuild_cache.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/mimalloc-obj.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/edit_cache.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/mimalloc-static.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/test.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/install/strip.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/list_install_components.dir
+/home/steve/open_source/stan/bstat/math/lib/mimalloc_1.0.6/release/CMakeFiles/install.dir

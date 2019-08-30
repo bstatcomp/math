@@ -1,5 +1,7 @@
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/opencl/kernel_generator/unary_function.hpp>
+#include <stan/math/opencl/kernel_generator/binary_operation.hpp>
+#include <stan/math/opencl/kernel_generator/transpose.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/copy.hpp>
 #include <stan/math.hpp>

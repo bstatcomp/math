@@ -17,18 +17,20 @@
 namespace stan{
 namespace math{
 
-template<typename Derived, typename T>
-class transpose__ : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
+template<typename T>
+class transpose__ : public operation<transpose__<T>, typename std::remove_reference_t<T>::ReturnScalar> {
 public:
     using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
-    using base = operation<Derived, ReturnScalar>;
+    using base = operation<transpose__<T>, ReturnScalar>;
     using base::var_name;
     using base::instance;
 
     transpose__(T&& a) : a_(std::forward<T>(a)) {}
 
     kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
-      return a_.generate(ng, generated, j, i);
+      kernel_parts res = a_.generate(ng, generated, j, i);
+      var_name = a_.var_name;
+      return res;
     }
 
     void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{

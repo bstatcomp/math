@@ -3,6 +3,8 @@
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <vector>
+#include <numeric>
+#include <functional>
 
 namespace stan {
 namespace math {
@@ -12,7 +14,7 @@ namespace math {
  *
  * The cumulative sum of a vector of values \code{x} is the
  *
- * @code x[0], x[1] + x[2], ..., x[1] + , ..., + x[x.size()-1] @endcode
+ * \code x[0], x[1] + x[2], ..., x[1] + , ..., + x[x.size()-1] @endcode
  *
  * @tparam T Scalar type of vector.
  * @param x Vector of values.
@@ -23,9 +25,7 @@ inline std::vector<T> cumulative_sum(const std::vector<T>& x) {
   std::vector<T> result(x.size());
   if (x.size() == 0)
     return result;
-  result[0] = x[0];
-  for (size_t i = 1; i < result.size(); ++i)
-    result[i] = x[i] + result[i - 1];
+  std::partial_sum(x.begin(), x.end(), result.begin(), std::plus<T>());
   return result;
 }
 
@@ -35,7 +35,7 @@ inline std::vector<T> cumulative_sum(const std::vector<T>& x) {
  * The cumulative sum is of the same type as the input and
  * has values defined by
  *
- * @code x(0), x(1) + x(2), ..., x(1) + , ..., + x(x.size()-1) @endcode
+ * \code x(0), x(1) + x(2), ..., x(1) + , ..., + x(x.size()-1) @endcode
  *
  * @tparam T Scalar type of matrix.
  * @tparam R Row type of matrix.
@@ -48,9 +48,8 @@ inline Eigen::Matrix<T, R, C> cumulative_sum(const Eigen::Matrix<T, R, C>& m) {
   Eigen::Matrix<T, R, C> result(m.rows(), m.cols());
   if (m.size() == 0)
     return result;
-  result(0) = m(0);
-  for (int i = 1; i < result.size(); ++i)
-    result(i) = m(i) + result(i - 1);
+  std::partial_sum(m.data(), m.data() + m.size(), result.data(),
+                   std::plus<T>());
   return result;
 }
 }  // namespace math

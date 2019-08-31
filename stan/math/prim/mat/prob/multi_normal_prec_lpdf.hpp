@@ -1,43 +1,28 @@
 #ifndef STAN_MATH_PRIM_MAT_PROB_MULTI_NORMAL_PREC_LPDF_HPP
 #define STAN_MATH_PRIM_MAT_PROB_MULTI_NORMAL_PREC_LPDF_HPP
 
+#include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/mat/err/check_consistent_sizes_mvt.hpp>
 #include <stan/math/prim/mat/err/check_ldlt_factor.hpp>
 #include <stan/math/prim/mat/err/check_symmetric.hpp>
-#include <stan/math/prim/mat/fun/columns_dot_product.hpp>
-#include <stan/math/prim/mat/fun/columns_dot_self.hpp>
-#include <stan/math/prim/mat/fun/dot_product.hpp>
-#include <stan/math/prim/mat/fun/dot_self.hpp>
 #include <stan/math/prim/mat/fun/log_determinant_ldlt.hpp>
-#include <stan/math/prim/mat/fun/log.hpp>
-#include <stan/math/prim/mat/fun/log_determinant.hpp>
-#include <stan/math/prim/mat/fun/mdivide_left_spd.hpp>
-#include <stan/math/prim/mat/fun/mdivide_left_tri_low.hpp>
-#include <stan/math/prim/mat/fun/multiply.hpp>
-#include <stan/math/prim/mat/fun/subtract.hpp>
 #include <stan/math/prim/mat/fun/sum.hpp>
 #include <stan/math/prim/mat/fun/trace_quad_form.hpp>
-#include <stan/math/prim/mat/meta/vector_seq_view.hpp>
 #include <stan/math/prim/scal/err/check_size_match.hpp>
 #include <stan/math/prim/scal/err/check_finite.hpp>
 #include <stan/math/prim/scal/err/check_not_nan.hpp>
 #include <stan/math/prim/scal/err/check_positive.hpp>
 #include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/meta/length_mvt.hpp>
-#include <stan/math/prim/scal/meta/max_size_mvt.hpp>
-#include <stan/math/prim/scal/meta/include_summand.hpp>
-#include <stan/math/prim/scal/meta/return_type.hpp>
 
 namespace stan {
 namespace math {
 
 template <bool propto, typename T_y, typename T_loc, typename T_covar>
-typename return_type<T_y, T_loc, T_covar>::type multi_normal_prec_lpdf(
+return_type_t<T_y, T_loc, T_covar> multi_normal_prec_lpdf(
     const T_y& y, const T_loc& mu, const T_covar& Sigma) {
   static const char* function = "multi_normal_prec_lpdf";
   typedef typename scalar_type<T_covar>::type T_covar_elem;
-  typedef typename return_type<T_y, T_loc, T_covar>::type lp_type;
-  lp_type lp(0.0);
+  typedef return_type_t<T_y, T_loc, T_covar> lp_type;
 
   check_positive(function, "Precision matrix rows", Sigma.rows());
   check_symmetric(function, "Precision matrix", Sigma);
@@ -51,9 +36,10 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_prec_lpdf(
   size_t number_of_y = length_mvt(y);
   size_t number_of_mu = length_mvt(mu);
   if (number_of_y == 0 || number_of_mu == 0)
-    return 0.0;
+    return 0;
   check_consistent_sizes_mvt(function, "y", y, "mu", mu);
 
+  lp_type lp(0);
   vector_seq_view<T_y> y_vec(y);
   vector_seq_view<T_loc> mu_vec(mu);
   size_t size_vec = max_size_mvt(y, mu);
@@ -117,8 +103,8 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_prec_lpdf(
   if (include_summand<propto, T_y, T_loc, T_covar_elem>::value) {
     lp_type sum_lp_vec(0.0);
     for (size_t i = 0; i < size_vec; i++) {
-      Eigen::Matrix<typename return_type<T_y, T_loc>::type, Eigen::Dynamic, 1>
-          y_minus_mu(size_y);
+      Eigen::Matrix<return_type_t<T_y, T_loc>, Eigen::Dynamic, 1> y_minus_mu(
+          size_y);
       for (int j = 0; j < size_y; j++)
         y_minus_mu(j) = y_vec[i](j) - mu_vec[i](j);
       sum_lp_vec += trace_quad_form(Sigma, y_minus_mu);
@@ -129,7 +115,7 @@ typename return_type<T_y, T_loc, T_covar>::type multi_normal_prec_lpdf(
 }
 
 template <typename T_y, typename T_loc, typename T_covar>
-inline typename return_type<T_y, T_loc, T_covar>::type multi_normal_prec_lpdf(
+inline return_type_t<T_y, T_loc, T_covar> multi_normal_prec_lpdf(
     const T_y& y, const T_loc& mu, const T_covar& Sigma) {
   return multi_normal_prec_lpdf<false>(y, mu, Sigma);
 }

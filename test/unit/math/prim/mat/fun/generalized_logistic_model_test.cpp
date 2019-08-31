@@ -890,8 +890,8 @@ TEST(MathFunctions, generalized_logistic_model) {
   Eigen::Matrix<double, -1, 1> eta_ss(eta_ss_tmp.size());
   Eigen::Matrix<double, -1, 1> eta_sr(eta_sr_tmp.size());
 
-  Eigen::Matrix<double, -1, 2> theta_r(theta_r_tmp.size());
-  Eigen::Matrix<double, -1, 2> theta_s(theta_s_tmp.size());
+  Eigen::Matrix<double, -1, 1> theta_r(theta_r_tmp.size());
+  Eigen::Matrix<double, -1, 1> theta_s(theta_s_tmp.size());
 
   for (unsigned int i = 0; i < eta_ps_tmp.size(); i++) {
     eta_ps(i) = eta_ps_tmp[i];

@@ -9,44 +9,30 @@
 namespace stan {
 namespace math {
 
-/*stan::math::var generalized_logistic_model(const std::vector<int>& IDp, const
-   std::vector<int>& IDs, const vector_d& time, const vector_d& S, const
-   vector_d& APOE4, const std::vector<int>& AGE, const std::vector<int>& SEX,
-   const std::vector<int>& pbo_flag, const std::vector<int>& COMED,
-   stan::math::var &theta_S0v, stan::math::var &theta_rv, stan::math::var &tauv,
-   stan::math::var &theta_AGEv, stan::math::var &theta_APOE4_rv, stan::math::var
-   &theta_APOE4_bv, stan::math::var &theta_COMEDv, stan::math::var &betav,
-   stan::math::var &theta_SEXv, stan::math::var &beta_batemanv, stan::math::var
-   &kelv, stan::math::var &keqv, Eigen::Matrix<stan::math::var, -1, -1> eta_pb,
-   Eigen::Matrix<stan::math::var, -1, -1> eta_pr, Eigen::Matrix<stan::math::var,
-   -1, -1> eta_sb, Eigen::Matrix<stan::math::var, -1, -1> eta_sr) {
-  */
-stan::math::var generalized_logistic_model(
+var generalized_logistic_model(
     const std::vector<int>& IDp, const std::vector<int>& IDs,
     const std::vector<int>& is_pbo, const vector_d& time, const vector_d& score,
-    const int& multiplicative_s, const int& multiplicative_r,
+    const int multiplicative_s, const int multiplicative_r,
     const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& X_s,
     const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& X_r,
-    stan::math::var& tauv, stan::math::var& betav, stan::math::var& beta_pbov,
-    stan::math::var& k_elv, stan::math::var& k_eqv,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> theta_r,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> theta_s,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> eta_pr,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> eta_sr,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> eta_ps,
-    Eigen::Matrix<stan::math::var, Eigen::Dynamic, Eigen::Dynamic> eta_ss,
-    stan::math::var& base_sv, stan::math::var& base_rv) {
-  int N = IDp.size();
+    var& tauv, var& betav, var& beta_pbov,
+    var& k_elv, var& k_eqv,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& theta_r,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& theta_s,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_pr,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_sr,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ps,
+    const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ss,
+    var& base_sv, var& base_rv) {
+  const int N = IDp.size();
+  const double tau = tauv.val();
+  const double beta = betav.val();
+  const double beta_pbo = beta_pbov.val();
+  const double k_el = k_elv.val();
+  const double k_eq = k_eqv.val();
+  const double base_s = base_sv.val();
+  const double base_r = base_rv.val();
 
-  double tau = tauv.val();
-  double beta = betav.val();
-  double beta_pbo = beta_pbov.val();
-  double k_el = k_elv.val();
-  double k_eq = k_eqv.val();
-  double base_s = base_sv.val();
-  double base_r = base_rv.val();
-
-  std::vector<double> muS(N);
   double d_tau = 0;
   double d_beta_pbo = 0;
   double d_k_eq = 0;
@@ -54,39 +40,39 @@ stan::math::var generalized_logistic_model(
   double d_beta = 0;
   double d_base_s = 0;
   double d_base_r = 0;
-  std::vector<double> d_eta_pr(*std::max_element(IDp.begin(), IDp.end()));
-  std::vector<double> d_eta_sr(*std::max_element(IDs.begin(), IDs.end()));
-  std::vector<double> d_eta_ps(*std::max_element(IDp.begin(), IDp.end()));
-  std::vector<double> d_eta_ss(*std::max_element(IDs.begin(), IDs.end()));
+  std::vector<double> d_eta_pr(eta_pr.size());
+  std::vector<double> d_eta_sr(eta_sr.size());
+  std::vector<double> d_eta_ps(eta_ps.size());
+  std::vector<double> d_eta_ss(eta_ss.size());
   std::vector<double> d_theta_s(2);
   std::vector<double> d_theta_r(2);
 
-  int p_size = d_eta_pr.size();
-  int s_size = d_eta_sr.size();
+  const int p_size = d_eta_pr.size();
+  const int s_size = d_eta_sr.size();
 
-  int theta_s_size = X_s.cols();
-  int theta_r_size = X_r.cols();
+  const int theta_s_size = X_s.cols();
+  const int theta_r_size = X_r.cols();
 
-  // Main loop
-  double cov_s = 0;
-  double cov_r = 0;
   double tgt = 0;
   for (int i = 0; i < N; i++) {
     // compute function
-    cov_s = base_s + eta_ps(IDp[i] - 1).val() + eta_ss(IDs[i] - 1).val();
-    cov_r = base_r + eta_pr(IDp[i] - 1).val() + eta_sr(IDs[i] - 1).val();
-    if (!theta_s.rows() == 0)
+    double cov_s = base_s + eta_ps(IDp[i] - 1).val() + eta_ss(IDs[i] - 1).val();
+    double cov_r = base_r + eta_pr(IDp[i] - 1).val() + eta_sr(IDs[i] - 1).val();
+    if (theta_s.size() > 0)
       cov_s = cov_s + (X_s.row(i) * theta_s)(0, 0).val();
-    if (!theta_r.rows() == 0)
+    if (theta_r.size() > 0) {
       cov_r = cov_r + (X_r.row(i) * theta_r)(0, 0).val();
-    if (multiplicative_s == 1)
+    }      
+    if (multiplicative_s == 1) {
       cov_s = exp(cov_s);
-    if (multiplicative_r == 1)
+    }      
+    if (multiplicative_r == 1) {
       cov_s = exp(cov_r);
-    double S0 = 1 / (1 + exp(-cov_s));
-    double pbo_eff = beta_pbo * (k_eq / (k_eq - k_el))
+    }      
+    const double S0 = 1 / (1 + exp(-cov_s));
+    const double pbo_eff = beta_pbo * (k_eq / (k_eq - k_el))
                      * (exp(-k_el * time[i]) - exp(-k_eq * time[i]));
-    muS[i] = S0
+    double muS = S0
                  / std::pow((std::pow(S0, beta)
                              + (1 - std::pow(S0, beta))
                                    * exp(-beta * cov_r * time[i])),
@@ -95,11 +81,11 @@ stan::math::var generalized_logistic_model(
 
     // compute gradients
     double d_x_d_mu = tau * log(score[i]) - tau * log(1 - score[i])
-                      - digamma(muS[i] * tau) * tau
-                      + digamma(tau - muS[i] * tau) * tau;
-    d_tau = d_tau + muS[i] * log(score[i]) + log(1 - score[i])
-            - muS[i] * log(1 - score[i]) - digamma(muS[i] * tau) * muS[i]
-            - digamma(tau - muS[i] * tau) * (1 - muS[i]) + digamma(tau);
+                      - digamma(muS * tau) * tau
+                      + digamma(tau - muS * tau) * tau;
+    d_tau = d_tau + muS * log(score[i]) + log(1 - score[i])
+            - muS * log(1 - score[i]) - digamma(muS * tau) * muS
+            - digamma(tau - muS * tau) * (1 - muS) + digamma(tau);
 
     d_beta_pbo = d_beta_pbo
                  + d_x_d_mu * (-is_pbo[IDs[i] - 1]) * (k_eq / (k_eq - k_el))
@@ -136,21 +122,26 @@ stan::math::var generalized_logistic_model(
                            + std::pow(S0, beta) * exp(-beta * cov_r * time[i])
                                  * beta * time[i]))
                       / (alpha * alpha));
-    if (multiplicative_s == 1)
+    if (multiplicative_s == 1) {
       tmp_s = tmp_s * cov_s;
-    if (multiplicative_r == 1)
+    }      
+    if (multiplicative_r == 1) {
       tmp_r = tmp_r * cov_r;
+    }  
 
     d_base_s += tmp_s;
-    for (int c = 0; c < X_s.cols(); c++)
+    
+    for (int c = 0; c < X_s.cols(); c++) {
       d_theta_s[c] += tmp_s * X_s(i, c);
+    }      
 
     d_eta_ps[IDp[i] - 1] = d_eta_ps[IDp[i] - 1] + tmp_s;
     d_eta_ss[IDs[i] - 1] = d_eta_ss[IDs[i] - 1] + tmp_s;
 
     d_base_r += tmp_r;
-    for (int c = 0; c < X_r.cols(); c++)
+    for (int c = 0; c < X_r.cols(); c++) {
       d_theta_r[c] += tmp_r * X_r(i, c);
+    }     
 
     d_eta_pr[IDp[i] - 1] = d_eta_pr[IDp[i] - 1] + tmp_r;
     d_eta_sr[IDs[i] - 1] = d_eta_sr[IDs[i] - 1] + tmp_r;
@@ -165,17 +156,14 @@ stan::math::var generalized_logistic_model(
                        + std::pow(S0, beta) * exp(-beta * cov_r * time[i])
                              * cov_r * time[i]))
                        / std::pow(alpha, beta));
-  }
-  for (int i = 0; i < N; i++) {
-    tgt += dbeta(score[i], muS[i] * tau, (1 - muS[i]) * tau);
+    tgt += dbeta(score[i], muS * tau, (1 - muS) * tau);
   }
 
   // stack it up
-  vari** varis = ChainableStack::instance().memalloc_.alloc_array<vari*>(
+  vari** varis = ChainableStack::instance_->memalloc_.alloc_array<vari*>(
       7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size);
   varis[0] = tauv.vi_;
   varis[1] = betav.vi_;
-  ;
   varis[2] = beta_pbov.vi_;
   varis[3] = k_elv.vi_;
   varis[4] = k_eqv.vi_;
@@ -207,7 +195,7 @@ stan::math::var generalized_logistic_model(
     varis[k] = eta_ss(i).vi_;
     k++;
   }
-  double* gradients = ChainableStack::instance().memalloc_.alloc_array<double>(
+  double* gradients = ChainableStack::instance_->memalloc_.alloc_array<double>(
       7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size);
   gradients[0] = d_tau;
   gradients[1] = d_beta;
@@ -245,7 +233,6 @@ stan::math::var generalized_logistic_model(
   return var(new precomputed_gradients_vari(
       tgt, 7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size,
       varis, gradients));
-  // return NULL;
 }
 }  // namespace math
 }  // namespace stan

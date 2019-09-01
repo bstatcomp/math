@@ -9,7 +9,7 @@
 namespace stan {
 namespace math {
 
-var generalized_logistic_model(
+inline var generalized_logistic_model(
     const std::vector<int>& IDp, const std::vector<int>& IDs,
     const std::vector<int>& is_pbo, const vector_d& time, const vector_d& score,
     const int multiplicative_s, const int multiplicative_r,

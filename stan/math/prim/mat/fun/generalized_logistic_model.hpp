@@ -13,7 +13,7 @@ inline double dbeta(const double x, const double a, const double b) {
   return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
 }
 
-double generalized_logistic_model(
+inline double generalized_logistic_model(
     const std::vector<int> &IDp, const std::vector<int> &IDs,
     const std::vector<int> &is_pbo, const vector_d &time, const vector_d &score,
     const int multiplicative_s, const int multiplicative_r,

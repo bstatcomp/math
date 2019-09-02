@@ -40,18 +40,21 @@ inline var generalized_logistic_model(
   double d_beta = 0;
   double d_base_s = 0;
   double d_base_r = 0;
+  
+  const int theta_s_size = X_s.cols();
+  const int theta_r_size = X_r.cols();
+  
   std::vector<double> d_eta_pr(eta_pr.size());
   std::vector<double> d_eta_sr(eta_sr.size());
   std::vector<double> d_eta_ps(eta_ps.size());
   std::vector<double> d_eta_ss(eta_ss.size());
-  std::vector<double> d_theta_s(2);
-  std::vector<double> d_theta_r(2);
+  std::vector<double> d_theta_s(X_s.cols());
+  std::vector<double> d_theta_r(X_r.cols());
 
   const int p_size = d_eta_pr.size();
   const int s_size = d_eta_sr.size();
 
-  const int theta_s_size = X_s.cols();
-  const int theta_r_size = X_r.cols();
+  
 
   double tgt = 0;
   for (int i = 0; i < N; i++) {

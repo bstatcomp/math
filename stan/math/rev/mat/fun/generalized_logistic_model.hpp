@@ -55,7 +55,6 @@ inline var generalized_logistic_model(
   const int s_size = d_eta_sr.size();
 
   
-
   double tgt = 0;
   for (int i = 0; i < N; i++) {
     // compute function

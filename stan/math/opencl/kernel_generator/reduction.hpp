@@ -17,7 +17,7 @@
 namespace stan {
 namespace math {
 
-template<typename Derived, typename T, typename Operation, bool Rowwise, bool Colwise>
+template<typename Derived, typename T, typename Operation, bool PassZero, bool Rowwise, bool Colwise>
 class reduction : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
 public:
     using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
@@ -36,10 +36,22 @@ public:
         kernel_parts res;
         res.body = type_str<ReturnScalar>::name + " " + var_name + " = " + init_ + ";\n";
         if (Rowwise) {
-          res.body += "for(int " + var_name + "_j = 0; " + var_name + "_j < " + var_name + "_cols; " + var_name + "_j++){\n";
+          if(PassZero) {
+            res.body += "for(int " + var_name + "_j = contains_nonzero(" + var_name + "_view, LOWER) ? 0 : " + i + "; "
+                        + var_name + "_j < (contains_nonzero(" + var_name + "_view, UPPER) ? " + var_name + "_cols : " + i + " + 1); " + var_name + "_j++){\n";
+          }
+          else{
+            res.body += "for(int " + var_name + "_j = 0; " + var_name + "_j < " + var_name + "_cols; " + var_name + "_j++){\n";
+          }
         }
         if (Colwise) {
-          res.body += "for(int " + var_name + "_i = 0; " + var_name + "_i < " + var_name + "_rows; " + var_name + "_i++){\n";
+          if(PassZero) {
+            res.body += "for(int " + var_name + "_i = contains_nonzero(" + var_name + "_view, UPPER) ? 0 : " + j + "; "
+                    + var_name + "_i < (contains_nonzero(" + var_name + "_view, LOWER) ? " + var_name + "_rows : " + j + " + 1); " + var_name + "_i++){\n";
+          }
+          else{
+            res.body += "for(int " + var_name + "_i = 0; " + var_name + "_i < " + var_name + "_rows; " + var_name + "_i++){\n";
+          }
         }
         res.body += a_parts.body + var_name + " = " + Operation::generate(var_name, a_.var_name) + ";\n";
         if (Rowwise) {
@@ -48,7 +60,7 @@ public:
         if (Colwise) {
           res.body += "}\n";
         }
-        res.args = a_parts.args;
+        res.args = a_parts.args + "int " + var_name + "_view, ";
         if (Rowwise) {
           res.args += "int " + var_name + "_cols, ";
         }
@@ -66,6 +78,7 @@ public:
       if (generated.count(instance) == 0) {
         generated.insert(instance);
         a_.set_args(generated, kernel, arg_num);
+        kernel.setArg(arg_num++, a_.view());
         if (Rowwise) {
           kernel.setArg(arg_num++, a_.cols());
         }
@@ -114,9 +127,9 @@ struct sum_op {
 };
 
 template<typename T, bool Rowwise, bool Colwise>
-class sum__ : public reduction<sum__<T, Rowwise, Colwise>, T, sum_op, Rowwise, Colwise> {
+class sum__ : public reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise> {
 public:
-    sum__(T&& a) : reduction<sum__<T, Rowwise, Colwise>, T, sum_op, Rowwise, Colwise>(std::forward<T>(a), "0") {}
+    sum__(T&& a) : reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise>(std::forward<T>(a), "0") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
@@ -124,16 +137,20 @@ auto sum(T&& a) -> const sum__<decltype(as_operation(std::forward<T>(a))), Rowwi
   return sum__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
+template< typename T>
 struct max_op {
     static std::string generate(const std::string& a, const std::string& b) {
+      if(std::is_floating_point<T>()){
+        return "fmax(" + a + ", " + b + ")";
+      }
       return "max(" + a + ", " + b + ")";
     }
 };
 
 template<typename T, bool Rowwise, bool Colwise>
-class max__ : public reduction<max__<T, Rowwise, Colwise>, T, max_op, Rowwise, Colwise> {
+class max__ : public reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
-    max__(T&& a) : reduction<max__<T, Rowwise, Colwise>, T, max_op, Rowwise, Colwise>(std::forward<T>(a), "-INFINITY") {}
+    max__(T&& a) : reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "-INFINITY") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
@@ -142,16 +159,20 @@ auto max(T&& a) -> const max__<decltype(as_operation(std::forward<T>(a))), Rowwi
 }
 
 
+template< typename T>
 struct min_op {
     static std::string generate(const std::string& a, const std::string& b) {
+      if(std::is_floating_point<T>()){
+        return "fmin(" + a + ", " + b + ")";
+      }
       return "min(" + a + ", " + b + ")";
     }
 };
 
 template<typename T, bool Rowwise, bool Colwise>
-class min__ : public reduction<min__<T, Rowwise, Colwise>, T, min_op, Rowwise, Colwise> {
+class min__ : public reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
-    min__(T&& a) : reduction<min__<T, Rowwise, Colwise>, T, min_op, Rowwise, Colwise>(std::forward<T>(a), "INFINITY") {}
+    min__(T&& a) : reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "INFINITY") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>

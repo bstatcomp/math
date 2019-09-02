@@ -33,7 +33,7 @@ public:
         kernel_parts res;
         std::string type = type_str<ReturnScalar>::name;
         res.body = type + " " + var_name + " = 0;"
-                   " if (!((!contains_nonzero(" + var_name + "_view, LOWER) && j < i) || (!contains_nonzero(" + var_name + "_view, UPPER) && j > i))) {"
+                   " if (!((!contains_nonzero(" + var_name + "_view, LOWER) && " + j + " < " + i + ") || (!contains_nonzero(" + var_name + "_view, UPPER) && " + j + " > " + i + "))) {"
                    + var_name + " = " + var_name + "_global[" + i + " + " + var_name + "_rows * " + j + "];}\n";
         res.args = "__global " + type + "* " + var_name + "_global, int " + var_name + "_rows, int " + var_name + "_view, ";
         return res;

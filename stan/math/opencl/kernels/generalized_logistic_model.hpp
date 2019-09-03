@@ -11,6 +11,8 @@ namespace opencl_kernels {
 // \cond
 static const char *generalized_logistic_model_kernel_code = STRINGIFY(
     // \endcond
+     
+    
     double digamma(double x)
     {
     double c = 8.5;
@@ -48,7 +50,10 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                 - r * (1.0 / 132.0)))));
 
     return value;
-    }  
+    }
+    double dbeta(const double x, const double a, const double b) {
+        return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
+    }
     /**
      * Matrix subtraction on the OpenCL device
      * Subtracts the second matrix from the
@@ -117,20 +122,46 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                   - is_pbo[ids-1] * pbo_eff;
         double d_x_d_mu = tmp[3] * log(score[i]) - tmp[3] * log(1 - score[i]) - digamma(muS * tmp[3]) * tmp[3] + digamma(tmp[3] - muS * tmp[3]) * tmp[3];
         double d_tau = muS * log(score[i]) + log(1 - score[i]) - muS * log(1 - score[i]) - digamma(muS * tmp[3]) * muS - digamma(tmp[3] - muS * tmp[3]) * (1 - muS) + digamma(tmp[3]);
-    
 
+        const double temp9 = pow(S0, tmp[4]);    
+        const double alpha = pow(temp9 + (1 - temp9) * exp10, 1.0 / tmp[4]);
+        const double alpha_sq = (alpha * alpha);
+        const double temp12 = 1.0 / tmp[4] * alpha * pow(alpha, -tmp[4]);
+        double tmp_s = d_x_d_mu
+                   * ((alpha - S0 * temp12
+                      * (tmp[4] * pow(S0, tmp[4] - 1) - exp10 * tmp[4] * pow(S0, tmp[4] - 1)))
+                      / alpha_sq)
+                   * (exp(-cov_s) / ((1 + exp(-cov_s)) * (1 + exp(-cov_s))));
+        double tmp_r = d_x_d_mu * S0 * (-(temp12 * (-exp10 * tmp[4] * time[i] + temp9 * exp10 * tmp[4] * time[i])) / alpha_sq);
+        double alpha_beta_pow = pow(alpha, tmp[4]);
+        const double temp13 = temp9 * log(S0);
+        const double temp14 = exp10 * cov_r * time[i];
+        double d_beta = d_x_d_mu * (-S0 * pow(alpha, -2)) * alpha
+              * ((log(alpha_beta_pow) * (-pow(tmp[4], -2)))
+              + (1.0 / tmp[4] * (temp13 - temp14 - temp13 * exp10 + temp9 * temp14))
+              / alpha_beta_pow);
+        if (tmp[0] == 1) {
+            tmp_s = tmp_s * cov_s;
+        }      
+        if (tmp[1] == 1) {
+            tmp_r = tmp_r * cov_r;
+        }
+        double tgt = dbeta(score[i], muS * tmp[3], (1 - muS) * tmp[3]);
         outtmp[i] = cov_s;
         outtmp1[i] = cov_r;
-        outtmp2[i] = S0;
-        outtmp5[i] = d_x_d_mu;
+        outtmp2[i] = tgt;
+        outtmp3[i] = tmp_s;
+        outtmp4[i] = tmp_r;
         outtmp6[i] = d_tau;
-        outtmp7[i] = exp10;
         outtmp8[i] = muS;
         outtmp9[i] = d_x_d_mu * (-is_pbo[ids - 1]) * temp1 * temp2;
         outtmp10[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
              * ((-tmp[6] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 + temp1 * exp(-tmp[7] * time[i]) * time[i]);
         outtmp11[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
              * ((tmp[7] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 - temp1 * exp(-tmp[6] * time[i]) * time[i]);
+        outtmp12[i] = d_beta;
+
+
       
     }
     // \cond
@@ -143,7 +174,7 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
 const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer,
                 out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer>
     generalized_logistic_model("generalized_logistic_model",
-             {indexing_helpers, generalized_logistic_model_kernel_code});
+             {indexing_helpers, helpnow, generalized_logistic_model_kernel_code});
 
 }  // namespace opencl_kernels
 }  // namespace math

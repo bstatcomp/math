@@ -201,9 +201,6 @@ inline var generalized_logistic_model(
     // compute function
     double cov_r = outtmp1(0,i);
     double cov_s = outtmp(0,i);
-    const double S0 = outtmp2(0,i);
-    const double d_x_d_mu = outtmp5(0,i);
-    const double exp10 = outtmp7(0,i);
     double muS = outtmp8(0,i);
 
     // compute gradients
@@ -211,27 +208,13 @@ inline var generalized_logistic_model(
     d_beta_pbo = d_beta_pbo + outtmp9(0,i);
     d_k_eq = d_k_eq + outtmp10(0,i);
     d_k_el = d_k_el + outtmp11(0,i);
-
-    const double temp9 = std::pow(S0, beta);    
-    const double alpha = std::pow(temp9 + (1 - temp9) * exp10, 1.0 / beta);
-    const double temp11 = std::pow(S0, beta - 1);
-    const double alpha_sq = (alpha * alpha);
-    const double temp12 = 1.0 / beta * alpha * std::pow(alpha, -beta);
-    double tmp_s = d_x_d_mu
-                   * ((alpha - S0 * temp12
-                      * (beta * temp11 - exp10 * beta * temp11))
-                      / alpha_sq)
-                   * (exp(-cov_s) / ((1 + exp(-cov_s)) * (1 + exp(-cov_s))));
-    double tmp_r = d_x_d_mu * S0 * (-(temp12 * (-exp10 * beta * time[i] + temp9 * exp10 * beta * time[i])) / alpha_sq);
-    if (multiplicative_s == 1) {
-      tmp_s = tmp_s * cov_s;
-    }      
-    if (multiplicative_r == 1) {
-      tmp_r = tmp_r * cov_r;
-    }  
+    double tmp_s = outtmp3(0,i);
+    double tmp_r = outtmp4(0,i);
+    d_beta = d_beta + outtmp12(0,i);
 
     d_base_s += tmp_s;
-    
+    d_base_r += tmp_r;
+    tgt = tgt + outtmp2(0,i);
     for (int c = 0; c < X_s.cols(); c++) {
       d_theta_s[c] += tmp_s * X_s(i, c);
     }      
@@ -239,21 +222,14 @@ inline var generalized_logistic_model(
     d_eta_ps[IDp[i] - 1] = d_eta_ps[IDp[i] - 1] + tmp_s;
     d_eta_ss[IDs[i] - 1] = d_eta_ss[IDs[i] - 1] + tmp_s;
 
-    d_base_r += tmp_r;
+   
     for (int c = 0; c < X_r.cols(); c++) {
       d_theta_r[c] += tmp_r * X_r(i, c);
     }     
 
     d_eta_pr[IDp[i] - 1] = d_eta_pr[IDp[i] - 1] + tmp_r;
     d_eta_sr[IDs[i] - 1] = d_eta_sr[IDs[i] - 1] + tmp_r;
-    const double alpha_beta_pow = std::pow(alpha, beta);
-    const double temp13 = temp9 * log(S0);
-    const double temp14 = exp10 * cov_r * time[i];
-    d_beta += d_x_d_mu * (-S0 * std::pow(alpha, -2)) * alpha
-              * ((log(alpha_beta_pow) * (-std::pow(beta, -2)))
-              + (1.0 / beta * (temp13 - temp14 - temp13 * exp10 + temp9 * temp14))
-              / alpha_beta_pow);
-    tgt += dbeta(score[i], muS * tau, (1 - muS) * tau);
+    
   }
 
   // stack it up

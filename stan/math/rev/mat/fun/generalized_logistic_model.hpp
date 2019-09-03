@@ -193,19 +193,17 @@ inline var generalized_logistic_model(
     const double temp1 = outtmp3(0,i);
     const double temp2 = outtmp4(0,i);
     const double d_x_d_mu = outtmp5(0,i);
-    const double S0_beta_pow = outtmp6(0,i);
     const double exp10 = outtmp7(0,i);
     double muS = outtmp8(0,i);
 
     // compute gradients
-    d_tau = d_tau + muS * log(score[i]) + log(1 - score[i]) - muS * log(1 - score[i]) - digamma(muS * tau) * muS - digamma(tau - muS * tau) * (1 - muS) + digamma(tau);
-    const double temp8 =  ((k_eq - k_el) * (k_eq - k_el));
+    d_tau = d_tau + outtmp6(0,i);
 
     d_beta_pbo = d_beta_pbo + d_x_d_mu * (-is_pbo[IDs[i] - 1]) * temp1 * temp2;
     d_k_eq = d_k_eq + d_x_d_mu * (-is_pbo[IDs[i] - 1] * beta_pbo)
-             * ((-k_el / temp8) * temp2 + temp1 * exp(-k_eq * time[i]) * time[i]);
+             * ((-k_el / ((k_eq - k_el) * (k_eq - k_el))) * temp2 + temp1 * exp(-k_eq * time[i]) * time[i]);
     d_k_el = d_k_el + d_x_d_mu * (-1*is_pbo[IDs[i] - 1] * beta_pbo)
-             * ((k_eq / temp8) * temp2 - temp1 * exp(-k_el * time[i]) * time[i]);
+             * ((k_eq / ((k_eq - k_el) * (k_eq - k_el))) * temp2 - temp1 * exp(-k_el * time[i]) * time[i]);
 
     const double temp9 = std::pow(S0, beta);
     

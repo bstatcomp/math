@@ -115,18 +115,16 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                   / pow((S0_beta_pow + (1 - S0_beta_pow) * exp10), 1.0 / tmp[4])
                   - is_pbo[ids-1] * pbo_eff;
         double d_x_d_mu = tmp[3] * log(score[i]) - tmp[3] * log(1 - score[i]) - digamma(muS * tmp[3]) * tmp[3] + digamma(tmp[3] - muS * tmp[3]) * tmp[3];
+        double d_tau = muS * log(score[i]) + log(1 - score[i]) - muS * log(1 - score[i]) - digamma(muS * tmp[3]) * muS - digamma(tmp[3] - muS * tmp[3]) * (1 - muS) + digamma(tmp[3]);
     
-    
-        //const double temp1 = outtmp3(0,i);//k_eq / (k_eq - k_el);
-        //const double temp2 = outtmp4(0,i);//(exp(-k_el * time[i]) - exp(-k_eq * time[i]));
-        //const double pbo_eff = outtmp5(0,i);//beta_pbo * temp1 * temp2;
+
         outtmp[i] = cov_s;
         outtmp1[i] = cov_r;
         outtmp2[i] = S0;
         outtmp3[i] = temp1;
         outtmp4[i] = temp2;
         outtmp5[i] = d_x_d_mu;
-        outtmp6[i] = S0_beta_pow;
+        outtmp6[i] = d_tau;
         outtmp7[i] = exp10;
         outtmp8[i] = muS;
       

@@ -55,6 +55,8 @@ static const char* indexing_helpers =
     #define S2 0.00079365079365079365079365
     #define S3 0.000595238095238095238095238
     #define S4 0.0008417508417508417508417508
+    #define NUM 256
+    #define NUM2 16
   )";
 
 /*

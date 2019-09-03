@@ -35,39 +35,59 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                            __global double *eta_pr, __global double *eta_sr,
                            __global double *X_s, __global double *theta_s,
                            __global double *X_r, __global double *theta_r,
-                           __global double *outtmp, __global double *outtmp1) {
-      int i = get_global_id(0);
-      int idp = IDp[i];
-      int ids = IDs[i];
-      double cov_s = tmp[8] + eta_ps[idp-1] + eta_ss[ids-1];
-      double cov_r = tmp[9] + eta_pr[idp - 1] + eta_sr[ids - 1];
-      int j = 0;
-      if(tmp[14]*tmp[15]>0){
-        for(j=0;j<tmp[10];j++) {
-          int id_xs = j*tmp[2]+i;
-          int id_theta_s = j;
-          cov_s = cov_s + X_s[id_xs]*theta_s[id_theta_s];
+                           __global double *time, __global double *is_pbo, __global double *score,
+                           __global double *outtmp, __global double *outtmp1, __global double *outtmp2,
+                           __global double *outtmp3, __global double *outtmp4,__global double *outtmp5,
+                           __global double *outtmp6, __global double *outtmp7, __global double *outtmp8) {
+        int i = get_global_id(0);
+        int idp = IDp[i];
+        int ids = IDs[i];
+        double cov_s = tmp[8] + eta_ps[idp-1] + eta_ss[ids-1];
+        double cov_r = tmp[9] + eta_pr[idp - 1] + eta_sr[ids - 1];
+        int j = 0;
+        if(tmp[14]*tmp[15]>0){
+            for(j=0;j<tmp[10];j++) {
+            int id_xs = j*tmp[2]+i;
+            int id_theta_s = j;
+            cov_s = cov_s + X_s[id_xs]*theta_s[id_theta_s];
+            }
         }
-      }
-      if(tmp[16]*tmp[17]>0){
-        for(j=0;j<tmp[12];j++) {
-          int id_xr = j*tmp[2]+i;
-          int id_theta_r = j;
-          cov_r = cov_r + X_r[id_xr]*theta_r[id_theta_r];
+        if(tmp[16]*tmp[17]>0){
+            for(j=0;j<tmp[12];j++) {
+            int id_xr = j*tmp[2]+i;
+            int id_theta_r = j;
+            cov_r = cov_r + X_r[id_xr]*theta_r[id_theta_r];
+            }
         }
-      }
-      //if(tmp[14]*tmp[15]>0){
-        // for(int j=0;j<tmp[10];j++){
-        //   int id_X_s = j*tmp[2]+i;
-        //   int id_theta_s = j*tmp[15];
-        //   cov_s += X_s[id_X_s]*theta_s[id_theta_s];
-        // }
-      //}      
-      outtmp[i] = cov_s;
-      outtmp1[i] = cov_r;
 
-      //if (theta_s.size() > 0)
-      //cov_s = cov_s + (X_s.row(i) * theta_s.col(0))(0, 0).val();
+        if (tmp[0] == 1) {
+            cov_s = exp(cov_s);
+        }      
+        if (tmp[1] == 1) {
+            cov_r = exp(cov_r);
+        }  
+
+        double temp1 = tmp[7] / (tmp[7] - tmp[6]);
+        double temp2 = (exp(-tmp[6] * time[i]) - exp(-tmp[7] * time[i]));
+        double S0 = 1 / (1 + exp(-cov_s));
+        double pbo_eff = tmp[5] * temp1 * temp2;
+        double S0_beta_pow = pow(S0, tmp[4]);
+        double temp10 = -tmp[4] * cov_r * time[i];
+        double muS = S0
+                  / pow((S0_beta_pow + (1 - S0_beta_pow) * exp(temp10)), 1.0 / tmp[4])
+                  - is_pbo[ids-1] * pbo_eff;
+        //const double temp1 = outtmp3(0,i);//k_eq / (k_eq - k_el);
+        //const double temp2 = outtmp4(0,i);//(exp(-k_el * time[i]) - exp(-k_eq * time[i]));
+        //const double pbo_eff = outtmp5(0,i);//beta_pbo * temp1 * temp2;
+        outtmp[i] = cov_s;
+        outtmp1[i] = cov_r;
+        outtmp2[i] = S0;
+        outtmp3[i] = temp1;
+        outtmp4[i] = temp2;
+        outtmp5[i] = pbo_eff;
+        outtmp6[i] = S0_beta_pow;
+        outtmp7[i] = temp10;
+        outtmp8[i] = muS;
       
     }
     // \cond
@@ -77,8 +97,8 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer,
-                out_buffer, out_buffer>
+const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer,
+                out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer>
     generalized_logistic_model("generalized_logistic_model",
              {indexing_helpers, generalized_logistic_model_kernel_code});
 

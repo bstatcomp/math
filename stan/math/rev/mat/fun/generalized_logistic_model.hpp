@@ -20,9 +20,9 @@ cl::Buffer IDp_buf;
 cl::Buffer IDs_buf;
 cl::Buffer X_s_buf;
 cl::Buffer X_r_buf;
-matrix_cl<double> *is_pbo_cl;
-matrix_cl<double> *score_cl;
-matrix_cl<double> *time_cl;
+cl::Buffer is_pbo_buf;
+cl::Buffer score_buf;
+cl::Buffer time_buf;
 
 inline var generalized_logistic_model(
     const std::vector<int>& IDp, const std::vector<int>& IDs,
@@ -95,15 +95,24 @@ inline var generalized_logistic_model(
     matrix_cl<double> tIDs_cl = to_matrix_cl<double>(IDs_temp);
     tIDs_cl.wait_for_read_write_events();
     IDs_buf = tIDs_cl.buffer();
-    is_pbo_cl = new matrix_cl<double>(is_pbo_temp);
-    score_cl = new matrix_cl<double>(score);
-    time_cl = new matrix_cl<double>(time);
+    matrix_cl<double> tis_pbo_cl = to_matrix_cl<double>(is_pbo_temp);
+    tis_pbo_cl.wait_for_read_write_events();
+    is_pbo_buf = tis_pbo_cl.buffer();    
+    matrix_cl<double> tscore_cl = to_matrix_cl<double>(score);
+    tscore_cl.wait_for_read_write_events();
+    score_buf = tscore_cl.buffer();
+    matrix_cl<double> ttime_cl = to_matrix_cl<double>(time);
+    ttime_cl.wait_for_read_write_events();
+    time_buf = ttime_cl.buffer();
     copied == 1;
   }
   matrix_cl<double> IDp_cl(IDp_buf, 1, N);
   matrix_cl<double> IDs_cl(IDs_buf, 1, N);
   matrix_cl<double> X_s_cl(X_s_buf, 1, N);
   matrix_cl<double> X_r_cl(X_r_buf, 1, N);
+  matrix_cl<double> time_cl(time_buf, 1, N);
+  matrix_cl<double> score_cl(score_buf, 1, N);
+  matrix_cl<double> is_pbo_cl(is_pbo_buf, 1, N);
   
   matrix_d t1 = eta_ps.val();
   matrix_d t2 = eta_ss.val();
@@ -143,64 +152,72 @@ inline var generalized_logistic_model(
   matrix_cl<double> cov_r_cl(tmp);
   matrix_cl<double> outtmp_cl(1, N);
   matrix_cl<double> outtmp1_cl(1, N);
+  matrix_cl<double> outtmp2_cl(1, N);
+  matrix_cl<double> outtmp3_cl(1, N);
+  matrix_cl<double> outtmp4_cl(1, N);
+  matrix_cl<double> outtmp5_cl(1, N);
+  matrix_cl<double> outtmp6_cl(1, N);
+  matrix_cl<double> outtmp7_cl(1, N);
+  matrix_cl<double> outtmp8_cl(1, N);
   matrix_d cov_s_tmp(N,1);
   matrix_d cov_r_tmp(N,1); 
   matrix_d outtmp(1, N);
   matrix_d outtmp1(1, N);
+  matrix_d outtmp2(1, N);
+  matrix_d outtmp3(1, N);
+  matrix_d outtmp4(1, N);
+  matrix_d outtmp5(1, N);
+  matrix_d outtmp6(1, N);
+  matrix_d outtmp7(1, N);
+  matrix_d outtmp8(1, N);
   try {
-    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, outtmp_cl, outtmp1_cl);
+    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, outtmp_cl, outtmp1_cl, outtmp2_cl, outtmp3_cl, outtmp4_cl, outtmp5_cl, outtmp6_cl, outtmp7_cl, outtmp8_cl);
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
   }
 
   outtmp = from_matrix_cl(outtmp_cl);
   outtmp1 = from_matrix_cl(outtmp1_cl);
+  outtmp2 = from_matrix_cl(outtmp2_cl);
+  outtmp3 = from_matrix_cl(outtmp3_cl);
+  outtmp4 = from_matrix_cl(outtmp4_cl);
+  outtmp5 =  from_matrix_cl(outtmp5_cl);
+  outtmp6 = from_matrix_cl(outtmp6_cl);
+  outtmp7 = from_matrix_cl(outtmp7_cl);
+  outtmp8 = from_matrix_cl(outtmp8_cl);
   for (int i = 0; i < N; i++) {
     // compute function
     double cov_r = outtmp1(0,i);
-    
     double cov_s = outtmp(0,i);
-    
-    if (multiplicative_s == 1) {
-      cov_s = exp(cov_s);
-    }      
-    if (multiplicative_r == 1) {
-      cov_s = exp(cov_r);
-    }      
-    const double S0 = 1 / (1 + exp(-cov_s));
-    const double temp1 = k_eq / (k_eq - k_el);
-    const double temp2 = (exp(-k_el * time[i]) - exp(-k_eq * time[i]));
-    const double pbo_eff = beta_pbo * temp1 * temp2;
-    const double temp7 = is_pbo[IDs[i] - 1];
-    const double inv_beta = 1.0 / beta;
-    const double S0_beta_pow = std::pow(S0, beta);
-    const double temp10 = -beta * cov_r * time[i];
-    double muS = S0
-                  / std::pow((S0_beta_pow + (1 - S0_beta_pow) * exp(temp10)), inv_beta)
-                  - temp7 * pbo_eff;
+    const double S0 = outtmp2(0,i);
+    const double temp1 = outtmp3(0,i);
+    const double temp2 = outtmp4(0,i);
+    const double pbo_eff = outtmp5(0,i);
+    const double S0_beta_pow = outtmp6(0,i);
+    const double temp10 = outtmp7(0,i);
+    double muS = outtmp8(0,i);
 
     // compute gradients
-    const double muS_tau_prod = muS * tau;
-    const double temp3 = digamma(muS_tau_prod);
-    const double temp4 = digamma(tau - muS_tau_prod);
+    const double temp3 = digamma(muS * tau);
+    const double temp4 = digamma(tau - muS * tau);
     const double temp5 = log(score[i]);
     const double temp6 = log(1 - score[i]);
     double d_x_d_mu = tau * temp5 - tau * temp6 - temp3 * tau + temp4 * tau;
     d_tau = d_tau + muS * temp5 + temp6 - muS * temp6 - temp3 * muS - temp4 * (1 - muS) + digamma(tau);
     const double temp8 =  ((k_eq - k_el) * (k_eq - k_el));
 
-    d_beta_pbo = d_beta_pbo + d_x_d_mu * (-temp7) * temp1 * temp2;
-    d_k_eq = d_k_eq + d_x_d_mu * (-temp7 * beta_pbo)
+    d_beta_pbo = d_beta_pbo + d_x_d_mu * (-is_pbo[IDs[i] - 1]) * temp1 * temp2;
+    d_k_eq = d_k_eq + d_x_d_mu * (-is_pbo[IDs[i] - 1] * beta_pbo)
              * ((-k_el / temp8) * temp2 + temp1 * exp(-k_eq * time[i]) * time[i]);
-    d_k_el = d_k_el + d_x_d_mu * (-1*temp7 * beta_pbo)
+    d_k_el = d_k_el + d_x_d_mu * (-1*is_pbo[IDs[i] - 1] * beta_pbo)
              * ((k_eq / temp8) * temp2 - temp1 * exp(-k_el * time[i]) * time[i]);
 
     const double temp9 = std::pow(S0, beta);
     const double exp10 = exp(temp10);
-    const double alpha = std::pow(temp9 + (1 - temp9) * exp10, inv_beta);
+    const double alpha = std::pow(temp9 + (1 - temp9) * exp10, 1.0 / beta);
     const double temp11 = std::pow(S0, beta - 1);
     const double alpha_sq = (alpha * alpha);
-    const double temp12 = inv_beta * alpha * std::pow(alpha, -beta);
+    const double temp12 = 1.0 / beta * alpha * std::pow(alpha, -beta);
     const double exp_neg_cov_s = exp(-cov_s);
     double tmp_s = d_x_d_mu
                    * ((alpha - S0 * temp12
@@ -237,9 +254,9 @@ inline var generalized_logistic_model(
     const double temp14 = exp10 * cov_r * time[i];
     d_beta += d_x_d_mu * (-S0 * std::pow(alpha, -2)) * alpha
               * ((log(alpha_beta_pow) * (-std::pow(beta, -2)))
-              + (inv_beta * (temp13 - temp14 - temp13 * exp10 + temp9 * temp14))
+              + (1.0 / beta * (temp13 - temp14 - temp13 * exp10 + temp9 * temp14))
               / alpha_beta_pow);
-    tgt += dbeta(score[i], muS_tau_prod, (1 - muS) * tau);
+    tgt += dbeta(score[i], muS * tau, (1 - muS) * tau);
   }
 
   // stack it up
@@ -318,6 +335,7 @@ inline var generalized_logistic_model(
       varis, gradients));
 }
 #else
+/*
 inline var generalized_logistic_model(
     const std::vector<int>& IDp, const std::vector<int>& IDs,
     const std::vector<int>& is_pbo, const vector_d& time, const vector_d& score,
@@ -529,6 +547,7 @@ inline var generalized_logistic_model(
       tgt, 7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size,
       varis, gradients));
 }
+*/
 #endif
 }  // namespace math
 }  // namespace stan

@@ -76,7 +76,8 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                            __global double *time, __global double *is_pbo, __global double *score,
                            __global double *outtmp, __global double *outtmp1, __global double *outtmp2,
                            __global double *outtmp3, __global double *outtmp4,__global double *outtmp5,
-                           __global double *outtmp6, __global double *outtmp7, __global double *outtmp8) {
+                           __global double *outtmp6, __global double *outtmp7, __global double *outtmp8,__global double *outtmp9,
+                           __global double *outtmp10, __global double *outtmp11, __global double *outtmp12) {
         int i = get_global_id(0);
         int idp = IDp[i];
         int ids = IDs[i];
@@ -121,12 +122,15 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         outtmp[i] = cov_s;
         outtmp1[i] = cov_r;
         outtmp2[i] = S0;
-        outtmp3[i] = temp1;
-        outtmp4[i] = temp2;
         outtmp5[i] = d_x_d_mu;
         outtmp6[i] = d_tau;
         outtmp7[i] = exp10;
         outtmp8[i] = muS;
+        outtmp9[i] = d_x_d_mu * (-is_pbo[ids - 1]) * temp1 * temp2;
+        outtmp10[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
+             * ((-tmp[6] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 + temp1 * exp(-tmp[7] * time[i]) * time[i]);
+        outtmp11[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
+             * ((tmp[7] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 - temp1 * exp(-tmp[6] * time[i]) * time[i]);
       
     }
     // \cond
@@ -137,7 +141,7 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
 const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer,
-                out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer>
+                out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer>
     generalized_logistic_model("generalized_logistic_model",
              {indexing_helpers, generalized_logistic_model_kernel_code});
 

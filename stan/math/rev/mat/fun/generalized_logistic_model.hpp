@@ -159,6 +159,10 @@ inline var generalized_logistic_model(
   matrix_cl<double> outtmp6_cl(1, N);
   matrix_cl<double> outtmp7_cl(1, N);
   matrix_cl<double> outtmp8_cl(1, N);
+  matrix_cl<double> outtmp9_cl(1, N);
+  matrix_cl<double> outtmp10_cl(1, N);
+  matrix_cl<double> outtmp11_cl(1, N);
+  matrix_cl<double> outtmp12_cl(1, N);
   matrix_d cov_s_tmp(N,1);
   matrix_d cov_r_tmp(N,1); 
   matrix_d outtmp(1, N);
@@ -170,8 +174,12 @@ inline var generalized_logistic_model(
   matrix_d outtmp6(1, N);
   matrix_d outtmp7(1, N);
   matrix_d outtmp8(1, N);
+  matrix_d outtmp9(1, N);
+  matrix_d outtmp10(1, N);
+  matrix_d outtmp11(1, N);
+  matrix_d outtmp12(1, N);
   try {
-    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, outtmp_cl, outtmp1_cl, outtmp2_cl, outtmp3_cl, outtmp4_cl, outtmp5_cl, outtmp6_cl, outtmp7_cl, outtmp8_cl);
+    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, outtmp_cl, outtmp1_cl, outtmp2_cl, outtmp3_cl, outtmp4_cl, outtmp5_cl, outtmp6_cl, outtmp7_cl, outtmp8_cl, outtmp9_cl, outtmp10_cl, outtmp11_cl, outtmp12_cl);
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
   }
@@ -185,40 +193,36 @@ inline var generalized_logistic_model(
   outtmp6 = from_matrix_cl(outtmp6_cl);
   outtmp7 = from_matrix_cl(outtmp7_cl);
   outtmp8 = from_matrix_cl(outtmp8_cl);
+  outtmp9 =  from_matrix_cl(outtmp9_cl);
+  outtmp10 = from_matrix_cl(outtmp10_cl);
+  outtmp11 = from_matrix_cl(outtmp11_cl);
+  outtmp12 = from_matrix_cl(outtmp12_cl);
   for (int i = 0; i < N; i++) {
     // compute function
     double cov_r = outtmp1(0,i);
     double cov_s = outtmp(0,i);
     const double S0 = outtmp2(0,i);
-    const double temp1 = outtmp3(0,i);
-    const double temp2 = outtmp4(0,i);
     const double d_x_d_mu = outtmp5(0,i);
     const double exp10 = outtmp7(0,i);
     double muS = outtmp8(0,i);
 
     // compute gradients
     d_tau = d_tau + outtmp6(0,i);
+    d_beta_pbo = d_beta_pbo + outtmp9(0,i);
+    d_k_eq = d_k_eq + outtmp10(0,i);
+    d_k_el = d_k_el + outtmp11(0,i);
 
-    d_beta_pbo = d_beta_pbo + d_x_d_mu * (-is_pbo[IDs[i] - 1]) * temp1 * temp2;
-    d_k_eq = d_k_eq + d_x_d_mu * (-is_pbo[IDs[i] - 1] * beta_pbo)
-             * ((-k_el / ((k_eq - k_el) * (k_eq - k_el))) * temp2 + temp1 * exp(-k_eq * time[i]) * time[i]);
-    d_k_el = d_k_el + d_x_d_mu * (-1*is_pbo[IDs[i] - 1] * beta_pbo)
-             * ((k_eq / ((k_eq - k_el) * (k_eq - k_el))) * temp2 - temp1 * exp(-k_el * time[i]) * time[i]);
-
-    const double temp9 = std::pow(S0, beta);
-    
+    const double temp9 = std::pow(S0, beta);    
     const double alpha = std::pow(temp9 + (1 - temp9) * exp10, 1.0 / beta);
     const double temp11 = std::pow(S0, beta - 1);
     const double alpha_sq = (alpha * alpha);
     const double temp12 = 1.0 / beta * alpha * std::pow(alpha, -beta);
-    const double exp_neg_cov_s = exp(-cov_s);
     double tmp_s = d_x_d_mu
                    * ((alpha - S0 * temp12
                       * (beta * temp11 - exp10 * beta * temp11))
                       / alpha_sq)
-                   * (exp_neg_cov_s / ((1 + exp_neg_cov_s) * (1 + exp_neg_cov_s)));
-    const double temp15 = exp10 * beta * time[i];
-    double tmp_r = d_x_d_mu * S0 * (-(temp12 * (-temp15 + temp9 * temp15)) / alpha_sq);
+                   * (exp(-cov_s) / ((1 + exp(-cov_s)) * (1 + exp(-cov_s))));
+    double tmp_r = d_x_d_mu * S0 * (-(temp12 * (-exp10 * beta * time[i] + temp9 * exp10 * beta * time[i])) / alpha_sq);
     if (multiplicative_s == 1) {
       tmp_s = tmp_s * cov_s;
     }      

@@ -28,10 +28,10 @@ public:
     broadcast__(T&& a) : a_(std::forward<T>(a)) {
       const char* function = "broadcast";
       if (Rows) {
-        check_size_match(function, "Rows of ", "a", a.rows(), "", "1", 1);
+        check_size_match(function, "Rows of ", "a", a.rows(), "", "", 1);
       }
       if (Cols) {
-        check_size_match(function, "Columns of ", "a", a.cols(), "", "1", 1);
+        check_size_match(function, "Columns of ", "a", a.cols(), "", "", 1);
       }
     }
 

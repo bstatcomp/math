@@ -120,6 +120,18 @@ protected:
     std::string init_;
 };
 
+//template<typename Derived, typename T, typename Operation, bool PassZero>
+//class reduction<Derived, T, Operation, PassZero, true, true> : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
+//public:
+//    using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
+//    using base = operation<Derived, ReturnScalar>;
+//    using base::var_name;
+//    using base::instance;
+//
+//    reduction(T&& a, const std::string& init) : a_(std::forward<T>(a)), init_(init) {}
+//
+//};
+
 struct sum_op {
     static std::string generate(const std::string& a, const std::string& b) {
       return a + " + " + b;

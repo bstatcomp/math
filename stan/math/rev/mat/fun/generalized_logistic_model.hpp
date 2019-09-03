@@ -18,8 +18,8 @@ namespace math {
 int copied = 0;
 cl::Buffer IDp_buf;
 cl::Buffer IDs_buf;
-matrix_cl<double> *X_s_cl;
-matrix_cl<double> *X_r_cl;
+cl::Buffer X_s_buf;
+cl::Buffer X_r_buf;
 matrix_cl<double> *is_pbo_cl;
 matrix_cl<double> *score_cl;
 matrix_cl<double> *time_cl;
@@ -70,8 +70,13 @@ inline var generalized_logistic_model(
   const int s_size = d_eta_sr.size();
   matrix_cl<double> IDpp_cl(1, IDp.size());
   if(copied == 0){
-    X_s_cl = new matrix_cl<double>(X_s);
-    X_r_cl = new matrix_cl<double>(X_r);
+    matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
+    tX_s_cl.wait_for_read_write_events();
+    X_s_buf = tX_s_cl.buffer();
+    matrix_cl<double> tX_r_cl = to_matrix_cl<double>(X_r);
+    tX_r_cl.wait_for_read_write_events();
+    X_r_buf = tX_r_cl.buffer();
+
     matrix_d IDp_temp(1, IDp.size());
     matrix_d IDs_temp(1, IDs.size());
     matrix_d is_pbo_temp(is_pbo.size(), 1);
@@ -97,6 +102,9 @@ inline var generalized_logistic_model(
   }
   matrix_cl<double> IDp_cl(IDp_buf, 1, N);
   matrix_cl<double> IDs_cl(IDs_buf, 1, N);
+  matrix_cl<double> X_s_cl(X_s_buf, 1, N);
+  matrix_cl<double> X_r_cl(X_r_buf, 1, N);
+  
   matrix_d t1 = eta_ps.val();
   matrix_d t2 = eta_ss.val();
   matrix_d t3 = eta_pr.val();
@@ -109,7 +117,7 @@ inline var generalized_logistic_model(
   matrix_cl<double> eta_sr_cl(t4);
   matrix_cl<double> theta_r_cl(t5);
   matrix_cl<double> theta_s_cl(t6);
-  matrix_d tmp(10,1);
+  matrix_d tmp(18,1);
   tmp(0,0) = multiplicative_s;
   tmp(1,0) = multiplicative_r;
   tmp(2,0) = N;
@@ -120,6 +128,14 @@ inline var generalized_logistic_model(
   tmp(7,0) = k_eq;
   tmp(8,0) = base_s;
   tmp(9,0) = base_r;
+  tmp(10,0) = X_s.cols();
+  tmp(11,0) = X_s.rows();
+  tmp(12,0) = X_r.cols();
+  tmp(13,0) = X_r.rows();
+  tmp(14,0) = theta_s.cols();
+  tmp(15,0) = theta_s.rows();
+  tmp(16,0) = theta_r.cols();
+  tmp(17,0) = theta_r.rows();
   matrix_cl<double> tmp_cl(tmp);
   double tgt = 0;
 
@@ -132,7 +148,7 @@ inline var generalized_logistic_model(
   matrix_d outtmp(1, N);
   matrix_d outtmp1(1, N);
   try {
-    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, outtmp_cl, outtmp1_cl);
+    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl, eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, outtmp_cl, outtmp1_cl);
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
   }
@@ -141,14 +157,10 @@ inline var generalized_logistic_model(
   outtmp1 = from_matrix_cl(outtmp1_cl);
   for (int i = 0; i < N; i++) {
     // compute function
-    double cov_s = outtmp(0,i);
     double cov_r = outtmp1(0,i);
     
-    if (theta_s.size() > 0)
-      cov_s = cov_s + (X_s.row(i) * theta_s.col(0))(0, 0).val();
-    if (theta_r.size() > 0) {
-      cov_r = cov_r + (X_r.row(i) * theta_r.col(0))(0, 0).val();
-    }      
+    double cov_s = outtmp(0,i);
+    
     if (multiplicative_s == 1) {
       cov_s = exp(cov_s);
     }      

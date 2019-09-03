@@ -11,6 +11,44 @@ namespace opencl_kernels {
 // \cond
 static const char *generalized_logistic_model_kernel_code = STRINGIFY(
     // \endcond
+    double digamma(double x)
+    {
+    double c = 8.5;
+    double euler_mascheroni = 0.57721566490153286060;
+    double r;
+    double value;
+    double x2;
+    if (x <= 0.0)
+    {
+        value = 0.0;
+        return value;
+    }
+    if (x <= 0.000001)
+    {
+        value = -euler_mascheroni - 1.0 / x + 1.6449340668482264365 * x;
+        return value;
+    }
+    value = 0.0;
+    x2 = x;
+    while (x2 < c)
+    {
+        value = value - 1.0 / x2;
+        x2 = x2 + 1.0;
+    }
+    r = 1.0 / x2;
+    value = value + log(x2) - 0.5 * r;
+
+    r = r * r;
+    
+    value = value
+        - r * (1.0 / 12.0
+        - r * (1.0 / 120.0
+            - r * (1.0 / 252.0
+            - r * (1.0 / 240.0
+                - r * (1.0 / 132.0)))));
+
+    return value;
+    }  
     /**
      * Matrix subtraction on the OpenCL device
      * Subtracts the second matrix from the
@@ -72,10 +110,13 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         double S0 = 1 / (1 + exp(-cov_s));
         double pbo_eff = tmp[5] * temp1 * temp2;
         double S0_beta_pow = pow(S0, tmp[4]);
-        double temp10 = -tmp[4] * cov_r * time[i];
+        double exp10 = exp(-tmp[4] * cov_r * time[i]);
         double muS = S0
-                  / pow((S0_beta_pow + (1 - S0_beta_pow) * exp(temp10)), 1.0 / tmp[4])
+                  / pow((S0_beta_pow + (1 - S0_beta_pow) * exp10), 1.0 / tmp[4])
                   - is_pbo[ids-1] * pbo_eff;
+        double d_x_d_mu = tmp[3] * log(score[i]) - tmp[3] * log(1 - score[i]) - digamma(muS * tmp[3]) * tmp[3] + digamma(tmp[3] - muS * tmp[3]) * tmp[3];
+    
+    
         //const double temp1 = outtmp3(0,i);//k_eq / (k_eq - k_el);
         //const double temp2 = outtmp4(0,i);//(exp(-k_el * time[i]) - exp(-k_eq * time[i]));
         //const double pbo_eff = outtmp5(0,i);//beta_pbo * temp1 * temp2;
@@ -84,9 +125,9 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         outtmp2[i] = S0;
         outtmp3[i] = temp1;
         outtmp4[i] = temp2;
-        outtmp5[i] = pbo_eff;
+        outtmp5[i] = d_x_d_mu;
         outtmp6[i] = S0_beta_pow;
-        outtmp7[i] = temp10;
+        outtmp7[i] = exp10;
         outtmp8[i] = muS;
       
     }

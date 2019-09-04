@@ -134,6 +134,34 @@ inline std::vector<T> packed_copy(const matrix_cl<T>& src) {
   return dst;
 }
 
+template <typename T, typename = enable_if_arithmetic<T>>
+inline std::vector<T> packed_copy(matrix_cl<T>& src) try {
+  check_triangular("packed_copy", "src", src);
+  const int packed_size = src.rows() * (src.rows() + 1) / 2;
+  if (src.size() == 0) {
+    std::vector<double> dst(0);
+    return dst;
+  }
+  const cl::CommandQueue queue = opencl_context.queue();
+  matrix_cl<T> packed(packed_size, 1);
+  stan::math::opencl_kernels::pack(cl::NDRange(src.rows(), src.rows()),
+                                   packed, src, src.rows(), src.rows(),
+                                   src.view());
+  const std::vector<cl::Event> mat_events
+     = vec_concat(packed.read_write_events(), src.write_events());
+  cl::Event copy_event;
+  double* foo = (double*)queue.enqueueMapBuffer(packed.buffer(), CL_FALSE,  CL_MAP_WRITE, 0, 0, &mat_events, &copy_event);
+  copy_event.wait();
+  queue.enqueueUnmapMemObject(packed.buffer(), &foo);
+  std::vector<double> dst(foo, foo + packed_size);
+  src.clear_write_events();
+  return dst;
+} catch (const cl::Error& e) {
+  check_opencl_error("packed_copy (OpenCL->std::vector)", e);
+  std::vector<double> dst(0);
+  return dst;
+}
+
 /**
  * Copies the packed triangular matrix from
  * the source std::vector to an OpenCL buffer and
@@ -158,13 +186,7 @@ inline matrix_cl<T> packed_copy(const std::vector<T>& src, int rows) {
     return dst;
   }
   try {
-    matrix_cl<T> packed(packed_size, 1);
-    cl::Event packed_event;
-    const cl::CommandQueue queue = opencl_context.queue();
-    queue.enqueueWriteBuffer(packed.buffer(), CL_FALSE, 0,
-                             sizeof(T) * packed_size, src.data(), NULL,
-                             &packed_event);
-    packed.add_write_event(packed_event);
+    matrix_cl<T> packed(src, packed_size, 1);
     stan::math::opencl_kernels::unpack(cl::NDRange(dst.rows(), dst.rows()), dst,
                                        packed, dst.rows(), dst.rows(),
                                        matrix_view);
@@ -174,6 +196,26 @@ inline matrix_cl<T> packed_copy(const std::vector<T>& src, int rows) {
   return dst;
 }
 
+template <matrix_cl_view matrix_view, typename T,
+          typename = enable_if_arithmetic<T>>
+inline matrix_cl<T> packed_copy(std::vector<T>& src, int rows) {
+  const int packed_size = rows * (rows + 1) / 2;
+  check_size_match("copy (packed std::vector -> OpenCL)", "src.size()",
+                   src.size(), "rows * (rows + 1) / 2", packed_size);
+  matrix_cl<T> dst(rows, rows, matrix_view);
+  if (dst.size() == 0) {
+    return dst;
+  }
+  try {
+    matrix_cl<T> packed(src, packed_size, 1);
+    stan::math::opencl_kernels::unpack(cl::NDRange(dst.rows(), dst.rows()), dst,
+                                       packed, dst.rows(), dst.rows(),
+                                       matrix_view);
+  } catch (const cl::Error& e) {
+    check_opencl_error("packed_copy (std::vector->OpenCL)", e);
+  }
+  return dst;
+}
 /**
  * Copies the source matrix to the
  * destination matrix. Both matrices

@@ -76,4 +76,21 @@ TEST(MathMatrixCL, multiple_operations_accept_lvalue_test){
   EXPECT_MATRIX_NEAR(res, correct,1e-9);
 }
 
+TEST(MathMatrixCL, lhs_block_test){
+  using stan::math::block;
+  MatrixXd m1 = MatrixXd::Random(2,3);
+  MatrixXd m2 = MatrixXd::Random(5,7);
+
+  matrix_cl<double> m1_cl(m1);
+  matrix_cl<double> m2_cl(m2);
+
+  block(m2_cl,1,1,2,3) = m1_cl;
+
+  MatrixXd res = stan::math::from_matrix_cl(m2_cl);
+
+  MatrixXd correct = m2;
+  correct.block(1,1,2,3) = m1;
+  EXPECT_MATRIX_NEAR(res, correct,1e-9);
+}
+
 #endif

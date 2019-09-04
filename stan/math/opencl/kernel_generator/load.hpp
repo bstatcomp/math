@@ -43,6 +43,18 @@ public:
       }
     }
 
+    kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+      kernel_parts res;
+      if(generated.count(instance)==0) {
+        generated.insert(instance);
+        var_name = ng.generate();
+        std::string type = type_str<ReturnScalar>::name;
+        res.args = "__global " + type + "* " + var_name + "_global, int " + var_name + "_rows, int " + var_name + "_view, ";
+      }
+      res.body = var_name + "_global[" + i + " + " + var_name + "_rows * " + j + "]";
+      return res;
+    }
+
     matrix_cl<ReturnScalar> eval() const{
       return a_;
     }
@@ -58,6 +70,10 @@ public:
 
     void add_event(cl::Event& e) const{
       a_.add_read_event(e);
+    }
+
+    void add_write_event(cl::Event& e) const {
+      a_.add_write_event(e);
     }
 
     int rows() const{

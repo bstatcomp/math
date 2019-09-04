@@ -20,54 +20,69 @@ namespace math{
 template<typename T>
 class block__ : public operation<block__<T>, typename std::remove_reference_t<T>::ReturnScalar> {
 public:
-    using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
-    using base = operation<block__<T>, ReturnScalar>;
-    using base::var_name;
-    using base::instance;
+  using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
+  using base = operation<block__<T>, ReturnScalar>;
+  using base::var_name;
+  using base::instance;
 
-    block__(T&& a, int start_row, int start_col, int rows, int cols) :
-    a_(std::forward<T>(a)), start_row_(start_row), start_col_(start_col), rows_(rows), cols_(cols) {
-      if ((a.rows() != base::dynamic && (start_row + rows) > a.rows()) ||
-          (a.cols() != base::dynamic && (start_col + cols) > a.cols())) {
-        domain_error("block", "block of \"a\"", " is out of bounds", "");
-      }
+  block__(T&& a, int start_row, int start_col, int rows, int cols) :
+  a_(std::forward<T>(a)), start_row_(start_row), start_col_(start_col), rows_(rows), cols_(cols) {
+    if ((a.rows() != base::dynamic && (start_row + rows) > a.rows()) ||
+        (a.cols() != base::dynamic && (start_col + cols) > a.cols())) {
+      domain_error("block", "block of \"a\"", " is out of bounds", "");
     }
+  }
 
-    kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
-      kernel_parts res = a_.generate(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
-      var_name = a_.var_name;
-      return res;
-    }
+  kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+    kernel_parts res = a_.generate(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
+    var_name = a_.var_name;
+    return res;
+  }
 
-    void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
-      if(generated.count(instance)==0) {
-        generated.insert(instance);
-        a_.set_args(generated, kernel, arg_num);
-      }
-    }
+  kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+    return a_.generate_lhs(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
+  }
 
-    void add_event(cl::Event& e) const {
-      a_.add_event(e);
+  void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
+    if(generated.count(instance)==0) {
+      generated.insert(instance);
+      a_.set_args(generated, kernel, arg_num);
     }
+  }
 
-    matrix_cl_view view() const {
-      return transpose(a_.view());
-    }
+  void add_event(cl::Event& e) const {
+    a_.add_event(e);
+  }
 
-    int rows() const {
-      return rows_;
-    }
+  void add_write_event(cl::Event& e) const {
+    a_.add_event(e);
+  }
 
-    int cols() const {
-      return cols_;
-    }
+  matrix_cl_view view() const {
+    return transpose(a_.view());
+  }
+
+  int rows() const {
+    return rows_;
+  }
+
+  int cols() const {
+    return cols_;
+  }
+
+  template<typename T_expression, typename = enable_if_all_usable_as_operation<T>>
+  const block__<T>& operator= (T_expression&& input) const{
+    auto expression = as_operation(std::forward<T_expression>(input));
+    expression.evaluate_expression(*this);
+    return *this;
+  }
 
 protected:
-    const T a_;
-    int start_row_, start_col_, rows_, cols_;
+  const T a_;
+  int start_row_, start_col_, rows_, cols_;
 };
 
-template<typename T, typename = enable_if_all_usable_as_operation <T>>
+template<typename T, typename = enable_if_all_usable_as_operation<T>>
 auto block(T&& a, int start_row, int start_col, int rows, int cols) -> const block__<decltype(as_operation(std::forward<T>(a)))> {
   return block__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a)), start_row, start_col, rows, cols);
 }

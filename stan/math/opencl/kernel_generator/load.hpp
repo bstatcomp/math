@@ -23,7 +23,7 @@ public:
     using base::var_name;
     using base::instance;
     static_assert(std::is_base_of<matrix_cl<ReturnScalar>,typename std::remove_reference_t<T>>::value, "load__: argument a must be a matrix_cl<T>!");
-    static_assert(std::is_arithmetic<ReturnScalar>::value, "load__: T in matrix_cl<T> a argument must be an arithmetic type!");
+    static_assert(std::is_arithmetic<ReturnScalar>::value, "load__: T in \"matrix_cl<T> a\" argument must be an arithmetic type!");
     load__(T&& a) : a_(std::forward<T>(a)) {}
 
     kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{

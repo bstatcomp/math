@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 
-TEST(AgradRevMatrix, generalized_logistic_model) {
+TEST(AgradRevMatrix, generalized_logistic_model_gradient) {
   // init data
   std::vector<int> IDp
       = {1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   2,   3,   3,
@@ -725,7 +725,7 @@ TEST(AgradRevMatrix, generalized_logistic_model) {
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
   std::vector<int> pbo_flag = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
-  // std::cout << "IDP" << IDp.size() << std::endl;
+  // std::err << "IDP" << IDp.size() << std::endl;
   // std::cout << "IDS" << IDs.size() << std::endl;
   // std::cout << "time" << time_tmp.size() << std::endl;
   // std::cout << "score" << S_tmp.size() << std::endl;
@@ -744,7 +744,8 @@ TEST(AgradRevMatrix, generalized_logistic_model) {
   std::vector<double> theta_r_tmp
       = std::vector<double>({-0.008054921656, -0.005340525808});
   std::vector<double> theta_s_tmp
-      = std::vector<double>({0.1186298492, -0.2896836946});
+     // = std::vector<double>({0.1186298492, -0.2896836946});
+      = std::vector<double>({0.1186298492});
   std::vector<double> eta_pr_tmp = std::vector<double>(
       {-0.1351406201,   0.2161363819,   -0.1138000899,  -0.1423910535,
        -0.08417946458,  0.02964936013,  0.07729184226,  0.1968639784,
@@ -861,7 +862,7 @@ TEST(AgradRevMatrix, generalized_logistic_model) {
   int N = IDp.size();
   stan::math::vector_d time(N);
   stan::math::vector_d S(N);
-  Eigen::Matrix<double, -1, 2> X_s(N, 2);
+  Eigen::Matrix<double, -1, 1> X_s(N, 1);
   Eigen::Matrix<double, -1, 2> X_r(N, 2);
 
   double mAPOE
@@ -874,8 +875,11 @@ TEST(AgradRevMatrix, generalized_logistic_model) {
     X_s(i, 0) = SEX[i];
     X_s(i, 1) = APOE4_tmp[i] - mAPOE;
 
+
     X_r(i, 0) = AGE[i] - mAGE;
     X_r(i, 1) = APOE4_tmp[i] - mAPOE;
+
+
   }
   int multiplicative_r = 0;
   int multiplicative_s = 0;
@@ -910,29 +914,34 @@ TEST(AgradRevMatrix, generalized_logistic_model) {
 
   for (unsigned int i = 0; i < theta_r_tmp.size(); i++) {
     theta_r(i) = theta_r_tmp[i];
+    
+  }
+  
+  for (unsigned int i = 0; i < theta_s_tmp.size(); i++) {
     theta_s(i) = theta_s_tmp[i];
   }
-
+std::cerr << "IDP" << IDp.size() << std::endl;
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
 
-  // std::cout << "tgt " << d.val() << std::endl;
-  // std::cout << "beta " << beta.adj() << std::endl;
-  // std::cout << "tau " << tau.adj() << std::endl;
-  // std::cout << "beta_pbo " << beta_pbo.adj() << std::endl;
-  // std::cout << "k_el " << k_el.adj() << std::endl;
-  // std::cout << "k_eq " << k_eq.adj() << std::endl;
-  // std::cout << "base_s " << base_s.adj() << std::endl;
-  // std::cout << "base_r " << base_r.adj() << std::endl;
-  // std::cout << "theta_r " << theta_r(0).adj() << std::endl;
+   /*std::cout << "tgt " << d.val() << std::endl;
+   std::cout << "beta " << beta.adj() << std::endl;
+   std::cout << "tau " << tau.adj() << std::endl;
+   std::cout << "beta_pbo " << beta_pbo.adj() << std::endl;
+   std::cout << "k_el " << k_el.adj() << std::endl;
+   std::cout << "k_eq " << k_eq.adj() << std::endl;
+   std::cout << "base_s " << base_s.adj() << std::endl;
+   std::cout << "base_r " << base_r.adj() << std::endl;
+   std::cout << "theta_r " << theta_r(0).adj() << std::endl;*/
 
   std::vector<double> d_theta_r_expected
       = std::vector<double>({2696.524, -81.17298});
   std::vector<double> d_theta_s_expected
       = std::vector<double>({-174.2827, - 26.63957});
+
 
   std::vector<double> d_eta_ss_expected = std::vector<double>(
       {-0.4095057, -11.98555, 34.13395, -88.39447, 41.26272, 25.34907,

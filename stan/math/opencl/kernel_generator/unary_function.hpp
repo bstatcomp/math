@@ -67,8 +67,8 @@ public:
     }
 
 protected:
-    const T a_;
-    const std::string fun_;
+    T a_;
+    std::string fun_;
 };
 
 #define ADD_UNARY_FUNCTION(fun) \

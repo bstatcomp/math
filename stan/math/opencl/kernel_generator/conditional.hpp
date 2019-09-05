@@ -87,9 +87,9 @@ public:
     }
 
 protected:
-    const T_condition condition_;
-    const T_then then_;
-    const T_else else_;
+    T_condition condition_;
+    T_then then_;
+    T_else else_;
 };
 
 template<typename T_condition, typename T_then, typename T_else, typename = enable_if_all_usable_as_operation<T_condition, T_then, T_else>>

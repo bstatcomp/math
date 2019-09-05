@@ -24,7 +24,7 @@ public:
     using base::var_name;
     using base::instance;
 
-    scalar__(const T a) : a_(a) {}
+    explicit scalar__(const T a) : a_(a) {}
 
     kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
       if(generated.count(instance)==0) {
@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    const T a_;
+    T a_;
 };
 
 }

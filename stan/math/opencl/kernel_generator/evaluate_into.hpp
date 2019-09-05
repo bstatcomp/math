@@ -1,5 +1,5 @@
-#ifndef STAN_MATH_OPENCL_KERNEL_GENERATOR_EVALUATE_EXPRESSION_HPP
-#define STAN_MATH_OPENCL_KERNEL_GENERATOR_EVALUATE_EXPRESSION_HPP
+#ifndef STAN_MATH_OPENCL_KERNEL_GENERATOR_EVALUATE_INTO_HPP
+#define STAN_MATH_OPENCL_KERNEL_GENERATOR_EVALUATE_INTO_HPP
 
 #include <stan/math/opencl/kernel_generator/operation.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
@@ -11,15 +11,13 @@ namespace math{
 
 template<typename Derived, typename ReturnScalar>
 template<typename T_lhs>
-void operation<Derived, ReturnScalar>::evaluate_expression(T_lhs&& lhs) const {
+void operation<Derived, ReturnScalar>::evaluate_into(T_lhs&& lhs) const {
   using enable = enable_if_all_usable_as_operation<T_lhs>;
   auto lhs_expression = as_operation(std::forward<T_lhs>(lhs));
-//  using Scalar = std::remove_reference_t<T_rhs>;
-//  static_assert(std::is_convertible<lhs_expression::ReturnScalar, rhs_expression::ReturnScalar>, "Attempt to assign expressions of incompatible types!");
 
   int n_rows = derived().rows();
   int n_cols = derived().cols();
-  const char* function = "evaluate_expression";
+  const char* function = "evaluate_into";
   if(n_rows!=dynamic) {
     check_size_match(function, "Rows of ", "*this", n_rows, "rows of ", "lhs_expression", lhs_expression.rows());
   }

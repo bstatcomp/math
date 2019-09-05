@@ -25,7 +25,7 @@ public:
     using base::var_name;
     using base::instance;
 
-    broadcast__(T&& a) : a_(std::forward<T>(a)) {
+    explicit broadcast__(T&& a) : a_(std::forward<T>(a)) {
       const char* function = "broadcast";
       if (Rows) {
         check_size_match(function, "Rows of ", "a", a.rows(), "", "", 1);
@@ -69,7 +69,7 @@ public:
     }
 
 protected:
-    const T a_;
+    T a_;
 };
 
 template<bool Rows, bool Cols, typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>>

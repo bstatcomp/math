@@ -36,20 +36,9 @@ class operation : public operation_base{
 public:
     static const int dynamic = -1;
 
-    Derived& derived() {
-      return *static_cast<Derived*>(this);
-    }
-
-    const Derived& derived() const {
-      return *static_cast<const Derived*>(this);
-    }
-
-    template<typename T_lhs>
-    void evaluate_expression(T_lhs&& lhs) const;
-
     matrix_cl<ReturnScalar> eval() const {
       matrix_cl<ReturnScalar> res(derived().rows(), derived().cols(), derived().view());
-      this->evaluate_expression(res);
+      this->evaluate_into(res);
       return res;
     }
 
@@ -57,9 +46,20 @@ public:
       return derived().eval();
     }
 
+    template<typename T_lhs>
+    void evaluate_into(T_lhs&& lhs) const;
+
 protected:
     mutable std::string var_name;
     static std::map<std::string, cl::Kernel> kernel_cache;
+
+    Derived& derived() {
+      return *static_cast<Derived*>(this);
+    }
+
+    const Derived& derived() const {
+      return *static_cast<const Derived*>(this);
+    }
 };
 
 template<typename Derived, typename ReturnScalar>
@@ -71,4 +71,4 @@ std::map<std::string, cl::Kernel> operation<Derived,ReturnScalar>::kernel_cache;
 #endif
 #endif
 
-#include <stan/math/opencl/kernel_generator/evaluate_expression.hpp>
+#include <stan/math/opencl/kernel_generator/evaluate_into.hpp>

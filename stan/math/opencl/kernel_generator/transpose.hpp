@@ -25,7 +25,7 @@ public:
     using base::var_name;
     using base::instance;
 
-    transpose__(T&& a) : a_(std::forward<T>(a)) {}
+    explicit  transpose__(T&& a) : a_(std::forward<T>(a)) {}
 
     kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
       kernel_parts res = a_.generate(ng, generated, j, i);
@@ -57,7 +57,7 @@ public:
     }
 
 protected:
-    const T a_;
+    T a_;
 };
 
 template<typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>

@@ -73,12 +73,12 @@ public:
   template<typename T_expression, typename = enable_if_all_usable_as_operation<T>>
   const block__<T>& operator= (T_expression&& input) const{
     auto expression = as_operation(std::forward<T_expression>(input));
-    expression.evaluate_expression(*this);
+    expression.evaluate_into(*this);
     return *this;
   }
 
 protected:
-  const T a_;
+  T a_;
   int start_row_, start_col_, rows_, cols_;
 };
 

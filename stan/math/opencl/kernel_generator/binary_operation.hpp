@@ -85,9 +85,9 @@ public:
   }
 
 protected:
-  const T_a a_;
-  const T_b b_;
-  const std::string op_;
+  T_a a_;
+  T_b b_;
+  std::string op_;
 };
 
 

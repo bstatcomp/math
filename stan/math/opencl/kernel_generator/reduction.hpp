@@ -116,7 +116,7 @@ public:
     }
 
 protected:
-    const T a_;
+    T a_;
     std::string init_;
 };
 
@@ -141,7 +141,7 @@ struct sum_op {
 template<typename T, bool Rowwise, bool Colwise>
 class sum__ : public reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise> {
 public:
-    sum__(T&& a) : reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise>(std::forward<T>(a), "0") {}
+    explicit sum__(T&& a) : reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise>(std::forward<T>(a), "0") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
@@ -162,7 +162,7 @@ struct max_op {
 template<typename T, bool Rowwise, bool Colwise>
 class max__ : public reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
-    max__(T&& a) : reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "-INFINITY") {}
+    explicit max__(T&& a) : reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "-INFINITY") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
@@ -184,7 +184,7 @@ struct min_op {
 template<typename T, bool Rowwise, bool Colwise>
 class min__ : public reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
-    min__(T&& a) : reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "INFINITY") {}
+    explicit min__(T&& a) : reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "INFINITY") {}
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>

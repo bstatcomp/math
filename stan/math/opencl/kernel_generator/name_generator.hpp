@@ -23,4 +23,4 @@ private:
 }
 
 #endif
-#endif //STAN_MATH_OPENCL_KERNEL_GENERATOR_NAME_GENERATOR_HPP
+#endif

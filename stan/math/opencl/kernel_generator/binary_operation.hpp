@@ -9,7 +9,7 @@
 #include <stan/math/opencl/kernel_generator/type_str.hpp>
 #include <stan/math/opencl/kernel_generator/name_generator.hpp>
 #include <stan/math/opencl/kernel_generator/operation.hpp>
-#include <stan/math/opencl/kernel_generator/constant.hpp>
+#include <stan/math/opencl/kernel_generator/scalar.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
 #include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
 #include <string>
@@ -132,13 +132,13 @@ auto elewise_multiplication(T_a&& a, T_b&& b) -> const elewise_multiplication__<
 }
 
 template<typename T_a, typename T_b, typename = enable_if_arithmetic<T_a>, typename = enable_if_all_usable_as_operation<T_b>>
-auto operator*(T_a&& a, T_b&& b) -> const elewise_multiplication__<constant__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>{
-  return elewise_multiplication__<constant__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>(as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b)));
+auto operator*(T_a&& a, T_b&& b) -> const elewise_multiplication__<scalar__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>{
+  return elewise_multiplication__<scalar__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>(as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b)));
 }
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a>, typename = enable_if_arithmetic<T_b>>
-auto operator*(T_a&& a, const T_b b) -> const elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),constant__<T_b>>{
-  return elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),constant__<T_b>>(as_operation(std::forward<T_a>(a)), as_operation(b));
+auto operator*(T_a&& a, const T_b b) -> const elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),scalar__<T_b>>{
+  return elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),scalar__<T_b>>(as_operation(std::forward<T_a>(a)), as_operation(b));
 }
 
 template<typename T_a, typename T_b, typename = enable_if_none_arithmetic_all_usable_as_operation<T_a, T_b>>

@@ -16,23 +16,22 @@ namespace math {
 
 
 template<typename T>
-class constant__ : public operation<constant__<T>, T>{
+class scalar__ : public operation<scalar__<T>, T>{
 public:
     static_assert(std::is_arithmetic<T>::value, "std::is_arithmetic<T> must be true for constants!");
     using ReturnScalar = T;
-    using base = operation<constant__<T>, T>;
+    using base = operation<scalar__<T>, T>;
     using base::var_name;
     using base::instance;
 
-    constant__(const T a) : a_(a) {}
+    scalar__(const T a) : a_(a) {}
 
     kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
       if(generated.count(instance)==0) {
         generated.insert(instance);
         var_name = ng.generate();
         kernel_parts res;
-        std::string type = type_str<T>::name;
-        res.body = type + " " + var_name + " = " + std::to_string(a_) + ";\n";
+        res.args = type_str<T>::name + " " + var_name + ", ";
         return res;
       }
       else{
@@ -41,7 +40,7 @@ public:
     }
 
     void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
-
+      kernel.setArg(arg_num++,a_);
     }
 
     void add_event(cl::Event& e) const{

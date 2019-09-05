@@ -149,12 +149,15 @@ inline std::vector<T> packed_copy(matrix_cl<T>& src) try {
                                    src.view());
   const std::vector<cl::Event> mat_events
      = vec_concat(packed.read_write_events(), src.write_events());
-  cl::Event copy_event;
-  double* foo = (double*)queue.enqueueMapBuffer(packed.buffer(), CL_FALSE,  CL_MAP_WRITE, 0, 0, &mat_events, &copy_event);
-  copy_event.wait();
-  queue.enqueueUnmapMemObject(packed.buffer(), &foo);
-  std::vector<double> dst(foo, foo + packed_size);
-  src.clear_write_events();
+cl::Event transfer_event;
+double* host_ptr_ = (double *)queue.enqueueMapBuffer(
+   packed.buffer(), CL_TRUE, CL_MAP_READ, 0, sizeof(T) * packed.size(),
+   &packed.write_events(), &transfer_event, NULL);
+transfer_event.wait();
+cl::Event transfer_event2;
+queue.enqueueUnmapMemObject(packed.buffer(), host_ptr_, &packed.write_events(), &transfer_event2);
+transfer_event2.wait();
+std::vector<double> dst(host_ptr_, host_ptr_ + packed_size);
   return dst;
 } catch (const cl::Error& e) {
   check_opencl_error("packed_copy (OpenCL->std::vector)", e);

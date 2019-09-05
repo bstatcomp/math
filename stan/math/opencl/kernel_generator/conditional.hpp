@@ -93,14 +93,10 @@ protected:
 };
 
 template<typename T_condition, typename T_then, typename T_else, typename = enable_if_all_usable_as_operation<T_condition, T_then, T_else>>
-auto conditional(T_condition&& condition, T_then&& then, T_else&& els) -> conditional__<decltype(as_operation(std::forward<T_condition>(condition))),
-        decltype(as_operation(std::forward<T_then>(then))),
-        decltype(as_operation(std::forward<T_else>(els)))>{
-  return conditional__<decltype(as_operation(std::forward<T_condition>(condition))),
-          decltype(as_operation(std::forward<T_then>(then))),
-          decltype(as_operation(std::forward<T_else>(els)))>(as_operation(std::forward<T_condition>(condition)),
-                  as_operation(std::forward<T_then>(then)),
-                  as_operation(std::forward<T_else>(els)));
+conditional__<as_operation_t<T_condition>, as_operation_t<T_then>, as_operation_t<T_else>> conditional(T_condition&& condition, T_then&& then, T_else&& els) {
+  return {as_operation(std::forward<T_condition>(condition)),
+          as_operation(std::forward<T_then>(then)),
+          as_operation(std::forward<T_else>(els))};
 }
 
 }

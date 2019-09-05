@@ -83,8 +83,8 @@ protected:
 };
 
 template<typename T, typename = enable_if_all_usable_as_operation<T>>
-auto block(T&& a, int start_row, int start_col, int rows, int cols) -> const block__<decltype(as_operation(std::forward<T>(a)))> {
-  return block__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a)), start_row, start_col, rows, cols);
+block__<as_operation_t<T>> block(T&& a, int start_row, int start_col, int rows, int cols) {
+  return block__<as_operation_t<T>>(as_operation(std::forward<T>(a)), start_row, start_col, rows, cols);
 }
 
 }

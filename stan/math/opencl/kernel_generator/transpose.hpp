@@ -61,8 +61,8 @@ protected:
 };
 
 template<typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
-auto transpose(T&& a) -> const transpose__<decltype(as_operation(std::forward<T>(a)))> {
-  return transpose__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a)));
+transpose__<as_operation_t<T>> transpose(T&& a) {
+  return transpose__<as_operation_t<T>>(as_operation(std::forward<T>(a)));
 }
 
 }

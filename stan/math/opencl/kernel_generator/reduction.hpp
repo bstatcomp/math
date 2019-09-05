@@ -145,8 +145,8 @@ public:
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
-auto sum(T&& a) -> const sum__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise> {
-  return sum__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise>(as_operation(std::forward<T>(a)));
+sum__<as_operation_t<T>, Rowwise, Colwise> sum(T&& a) {
+  return sum__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
 template< typename T>
@@ -166,8 +166,8 @@ public:
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
-auto max(T&& a) -> const max__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise> {
-  return max__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise>(as_operation(std::forward<T>(a)));
+max__<as_operation_t<T>, Rowwise, Colwise> max(T&& a) {
+  return max__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
 
@@ -188,8 +188,8 @@ public:
 };
 
 template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation <T>>
-auto min(T&& a) -> const min__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise> {
-  return min__<decltype(as_operation(std::forward<T>(a))), Rowwise, Colwise>(as_operation(std::forward<T>(a)));
+min__<as_operation_t<T>, Rowwise, Colwise> min(T&& a) {
+  return min__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
 }

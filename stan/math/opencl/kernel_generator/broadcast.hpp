@@ -73,8 +73,8 @@ protected:
 };
 
 template<bool Rows, bool Cols, typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>>
-auto broadcast(T&& a) -> broadcast__<decltype(as_operation(std::forward<T>(a))), Rows, Cols>{
-  return broadcast__<decltype(as_operation(std::forward<T>(a))), Rows, Cols>(as_operation(std::forward<T>(a)));
+broadcast__<as_operation_t<T>, Rows, Cols> broadcast(T&& a) {
+  return broadcast__<as_operation_t<T>, Rows, Cols>(as_operation(std::forward<T>(a)));
 }
 
 }

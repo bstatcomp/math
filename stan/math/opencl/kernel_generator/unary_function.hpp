@@ -82,8 +82,8 @@ public: \
 }; \
 \
 template<typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>> \
-auto fun(T&& a) -> fun##__<decltype(as_operation(std::forward<T>(a)))>{ \
-  return fun##__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a))); \
+fun##__<as_operation_t<T>> fun(T&& a) { \
+  return fun##__<as_operation_t<T>>(as_operation(std::forward<T>(a))); \
 }
 
 #define ADD_UNARY_FUNCTION_PASS_ZERO(fun) \
@@ -94,8 +94,8 @@ public: \
 }; \
 \
 template<typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>> \
-auto fun(T&& a) -> fun##__<decltype(as_operation(std::forward<T>(a)))>{ \
-  return fun##__<decltype(as_operation(std::forward<T>(a)))>(as_operation(std::forward<T>(a))); \
+fun##__<as_operation_t<T>> fun(T&& a) { \
+  return fun##__<as_operation_t<T>>(as_operation(std::forward<T>(a))); \
 }
 
 ADD_UNARY_FUNCTION(rsqrt)

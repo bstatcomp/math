@@ -98,7 +98,7 @@ public:
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-auto operator+(T_a&& a, T_b&& b) -> const addition__<decltype(as_operation(std::forward<T_a>(a))),decltype(as_operation(std::forward<T_b>(b)))>{
+addition__<as_operation_t<T_a>,as_operation_t<T_b>> operator+(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
@@ -110,7 +110,7 @@ public:
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-auto operator-(T_a&& a, T_b&& b) -> const subtraction__<decltype(as_operation(std::forward<T_a>(a))),decltype(as_operation(std::forward<T_b>(b)))>{
+subtraction__<as_operation_t<T_a>,as_operation_t<T_b>> operator-(T_a&& a, T_b&& b){
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
@@ -127,18 +127,18 @@ public:
 };
 
 template<typename T_a, typename T_b>
-auto elewise_multiplication(T_a&& a, T_b&& b) -> const elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),decltype(as_operation(std::forward<T_b>(b)))>{
+elewise_multiplication__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_multiplication(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_arithmetic<T_a>, typename = enable_if_all_usable_as_operation<T_b>>
-auto operator*(T_a&& a, T_b&& b) -> const elewise_multiplication__<scalar__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>{
-  return elewise_multiplication__<scalar__<T_a>,decltype(as_operation(std::forward<T_b>(b)))>(as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b)));
+elewise_multiplication__<scalar__<T_a>,as_operation_t<T_b>> operator*(T_a&& a, T_b&& b) {
+  return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a>, typename = enable_if_arithmetic<T_b>>
-auto operator*(T_a&& a, const T_b b) -> const elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),scalar__<T_b>>{
-  return elewise_multiplication__<decltype(as_operation(std::forward<T_a>(a))),scalar__<T_b>>(as_operation(std::forward<T_a>(a)), as_operation(b));
+elewise_multiplication__<as_operation_t<T_a>,scalar__<T_b>> operator*(T_a&& a, const T_b b) {
+  return {as_operation(std::forward<T_a>(a)), as_operation(b)};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_none_arithmetic_all_usable_as_operation<T_a, T_b>>
@@ -159,7 +159,7 @@ public:
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-auto elewise_division(T_a&& a, T_b&& b) -> const elewise_division__<decltype(as_operation(std::forward<T_a>(a))),decltype(as_operation(std::forward<T_b>(b)))>{
+elewise_division__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_division(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 

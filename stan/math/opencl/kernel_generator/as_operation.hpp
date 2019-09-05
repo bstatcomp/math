@@ -12,8 +12,8 @@ namespace stan {
 namespace math {
 
 template<typename T, typename = std::enable_if_t<std::is_base_of<operation_base, std::remove_reference_t<T>>::value>>
-T as_operation(T&& a){ //TODO: return ref, separate type deduction
-  return a;
+T&& as_operation(T&& a){
+  return std::forward<T>(a);
 }
 
 template<typename T, typename = enable_if_arithmetic<T>>
@@ -25,6 +25,11 @@ template<typename T, typename = std::enable_if_t<std::is_base_of<matrix_cl<typen
 load__<T> as_operation(T&& a){
   return load__<T>(std::forward<T>(a));
 }
+
+template<typename T>
+using as_operation_t = std::conditional_t<std::is_lvalue_reference<T>::value,
+                                          decltype(as_operation(std::declval<T>())),
+                                          std::remove_reference_t<decltype(as_operation(std::declval<T>()))>>;
 
 }
 }

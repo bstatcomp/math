@@ -355,12 +355,14 @@ class matrix_cl<T, enable_if_arithmetic<T>> {
   }
 
   explicit matrix_cl(std::vector<T>& A, const int& R, const int& C) try
-      : rows_(R), cols_(C) {
+      : rows_(R),
+        cols_(C) {
     if (size() == 0) {
       return;
     }
     cl::Context& ctx = opencl_context.context();
-    buffer_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(T) * A.size(), A.data());
+    buffer_cl_ = cl::Buffer(ctx, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                            sizeof(T) * A.size(), A.data());
   } catch (const cl::Error& e) {
     check_opencl_error("matrix constructor", e);
   }

@@ -144,20 +144,20 @@ inline std::vector<T> packed_copy(matrix_cl<T>& src) try {
   }
   const cl::CommandQueue queue = opencl_context.queue();
   matrix_cl<T> packed(packed_size, 1);
-  stan::math::opencl_kernels::pack(cl::NDRange(src.rows(), src.rows()),
-                                   packed, src, src.rows(), src.rows(),
-                                   src.view());
+  stan::math::opencl_kernels::pack(cl::NDRange(src.rows(), src.rows()), packed,
+                                   src, src.rows(), src.rows(), src.view());
   const std::vector<cl::Event> mat_events
-     = vec_concat(packed.read_write_events(), src.write_events());
-cl::Event transfer_event;
-double* host_ptr_ = (double *)queue.enqueueMapBuffer(
-   packed.buffer(), CL_TRUE, CL_MAP_READ, 0, sizeof(T) * packed.size(),
-   &packed.write_events(), &transfer_event, NULL);
-transfer_event.wait();
-cl::Event transfer_event2;
-queue.enqueueUnmapMemObject(packed.buffer(), host_ptr_, &packed.write_events(), &transfer_event2);
-transfer_event2.wait();
-std::vector<double> dst(host_ptr_, host_ptr_ + packed_size);
+      = vec_concat(packed.read_write_events(), src.write_events());
+  cl::Event transfer_event;
+  double* host_ptr_ = (double*)queue.enqueueMapBuffer(
+      packed.buffer(), CL_TRUE, CL_MAP_READ, 0, sizeof(T) * packed.size(),
+      &packed.write_events(), &transfer_event, NULL);
+  transfer_event.wait();
+  cl::Event transfer_event2;
+  queue.enqueueUnmapMemObject(packed.buffer(), host_ptr_,
+                              &packed.write_events(), &transfer_event2);
+  transfer_event2.wait();
+  std::vector<double> dst(host_ptr_, host_ptr_ + packed_size);
   return dst;
 } catch (const cl::Error& e) {
   check_opencl_error("packed_copy (OpenCL->std::vector)", e);

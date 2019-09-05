@@ -15,14 +15,14 @@ namespace stan {
 namespace math {
 #ifdef STAN_OPENCL
 
-//int copied = 0;
-// cl::Buffer IDp_buf;
-// cl::Buffer IDs_buf;
-// cl::Buffer X_s_buf;
-// cl::Buffer X_r_buf;
-// cl::Buffer is_pbo_buf;
-// cl::Buffer score_buf;
-// cl::Buffer time_buf;
+int copied = 0;
+cl::Buffer IDp_buf;
+cl::Buffer IDs_buf;
+cl::Buffer X_s_buf;
+cl::Buffer X_r_buf;
+cl::Buffer is_pbo_buf;
+cl::Buffer score_buf;
+cl::Buffer time_buf;
 
 inline var generalized_logistic_model(
     const std::vector<int>& IDp, const std::vector<int>& IDs,
@@ -68,132 +68,140 @@ inline var generalized_logistic_model(
 
   const int p_size = d_eta_pr.size();
   const int s_size = d_eta_sr.size();
-  // matrix_cl<double> IDpp_cl(1, IDp.size());
-  // if(copied == 0){
-  //   matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
-  //   tX_s_cl.wait_for_read_write_events();
-  //   X_s_buf = tX_s_cl.buffer();
-  //   matrix_cl<double> tX_r_cl = to_matrix_cl<double>(X_r);
-  //   tX_r_cl.wait_for_read_write_events();
-  //   X_r_buf = tX_r_cl.buffer();
+  matrix_cl<double> IDpp_cl(1, IDp.size());
+  if(copied == 0){
+    matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
+    tX_s_cl.wait_for_read_write_events();
+    X_s_buf = tX_s_cl.buffer();
+    matrix_cl<double> tX_r_cl = to_matrix_cl<double>(X_r);
+    tX_r_cl.wait_for_read_write_events();
+    X_r_buf = tX_r_cl.buffer();
 
-  //   matrix_d IDp_temp(1, IDp.size());
-  //   matrix_d IDs_temp(1, IDs.size());
-  //   matrix_d is_pbo_temp(is_pbo.size(), 1);
-  //   for(int i=0;i<IDp.size();i++) {
-  //     IDp_temp(i) = static_cast<double>(IDp[i]);
-  //   }
-  //   for(int i=0;i<IDs.size();i++) {
-  //     IDs_temp(i) = static_cast<double>(IDs[i]);
-  //   }
-  //   for(int i=0;i<is_pbo.size();i++) {
-  //     is_pbo_temp(i, 0) = is_pbo[i];
-  //   } 
-  //   matrix_cl<double> tIDp_cl = to_matrix_cl<double>(IDp_temp);
-  //   tIDp_cl.wait_for_read_write_events();
-  //   IDp_buf = tIDp_cl.buffer();
-  //   matrix_cl<double> tIDs_cl = to_matrix_cl<double>(IDs_temp);
-  //   tIDs_cl.wait_for_read_write_events();
-  //   IDs_buf = tIDs_cl.buffer();
-  //   matrix_cl<double> tis_pbo_cl = to_matrix_cl<double>(is_pbo_temp);
-  //   tis_pbo_cl.wait_for_read_write_events();
-  //   is_pbo_buf = tis_pbo_cl.buffer();    
-  //   matrix_cl<double> tscore_cl = to_matrix_cl<double>(score);
-  //   tscore_cl.wait_for_read_write_events();
-  //   score_buf = tscore_cl.buffer();
-  //   matrix_cl<double> ttime_cl = to_matrix_cl<double>(time);
-  //   ttime_cl.wait_for_read_write_events();
-  //   time_buf = ttime_cl.buffer();
-  //   copied == 1;
-  // }
-  // matrix_cl<double> IDp_cl(IDp_buf, 1, N);
-  // matrix_cl<double> IDs_cl(IDs_buf, 1, N);
-  // matrix_cl<double> X_s_cl(X_s_buf, 1, N);
-  // matrix_cl<double> X_r_cl(X_r_buf, 1, N);
-  // matrix_cl<double> time_cl(time_buf, 1, N);
-  // matrix_cl<double> score_cl(score_buf, 1, N);
-  // matrix_cl<double> is_pbo_cl(is_pbo_buf, 1, N);
+    matrix_d IDp_temp(1, IDp.size());
+    matrix_d IDs_temp(1, IDs.size());
+    matrix_d is_pbo_temp(is_pbo.size(), 1);
+    for(int i=0;i<IDp.size();i++) {
+      IDp_temp(i) = static_cast<double>(IDp[i]);
+    }
+    for(int i=0;i<IDs.size();i++) {
+      IDs_temp(i) = static_cast<double>(IDs[i]);
+    }
+    for(int i=0;i<is_pbo.size();i++) {
+      is_pbo_temp(i, 0) = is_pbo[i];
+    } 
+    matrix_cl<double> tIDp_cl = to_matrix_cl<double>(IDp_temp);
+    tIDp_cl.wait_for_read_write_events();
+    IDp_buf = tIDp_cl.buffer();
+    matrix_cl<double> tIDs_cl = to_matrix_cl<double>(IDs_temp);
+    tIDs_cl.wait_for_read_write_events();
+    IDs_buf = tIDs_cl.buffer();
+    matrix_cl<double> tis_pbo_cl = to_matrix_cl<double>(is_pbo_temp);
+    tis_pbo_cl.wait_for_read_write_events();
+    is_pbo_buf = tis_pbo_cl.buffer();    
+    matrix_cl<double> tscore_cl = to_matrix_cl<double>(score);
+    tscore_cl.wait_for_read_write_events();
+    score_buf = tscore_cl.buffer();
+    matrix_cl<double> ttime_cl = to_matrix_cl<double>(time);
+    ttime_cl.wait_for_read_write_events();
+    time_buf = ttime_cl.buffer();
+    copied == 1;
+  }
+  matrix_cl<double> IDp_cl(IDp_buf, 1, N);
+  matrix_cl<double> IDs_cl(IDs_buf, 1, N);
+  matrix_cl<double> X_s_cl(X_s_buf, 1, N);
+  matrix_cl<double> X_r_cl(X_r_buf, 1, N);
+  matrix_cl<double> time_cl(time_buf, 1, N);
+  matrix_cl<double> score_cl(score_buf, 1, N);
+  matrix_cl<double> is_pbo_cl(is_pbo_buf, 1, N);
   
-  // matrix_d t1 = eta_ps.val();
-  // matrix_d t2 = eta_ss.val();
-  // matrix_d t3 = eta_pr.val();
-  // matrix_d t4 = eta_sr.val();
-  // matrix_d t5 = theta_r.val();
-  // matrix_d t6 = theta_s.val();
-  // matrix_cl<double> eta_ps_cl(t1);
-  // matrix_cl<double> eta_ss_cl(t2);
-  // matrix_cl<double> eta_pr_cl(t3);
-  // matrix_cl<double> eta_sr_cl(t4);
-  // matrix_cl<double> theta_r_cl(t5);
-  // matrix_cl<double> theta_s_cl(t6);
-  // matrix_d tmp(18,1);
-  // tmp(0,0) = multiplicative_s;
-  // tmp(1,0) = multiplicative_r;
-  // tmp(2,0) = N;
-  // tmp(3,0) = tau;
-  // tmp(4,0) = beta;
-  // tmp(5,0) = beta_pbo;
-  // tmp(6,0) = k_el;
-  // tmp(7,0) = k_eq;
-  // tmp(8,0) = base_s;
-  // tmp(9,0) = base_r;
-  // tmp(10,0) = X_s.cols();
-  // tmp(11,0) = X_s.rows();
-  // tmp(12,0) = X_r.cols();
-  // tmp(13,0) = X_r.rows();
-  // tmp(14,0) = theta_s.cols();
-  // tmp(15,0) = theta_s.rows();
-  // tmp(16,0) = theta_r.cols();
-  // tmp(17,0) = theta_r.rows();
-  // matrix_cl<double> tmp_cl(tmp);
+  matrix_d t1 = eta_ps.val();
+  matrix_d t2 = eta_ss.val();
+  matrix_d t3 = eta_pr.val();
+  matrix_d t4 = eta_sr.val();
+  matrix_d t5 = theta_r.val();
+  matrix_d t6 = theta_s.val();
+  matrix_cl<double> eta_ps_cl(t1);
+  matrix_cl<double> eta_ss_cl(t2);
+  matrix_cl<double> eta_pr_cl(t3);
+  matrix_cl<double> eta_sr_cl(t4);
+  matrix_cl<double> theta_r_cl(t5);
+  matrix_cl<double> theta_s_cl(t6);
+  matrix_d tmp(18,1);
+  tmp(0,0) = multiplicative_s;
+  tmp(1,0) = multiplicative_r;
+  tmp(2,0) = N;
+  tmp(3,0) = tau;
+  tmp(4,0) = beta;
+  tmp(5,0) = beta_pbo;
+  tmp(6,0) = k_el;
+  tmp(7,0) = k_eq;
+  tmp(8,0) = base_s;
+  tmp(9,0) = base_r;
+  tmp(10,0) = X_s.cols();
+  tmp(11,0) = X_s.rows();
+  tmp(12,0) = X_r.cols();
+  tmp(13,0) = X_r.rows();
+  tmp(14,0) = theta_s.cols();
+  tmp(15,0) = theta_s.rows();
+  tmp(16,0) = theta_r.cols();
+  tmp(17,0) = theta_r.rows();
+  matrix_cl<double> tmp_cl(tmp);
   
 
-  // matrix_cl<double> tgt_cl(1, N);
-  // matrix_cl<double> tmp_s_cl(1, N);
-  // matrix_cl<double> tmp_r_cl(1, N);
+  matrix_cl<double> tgt_cl(1, N);
+  matrix_cl<double> tmp_s_cl(1, N);
+  matrix_cl<double> tmp_r_cl(1, N);
 
-  // matrix_cl<double> d_tau_cl(1, N);
-  // matrix_cl<double> d_beta_pbo_cl(1, N);
-  // matrix_cl<double> d_k_eq_cl(1, N);
-  // matrix_cl<double> d_k_el_cl(1, N);
-  // matrix_cl<double> d_beta_cl(1, N);
-  // matrix_cl<double> d_theta_s_cl(1, X_s.cols());
-  // matrix_cl<double> d_theta_r_cl(1, X_r.cols());
-  // matrix_d outtmp3(1, N);
-  // matrix_d outtmp4(1, N);
-  // matrix_cl<double> params_cl(1,8);
-  // try {
-  //   opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
-  //    eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, tgt_cl, tmp_s_cl, tmp_r_cl,
-  //     d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl, d_beta_cl);
-  //   opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
-  //    d_beta_cl, tmp_s_cl, tmp_r_cl, d_theta_s_cl, d_theta_r_cl, X_s, X_r, params_cl, N);
-  // } catch (cl::Error& e) {
-  //   check_opencl_error("generalized_logistic_model", e);
-  // }
+  matrix_cl<double> d_tau_cl(1, N);
+  matrix_cl<double> d_beta_pbo_cl(1, N);
+  matrix_cl<double> d_k_eq_cl(1, N);
+  matrix_cl<double> d_k_el_cl(1, N);
+  matrix_cl<double> d_beta_cl(1, N);
+  matrix_cl<double> d_theta_s_cl(1, X_s.cols());
+  matrix_cl<double> d_theta_r_cl(1, X_r.cols());
+  matrix_d outtmp3(1, N);
+  matrix_d outtmp4(1, N);
+  matrix_cl<double> params_cl(1,8);
+  try {
+    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
+     eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, tgt_cl, tmp_s_cl, tmp_r_cl,
+      d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl, d_beta_cl);
+    opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
+     d_beta_cl, tmp_s_cl, tmp_r_cl, params_cl, N);
+  } catch (cl::Error& e) {
+    check_opencl_error("generalized_logistic_model", e);
+  }
 
-  // matrix_d params = from_matrix_cl(params_cl);
-  // tgt = params(0,0);
-  // d_tau = params(0,1);
-  // d_beta_pbo = params(0,2);
-  // d_k_eq = params(0,3);
-  // d_k_el = params(0,4);
-  // d_beta = params(0,5);
-  // d_base_s = params(0,6);
-  // d_base_r = params(0,7);
-  // outtmp3 = from_matrix_cl(tmp_s_cl);
-  // outtmp4 = from_matrix_cl(tmp_r_cl);
-  // for (int i = 0; i < N; i++) {
+  matrix_d params = from_matrix_cl(params_cl);
+  tgt = params(0,0);
+  d_tau = params(0,1);
+  d_beta_pbo = params(0,2);
+  d_k_eq = params(0,3);
+  d_k_el = params(0,4);
+  d_beta = params(0,5);
+  d_base_s = params(0,6);
+  d_base_r = params(0,7);
+  outtmp3 = from_matrix_cl(tmp_s_cl);
+  outtmp4 = from_matrix_cl(tmp_r_cl);
+  for (int i = 0; i < N; i++) {
     
-  //   double tmp_s = outtmp3(0,i);
-  //   double tmp_r = outtmp4(0,i);
+    double tmp_s = outtmp3(0,i);
+    double tmp_r = outtmp4(0,i);
+    for (int c = 0; c < X_s.cols(); c++) {
+      d_theta_s[c] += tmp_s * X_s(i, c);
+    }      
 
-  //   d_eta_ps[IDp[i] - 1] = d_eta_ps[IDp[i] - 1] + tmp_s;
-  //   d_eta_ss[IDs[i] - 1] = d_eta_ss[IDs[i] - 1] + tmp_s;
-  //   d_eta_pr[IDp[i] - 1] = d_eta_pr[IDp[i] - 1] + tmp_r;
-  //   d_eta_sr[IDs[i] - 1] = d_eta_sr[IDs[i] - 1] + tmp_r;
+
+   
+    for (int c = 0; c < X_r.cols(); c++) {
+      d_theta_r[c] += tmp_r * X_r(i, c);
+    }   
+    d_eta_ps[IDp[i] - 1] = d_eta_ps[IDp[i] - 1] + tmp_s;
+    d_eta_ss[IDs[i] - 1] = d_eta_ss[IDs[i] - 1] + tmp_s;
+    d_eta_pr[IDp[i] - 1] = d_eta_pr[IDp[i] - 1] + tmp_r;
+    d_eta_sr[IDs[i] - 1] = d_eta_sr[IDs[i] - 1] + tmp_r;
     
-  // }
+  }
 
   // stack it up
   vari** varis = ChainableStack::instance_->memalloc_.alloc_array<vari*>(

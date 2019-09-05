@@ -68,8 +68,6 @@ inline var generalized_logistic_model(
 
   const int p_size = d_eta_pr.size();
   const int s_size = d_eta_sr.size();
-<<<<<<< HEAD
-=======
   matrix_cl<double> IDpp_cl(1, IDp.size());
   if(copied == 0){
     matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
@@ -316,7 +314,6 @@ inline var generalized_logistic_model(
   
   const int theta_s_size = X_s.cols();
   const int theta_r_size = X_r.cols();
->>>>>>> e20f02a13c26ac4055363240a8d86a5b5869a8ff
   
   std::vector<double> d_eta_pr(eta_pr.size());
   std::vector<double> d_eta_sr(eta_sr.size());

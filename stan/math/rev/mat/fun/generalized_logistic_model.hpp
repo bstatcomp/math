@@ -171,7 +171,6 @@ inline var generalized_logistic_model(
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
   }
-
   matrix_d params = from_matrix_cl(params_cl);
   tgt = params(0,0);
   d_tau = params(0,1);
@@ -339,7 +338,7 @@ inline var generalized_logistic_model(
       cov_s = exp(cov_s);
     }      
     if (multiplicative_r == 1) {
-      cov_s = exp(cov_r);
+      cov_r = exp(cov_r);
     }      
     const double S0 = 1 / (1 + exp(-cov_s));
     const double temp1 = k_eq / (k_eq - k_el);

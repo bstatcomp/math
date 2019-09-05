@@ -744,8 +744,7 @@ TEST(AgradRevMatrix, generalized_logistic_model_gradient) {
   std::vector<double> theta_r_tmp
       = std::vector<double>({-0.008054921656, -0.005340525808});
   std::vector<double> theta_s_tmp
-     // = std::vector<double>({0.1186298492, -0.2896836946});
-      = std::vector<double>({0.1186298492});
+      = std::vector<double>({0.1186298492, -0.2896836946});
   std::vector<double> eta_pr_tmp = std::vector<double>(
       {-0.1351406201,   0.2161363819,   -0.1138000899,  -0.1423910535,
        -0.08417946458,  0.02964936013,  0.07729184226,  0.1968639784,
@@ -862,7 +861,7 @@ TEST(AgradRevMatrix, generalized_logistic_model_gradient) {
   int N = IDp.size();
   stan::math::vector_d time(N);
   stan::math::vector_d S(N);
-  Eigen::Matrix<double, -1, 1> X_s(N, 1);
+  Eigen::Matrix<double, -1, 2> X_s(N, 2);
   Eigen::Matrix<double, -1, 2> X_r(N, 2);
 
   double mAPOE
@@ -920,7 +919,7 @@ TEST(AgradRevMatrix, generalized_logistic_model_gradient) {
   for (unsigned int i = 0; i < theta_s_tmp.size(); i++) {
     theta_s(i) = theta_s_tmp[i];
   }
-std::cerr << "IDP" << IDp.size() << std::endl;
+  
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,

@@ -1,3 +1,4 @@
+#ifdef STAN_OPENCL
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/opencl/kernel_generator/unary_function.hpp>
 #include <stan/math/opencl/kernel_generator/binary_operation.hpp>
@@ -59,3 +60,5 @@ TEST(MathMatrixCL, double_transpose_accepts_lvalue_test){
   EXPECT_EQ(correct.cols(), res.cols());
   EXPECT_MATRIX_NEAR(correct,res,1e-9);
 }
+
+#endif

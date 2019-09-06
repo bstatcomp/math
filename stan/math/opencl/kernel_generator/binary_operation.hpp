@@ -41,7 +41,7 @@ public:
       }
   }
 
-  kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
     if(generated.count(instance)==0) {
       kernel_parts a_parts = a_.generate(ng, generated, i, j);
       kernel_parts b_parts = b_.generate(ng, generated, i, j);
@@ -57,7 +57,7 @@ public:
     }
   }
 
-  void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
+  inline void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
     if(generated.count(instance)==0) {
       generated.insert(instance);
       a_.set_args(generated, kernel, arg_num);
@@ -65,22 +65,22 @@ public:
     }
   }
 
-  void add_event(cl::Event& e) const{
+  inline void add_event(cl::Event& e) const{
     a_.add_event(e);
     b_.add_event(e);
   }
 
-  int rows() const{
+  inline int rows() const{
     int a_rows = a_.rows();
     return a_rows == base::dynamic ? b_.rows() : a_rows;
   }
 
-  int cols() const{
+  inline int cols() const{
     int a_cols = a_.cols();
     return a_cols == base::dynamic ? b_.cols() : a_cols;
   }
 
-  matrix_cl_view view() const{
+  inline matrix_cl_view view() const{
     return either(a_.view(), b_.view());
   }
 
@@ -98,7 +98,7 @@ public:
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-addition__<as_operation_t<T_a>,as_operation_t<T_b>> operator+(T_a&& a, T_b&& b) {
+inline addition__<as_operation_t<T_a>,as_operation_t<T_b>> operator+(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
@@ -110,7 +110,7 @@ public:
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-subtraction__<as_operation_t<T_a>,as_operation_t<T_b>> operator-(T_a&& a, T_b&& b){
+inline subtraction__<as_operation_t<T_a>,as_operation_t<T_b>> operator-(T_a&& a, T_b&& b){
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
@@ -120,29 +120,29 @@ class elewise_multiplication__ : public binary_operation<elewise_multiplication_
 public:
   elewise_multiplication__(T_a&& a, T_b&& b) : binary_operation<elewise_multiplication__<T_a, T_b>, T_a, T_b>(std::forward<T_a>(a),std::forward<T_b>(b),"*") {}
 
-  matrix_cl_view view()  const{
+  inline matrix_cl_view view()  const{
     using base = binary_operation<elewise_multiplication__<T_a, T_b>, T_a, T_b>;
     return both(base::a_.view(), base::b_.view());
   }
 };
 
 template<typename T_a, typename T_b>
-elewise_multiplication__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_multiplication(T_a&& a, T_b&& b) {
+inline elewise_multiplication__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_multiplication(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_arithmetic<T_a>, typename = enable_if_all_usable_as_operation<T_b>>
-elewise_multiplication__<scalar__<T_a>,as_operation_t<T_b>> operator*(T_a&& a, T_b&& b) {
+inline elewise_multiplication__<scalar__<T_a>,as_operation_t<T_b>> operator*(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a>, typename = enable_if_arithmetic<T_b>>
-elewise_multiplication__<as_operation_t<T_a>,scalar__<T_b>> operator*(T_a&& a, const T_b b) {
+inline elewise_multiplication__<as_operation_t<T_a>,scalar__<T_b>> operator*(T_a&& a, const T_b b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(b)};
 }
 
 template<typename T_a, typename T_b, typename = enable_if_none_arithmetic_all_usable_as_operation<T_a, T_b>>
-matrix_cl<double> operator*(const T_a& a, const T_b& b){
+inline matrix_cl<double> operator*(const T_a& a, const T_b& b){
   //no need for perfect forwarding as operations are evaluated
   return as_operation(a).eval() * as_operation(b).eval();
 }
@@ -152,14 +152,14 @@ class elewise_division__ : public binary_operation<elewise_division__<T_a, T_b>,
 public:
   elewise_division__(T_a&& a, T_b&& b) : binary_operation<elewise_division__<T_a, T_b>, T_a, T_b>(std::forward<T_a>(a),std::forward<T_b>(b),"/") {}
 
-  matrix_cl_view view()  const{
+  inline matrix_cl_view view()  const{
     using base = binary_operation<elewise_division__<T_a, T_b>, T_a, T_b>;
     return either(base::a_.view(), invert(base::b_.view()));
   }
 };
 
 template<typename T_a, typename T_b, typename = enable_if_all_usable_as_operation<T_a, T_b>>
-elewise_division__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_division(T_a&& a, T_b&& b) {
+inline elewise_division__<as_operation_t<T_a>,as_operation_t<T_b>> elewise_division(T_a&& a, T_b&& b) {
   return {as_operation(std::forward<T_a>(a)), as_operation(std::forward<T_b>(b))};
 }
 

@@ -33,40 +33,40 @@ public:
     }
   }
 
-  kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
     kernel_parts res = a_.generate(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
     var_name = a_.var_name;
     return res;
   }
 
-  kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
+  inline kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
     return a_.generate_lhs(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
   }
 
-  void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
+  inline void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
     if(generated.count(instance)==0) {
       generated.insert(instance);
       a_.set_args(generated, kernel, arg_num);
     }
   }
 
-  void add_event(cl::Event& e) const {
+  inline void add_event(cl::Event& e) const {
     a_.add_event(e);
   }
 
-  void add_write_event(cl::Event& e) const {
+  inline void add_write_event(cl::Event& e) const {
     a_.add_event(e);
   }
 
-  matrix_cl_view view() const {
+  inline matrix_cl_view view() const {
     return transpose(a_.view());
   }
 
-  int rows() const {
+  inline int rows() const {
     return rows_;
   }
 
-  int cols() const {
+  inline int cols() const {
     return cols_;
   }
 
@@ -83,7 +83,7 @@ protected:
 };
 
 template<typename T, typename = enable_if_all_usable_as_operation<T>>
-block__<as_operation_t<T>> block(T&& a, int start_row, int start_col, int rows, int cols) {
+inline block__<as_operation_t<T>> block(T&& a, int start_row, int start_col, int rows, int cols) {
   return block__<as_operation_t<T>>(as_operation(std::forward<T>(a)), start_row, start_col, rows, cols);
 }
 

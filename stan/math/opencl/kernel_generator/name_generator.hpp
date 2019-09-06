@@ -4,19 +4,19 @@
 
 #include <string>
 
-namespace stan{
-namespace math{
+namespace stan {
+namespace math {
 
-class name_generator{
+class name_generator {
 public:
-    name_generator() : i_(0){}
+  name_generator() : i_(0) {}
 
-    std::string generate(){
-      return "var" + std::to_string(++i_);
-    }
+  inline std::string generate() {
+    return "var" + std::to_string(++i_);
+  }
 
 private:
-    int i_;
+  int i_;
 };
 
 }

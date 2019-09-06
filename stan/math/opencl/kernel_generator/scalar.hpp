@@ -16,51 +16,51 @@ namespace math {
 
 
 template<typename T>
-class scalar__ : public operation<scalar__<T>, T>{
+class scalar__ : public operation<scalar__<T>, T> {
 public:
-    static_assert(std::is_arithmetic<T>::value, "std::is_arithmetic<T> must be true for constants!");
-    using ReturnScalar = T;
-    using base = operation<scalar__<T>, T>;
-    using base::var_name;
-    using base::instance;
+  static_assert(std::is_arithmetic<T>::value, "std::is_arithmetic<T> must be true for constants!");
+  using ReturnScalar = T;
+  using base = operation<scalar__<T>, T>;
+  using base::var_name;
+  using base::instance;
 
-    explicit scalar__(const T a) : a_(a) {}
+  explicit scalar__(const T a) : a_(a) {}
 
-    kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
-      if(generated.count(instance)==0) {
-        generated.insert(instance);
-        var_name = ng.generate();
-        kernel_parts res;
-        res.args = type_str<T>::name + " " + var_name + ", ";
-        return res;
-      }
-      else{
-        return {};
-      }
+  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
+    if (generated.count(instance) == 0) {
+      generated.insert(instance);
+      var_name = ng.generate();
+      kernel_parts res;
+      res.args = type_str<T>::name + " " + var_name + ", ";
+      return res;
     }
-
-    void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const{
-      kernel.setArg(arg_num++,a_);
+    else {
+      return {};
     }
+  }
 
-    void add_event(cl::Event& e) const{
+  inline void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const {
+    kernel.setArg(arg_num++, a_);
+  }
 
-    }
+  inline void add_event(cl::Event& e) const {
 
-    int rows() const{
-      return base::dynamic;
-    }
+  }
 
-    int cols() const{
-      return base::dynamic;
-    }
+  inline int rows() const {
+    return base::dynamic;
+  }
 
-    matrix_cl_view view() const{
-      return matrix_cl_view::Entire;
-    }
+  inline int cols() const {
+    return base::dynamic;
+  }
+
+  inline matrix_cl_view view() const {
+    return matrix_cl_view::Entire;
+  }
 
 private:
-    T a_;
+  T a_;
 };
 
 }

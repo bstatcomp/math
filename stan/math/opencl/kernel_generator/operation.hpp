@@ -17,53 +17,54 @@
 namespace stan {
 namespace math {
 
-struct kernel_parts{
-    std::string body, args;
+struct kernel_parts {
+  std::string body, args;
 };
 
-class operation_base{
+class operation_base {
 public:
-    operation_base() : instance(instance_counter++){}
+  operation_base() : instance(instance_counter++) {}
+
 protected:
-    static int instance_counter;
-    int instance;
+  static int instance_counter;
+  int instance;
 };
 
 int operation_base::instance_counter = 0;
 
 template<typename Derived, typename ReturnScalar>
-class operation : public operation_base{
+class operation : public operation_base {
 public:
-    static const int dynamic = -1;
+  static const int dynamic = -1;
 
-    matrix_cl<ReturnScalar> eval() const {
-      matrix_cl<ReturnScalar> res(derived().rows(), derived().cols(), derived().view());
-      this->evaluate_into(res);
-      return res;
-    }
+  matrix_cl<ReturnScalar> eval() const {
+    matrix_cl<ReturnScalar> res(derived().rows(), derived().cols(), derived().view());
+    this->evaluate_into(res);
+    return res;
+  }
 
-    operator matrix_cl<ReturnScalar>() const {
-      return derived().eval();
-    }
+  operator matrix_cl<ReturnScalar>() const {
+    return derived().eval();
+  }
 
-    template<typename T_lhs>
-    void evaluate_into(T_lhs&& lhs) const;
+  template<typename T_lhs>
+  inline void evaluate_into(T_lhs&& lhs) const;
 
 protected:
-    mutable std::string var_name;
-    static std::map<std::string, cl::Kernel> kernel_cache;
+  mutable std::string var_name;
+  static std::map<std::string, cl::Kernel> kernel_cache;
 
-    Derived& derived() {
-      return *static_cast<Derived*>(this);
-    }
+  inline Derived& derived() {
+    return *static_cast<Derived*>(this);
+  }
 
-    const Derived& derived() const {
-      return *static_cast<const Derived*>(this);
-    }
+  inline const Derived& derived() const {
+    return *static_cast<const Derived*>(this);
+  }
 };
 
 template<typename Derived, typename ReturnScalar>
-std::map<std::string, cl::Kernel> operation<Derived,ReturnScalar>::kernel_cache;
+std::map<std::string, cl::Kernel> operation<Derived, ReturnScalar>::kernel_cache;
 
 }
 }

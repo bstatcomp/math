@@ -12,17 +12,17 @@ namespace stan {
 namespace math {
 
 template<typename T, typename = std::enable_if_t<std::is_base_of<operation_base, std::remove_reference_t<T>>::value>>
-T&& as_operation(T&& a){
+inline T&& as_operation(T&& a){
   return std::forward<T>(a);
 }
 
 template<typename T, typename = enable_if_arithmetic<T>>
-scalar__<T> as_operation(const T a){
+inline scalar__<T> as_operation(const T a){
   return scalar__<T>(a);
 }
 
 template<typename T, typename = std::enable_if_t<std::is_base_of<matrix_cl<typename std::remove_reference_t<T>::type>,typename std::remove_reference_t<T>>::value>>
-load__<T> as_operation(T&& a){
+inline load__<T> as_operation(T&& a){
   return load__<T>(std::forward<T>(a));
 }
 

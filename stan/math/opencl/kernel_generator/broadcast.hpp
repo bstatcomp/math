@@ -20,60 +20,60 @@ namespace math {
 template<typename T, bool Rows, bool Cols>
 class broadcast__ : public operation<broadcast__<T, Rows, Cols>, typename std::remove_reference_t<T>::ReturnScalar> {
 public:
-    using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
-    using base = operation<broadcast__<T, Rows, Cols>, ReturnScalar>;
-    using base::var_name;
-    using base::instance;
+  using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
+  using base = operation<broadcast__<T, Rows, Cols>, ReturnScalar>;
+  using base::var_name;
+  using base::instance;
 
-    explicit broadcast__(T&& a) : a_(std::forward<T>(a)) {
-      const char* function = "broadcast";
-      if (Rows) {
-        check_size_match(function, "Rows of ", "a", a.rows(), "", "", 1);
-      }
-      if (Cols) {
-        check_size_match(function, "Columns of ", "a", a.cols(), "", "", 1);
-      }
+  explicit broadcast__(T&& a) : a_(std::forward<T>(a)) {
+    const char* function = "broadcast";
+    if (Rows) {
+      check_size_match(function, "Rows of ", "a", a.rows(), "", "", 1);
     }
+    if (Cols) {
+      check_size_match(function, "Columns of ", "a", a.cols(), "", "", 1);
+    }
+  }
 
-    kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
-      kernel_parts res = a_.generate(ng, generated, Rows ? "0" : i, Cols ? "0" : j);
-      var_name = a_.var_name;
-      return res;
-    }
+  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
+    kernel_parts res = a_.generate(ng, generated, Rows ? "0" : i, Cols ? "0" : j);
+    var_name = a_.var_name;
+    return res;
+  }
 
-    void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const {
-      a_.set_args(generated, kernel, arg_num);
-    }
+  inline void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const {
+    a_.set_args(generated, kernel, arg_num);
+  }
 
-    void add_event(cl::Event& e) const {
-      a_.add_event(e);
-    }
+  inline void add_event(cl::Event& e) const {
+    a_.add_event(e);
+  }
 
-    int rows() const {
-      return Rows ? base::dynamic : a_.rows();
-    }
+  inline int rows() const {
+    return Rows ? base::dynamic : a_.rows();
+  }
 
-    int cols() const {
-      return Cols ? base::dynamic : a_.cols();
-    }
+  inline int cols() const {
+    return Cols ? base::dynamic : a_.cols();
+  }
 
-    matrix_cl_view view() const {
-      matrix_cl_view view = a_.view();
-      if (Rows) {
-        view = either(view, matrix_cl_view::Lower);
-      }
-      if (Cols) {
-        view = either(view, matrix_cl_view::Upper);
-      }
-      return view;
+  inline matrix_cl_view view() const {
+    matrix_cl_view view = a_.view();
+    if (Rows) {
+      view = either(view, matrix_cl_view::Lower);
     }
+    if (Cols) {
+      view = either(view, matrix_cl_view::Upper);
+    }
+    return view;
+  }
 
 protected:
-    T a_;
+  T a_;
 };
 
 template<bool Rows, bool Cols, typename T, typename Cond = enable_if_none_arithmetic_all_usable_as_operation<T>>
-broadcast__<as_operation_t<T>, Rows, Cols> broadcast(T&& a) {
+inline broadcast__<as_operation_t<T>, Rows, Cols> broadcast(T&& a) {
   return broadcast__<as_operation_t<T>, Rows, Cols>(as_operation(std::forward<T>(a)));
 }
 

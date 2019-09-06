@@ -35,7 +35,6 @@ void operation<Derived, ReturnScalar>::evaluate_into(T_lhs&& lhs) const {
                     out_parts.body + " = " + var_name + ";}";
   try {
     if(kernel_cache.count(src)==0){
-      std::cout << src << std::endl;
       auto opts = opencl_context.base_opts();
       kernel_cache[src] = opencl_kernels::compile_kernel("calculate", {view_kernel_helpers, src.c_str()}, opts);
     }

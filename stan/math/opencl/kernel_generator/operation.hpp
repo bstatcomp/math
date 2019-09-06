@@ -12,8 +12,6 @@
 #include <map>
 #include <set>
 
-#include <iostream>
-
 namespace stan {
 namespace math {
 

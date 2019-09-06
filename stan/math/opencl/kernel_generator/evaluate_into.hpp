@@ -3,7 +3,7 @@
 
 #include <stan/math/opencl/kernel_generator/operation.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
-#include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
+#include <stan/math/opencl/kernel_generator/is_valid_expression.hpp>
 #include <utility>
 
 namespace stan{
@@ -12,7 +12,7 @@ namespace math{
 template<typename Derived, typename ReturnScalar>
 template<typename T_lhs>
 void operation<Derived, ReturnScalar>::evaluate_into(T_lhs&& lhs) const {
-  using enable = enable_if_all_usable_as_operation<T_lhs>;
+  using enable = enable_if_all_valid_expressions<T_lhs>;
   auto lhs_expression = as_operation(std::forward<T_lhs>(lhs));
 
   int n_rows = derived().rows();

@@ -2,7 +2,7 @@
 #define STAN_MATH_OPENCL_KERNEL_GENERATOR_MULTI_RESULT_KERNEL_HPP
 #ifdef STAN_OPENCL
 
-#include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
+#include <stan/math/opencl/kernel_generator/is_valid_expression.hpp>
 #include <stan/math/opencl/kernel_generator/name_generator.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <string>

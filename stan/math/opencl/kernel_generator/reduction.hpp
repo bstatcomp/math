@@ -8,7 +8,7 @@
 #include <stan/math/opencl/kernel_generator/name_generator.hpp>
 #include <stan/math/opencl/kernel_generator/operation.hpp>
 #include <stan/math/opencl/kernel_generator/as_operation.hpp>
-#include <stan/math/opencl/kernel_generator/is_usable_as_operation.hpp>
+#include <stan/math/opencl/kernel_generator/is_valid_expression.hpp>
 #include <string>
 #include <type_traits>
 #include <set>
@@ -16,6 +16,15 @@
 
 namespace stan {
 namespace math {
+/**
+ * Represents a reduction in kernel generator expressions.
+ * @tparam Derived derived type
+ * @tparam T type of first argument
+ * @tparam Operation type with member function generate that accepts two variable names and returns OpenCL source code for reduction operation
+ * @tparam PassZero whether \c Operation passes trough zeros
+ * @tparam Rowwise whether this is row wise reduction
+ * @tparam Colwise whether this is column wise reduction
+ */
 
 template<typename Derived, typename T, typename Operation, bool PassZero, bool Rowwise, bool Colwise>
 class reduction : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
@@ -25,8 +34,21 @@ public:
   using base::var_name;
   using base::instance;
 
+  /**
+   * Constructor
+   * @param a the expression to reduce
+   * @param init OpenCL source code of initialization value for reduction
+   */
   reduction(T&& a, const std::string& init) : a_(std::forward<T>(a)), init_(init) {}
 
+  /**
+   * generates kernel code for this and nested expressions.
+   * @param ng name generator for this kernel
+   * @param[in,out] generated set of already generated operations
+   * @param i row index variable name
+   * @param j column index variable name
+   * @return part of kernel with code for this and nested expressions
+   */
   inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
     if (generated.count(instance) == 0) {
       generated.insert(instance);
@@ -74,6 +96,12 @@ public:
     }
   }
 
+  /**
+   * Sets kernel arguments for this and nested expressions.
+   * @param[in,out] generated set of expressions that already set their kernel arguments
+   * @param kernel kernel to set arguments on
+   * @param[in,out] arg_num consecutive number of the first argument to set. This is incremented for each argument set by this function.
+   */
   inline void set_args(std::set<int>& generated, cl::Kernel& kernel, int& arg_num) const {
     if (generated.count(instance) == 0) {
       generated.insert(instance);
@@ -88,11 +116,18 @@ public:
     }
   }
 
+  /**
+   * Adds event for any matrices used by this or nested expressions.
+   * @param e the event to add
+   */
   inline void add_event(cl::Event& e) const {
     a_.add_event(e);
   }
 
-
+  /**
+   * Number of rows of a matrix that would be the result of evaluating this expression.
+   * @return number of rows
+   */
   inline int rows() const {
     if (Colwise) {
       return 1;
@@ -102,6 +137,10 @@ public:
     }
   }
 
+  /**
+   * Number of columns of a matrix that would be the result of evaluating this expression.
+   * @return number of columns
+   */
   inline int cols() const {
     if (Rowwise) {
       return 1;
@@ -111,6 +150,10 @@ public:
     }
   }
 
+  /**
+   * View of a matrix that would be the result of evaluating this expression.
+   * @return view
+   */
   matrix_cl_view view() const {
     return a_.view();
   }
@@ -132,25 +175,58 @@ protected:
 //
 //};
 
+/**
+ * operation for sum reduction.
+ */
 struct sum_op {
+  /**
+   * Generates sum reduction
+   * @param a first variable
+   * @param b second variable
+   * @return reduction code
+   */
   inline static std::string generate(const std::string& a, const std::string& b) {
     return a + " + " + b;
   }
 };
 
+/**
+ * Represents sum - reduction in kernel generator expressions.
+ * @tparam T type of expression
+ * @tparam Rowwise whether to sum row wise
+ * @tparam Colwise whether to sum column wise
+ */
 template<typename T, bool Rowwise, bool Colwise>
 class sum__ : public reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise> {
 public:
   explicit sum__(T&& a) : reduction<sum__<T, Rowwise, Colwise>, T, sum_op, true, Rowwise, Colwise>(std::forward<T>(a), "0") {}
 };
 
-template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation<T>>
+/**
+ * Sum - reduction of a kernel generator expression.
+ * @tparam Rowwise whether to sum row wise
+ * @tparam Colwise whether to sum column wise
+ * @tparam T type of input expression
+ * @param a expression to reduce
+ * @return sum
+ */
+template<bool Rowwise, bool Colwise, typename T, typename = enable_if_all_valid_expressions_and_none_scalar<T>>
 inline sum__<as_operation_t<T>, Rowwise, Colwise> sum(T&& a) {
   return sum__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
+/**
+ * operation for max reduction.
+ * @tparam T type to reduce
+ */
 template<typename T>
 struct max_op {
+  /**
+   * Generates sum reduction
+   * @param a first variable
+   * @param b second variable
+   * @return reduction code
+   */
   inline static std::string generate(const std::string& a, const std::string& b) {
     if (std::is_floating_point<T>()) {
       return "fmax(" + a + ", " + b + ")";
@@ -159,20 +235,43 @@ struct max_op {
   }
 };
 
+/**
+ * Represents max - reduction in kernel generator expressions.
+ * @tparam T type of expression
+ * @tparam Rowwise whether to reduce row wise
+ * @tparam Colwise whether to reduce column wise
+ */
 template<typename T, bool Rowwise, bool Colwise>
 class max__ : public reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
   explicit max__(T&& a) : reduction<max__<T, Rowwise, Colwise>, T, max_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "-INFINITY") {}
 };
 
-template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation<T>>
+/**
+ * Max - reduction of a kernel generator expression.
+ * @tparam Rowwise whether to reduce row wise
+ * @tparam Colwise whether to reduce column wise
+ * @tparam T type of input expression
+ * @param a expression to reduce
+ * @return max
+ */
+template<bool Rowwise, bool Colwise, typename T, typename = enable_if_all_valid_expressions_and_none_scalar<T>>
 inline max__<as_operation_t<T>, Rowwise, Colwise> max(T&& a) {
   return max__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }
 
-
+/**
+ * operation for min reduction.
+ * @tparam T type to reduce
+ */
 template<typename T>
 struct min_op {
+  /**
+   * Generates sum reduction
+   * @param a first variable
+   * @param b second variable
+   * @return reduction code
+   */
   inline static std::string generate(const std::string& a, const std::string& b) {
     if (std::is_floating_point<T>()) {
       return "fmin(" + a + ", " + b + ")";
@@ -181,13 +280,27 @@ struct min_op {
   }
 };
 
+/**
+ * Represents min - reduction in kernel generator expressions.
+ * @tparam T type of expression
+ * @tparam Rowwise whether to reduce row wise
+ * @tparam Colwise whether to reduce column wise
+ */
 template<typename T, bool Rowwise, bool Colwise>
 class min__ : public reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise> {
 public:
   explicit min__(T&& a) : reduction<min__<T, Rowwise, Colwise>, T, min_op<typename std::remove_reference_t<T>::ReturnScalar>, false, Rowwise, Colwise>(std::forward<T>(a), "INFINITY") {}
 };
 
-template<bool Rowwise, bool Colwise, typename T, typename = enable_if_none_arithmetic_all_usable_as_operation<T>>
+/**
+ * Min - reduction of a kernel generator expression.
+ * @tparam Rowwise whether to reduce row wise
+ * @tparam Colwise whether to reduce column wise
+ * @tparam T type of input expression
+ * @param a expression to reduce
+ * @return min
+ */
+template<bool Rowwise, bool Colwise, typename T, typename = enable_if_all_valid_expressions_and_none_scalar<T>>
 inline min__<as_operation_t<T>, Rowwise, Colwise> min(T&& a) {
   return min__<as_operation_t<T>, Rowwise, Colwise>(as_operation(std::forward<T>(a)));
 }

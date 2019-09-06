@@ -4,6 +4,9 @@
 
 #include <string>
 
+/**
+ * Determins a string name of a type. Unsupported types fail static assert.
+ */
 template<typename T>
 struct type_str{
     static_assert(sizeof(T)==-1, "Unsupported type in type_str");

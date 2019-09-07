@@ -339,42 +339,105 @@ static const char *reduce3_kernel_code = STRINGIFY(
             unsigned int N,
             unsigned int d_eta_p_size,
             unsigned int d_eta_s_size) {
-        const int id = get_global_id(0);
+        const int i = get_global_id(0)%NUM;
+        const int id = get_global_id(0)/NUM;
+        __local double sum[NUM];  
+        sum[i] = 0.0;
         if(id<d_eta_p_size) {
-            double sum = 0.0;
-            for(int i=0;i<N;i++) {
-                if((IDp[i]-1)==id){
-                    sum += tmp_s[i];
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDp[i+j]-1)==id){
+                        sum[i] += tmp_s[i+j];
+                    }
                 }
             }
-            d_eta_ps[id] = sum;
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta_ps[id] = sum[0];
+            }
         }else if(id>=d_eta_p_size && id < 2*d_eta_p_size) {
-            const int idp = id -d_eta_p_size;            
-            double sum = 0.0;
-            for(int i=0;i<N;i++) {
-                if((IDp[i]-1)==idp){
-                    sum += tmp_r[i];
+            const int idp = id -d_eta_p_size; 
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                     if((IDp[i+j]-1)==idp){
+                        sum[i] += tmp_r[i+j];
+                    }
                 }
             }
-            d_eta_pr[idp] = sum;
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta_pr[idp] = sum[0];
+            }
         }else if(id>=(2*d_eta_p_size) && id< (2*d_eta_p_size+d_eta_s_size)) {
             const int ids = id - 2*d_eta_p_size;
-            double sum = 0.0;
-            for(int i=0;i<N;i++) {
-                if((IDs[i]-1)==ids){
-                    sum += tmp_s[i];
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDs[i+j]-1)==ids){
+                        sum[i] += tmp_s[i+j];
+                    }
                 }
             }
-            d_eta_ss[ids] = sum;
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta_ss[ids] = sum[0];
+            }
         }else {
             const int idr = id - 2*d_eta_p_size - d_eta_s_size;
-            double sum = 0.0;
-            for(int i=0;i<N;i++) {
-                if((IDs[i]-1)==idr){
-                    sum += tmp_r[i];
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDs[i+j]-1)==idr){
+                        sum[i] += tmp_r[i+j];
+                    }
                 }
             }
-            d_eta_sr[idr] = sum;
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta_sr[idr] = sum[0];
+            }
         }
     }
     // \cond

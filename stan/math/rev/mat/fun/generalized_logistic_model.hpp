@@ -56,15 +56,7 @@ inline var generalized_logistic_model(
   double d_base_s = 0;
   double d_base_r = 0;
   double tgt = 0;
-  const int theta_s_size = X_s.cols();
-  const int theta_r_size = X_r.cols();
-  std::vector<double> d_eta_pr(eta_pr.size());
-  std::vector<double> d_eta_sr(eta_sr.size());
-  std::vector<double> d_eta_ps(eta_ps.size());
-  std::vector<double> d_eta_ss(eta_ss.size());
 
-  const int p_size = d_eta_pr.size();
-  const int s_size = d_eta_sr.size();
   if(copied == 0){
     matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
     tX_s_cl.wait_for_read_write_events();
@@ -153,10 +145,12 @@ inline var generalized_logistic_model(
   matrix_cl<double> d_k_eq_cl(1, N);
   matrix_cl<double> d_k_el_cl(1, N);
   matrix_cl<double> d_beta_cl(1, N);
+  matrix_cl<double> d_eta_ps_cl(1, eta_ps.size());
+  matrix_cl<double> d_eta_ss_cl(1, eta_ss.size());
+  matrix_cl<double> d_eta_pr_cl(1, eta_pr.size());
+  matrix_cl<double> d_eta_sr_cl(1, eta_sr.size());
   matrix_cl<double> d_theta_s_cl(1, X_s.cols());
   matrix_cl<double> d_theta_r_cl(1, X_r.cols());
-  matrix_d outtmp3(1, N);
-  matrix_d outtmp4(1, N);
   matrix_cl<double> params_cl(1,8);
   try {
     opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
@@ -165,7 +159,9 @@ inline var generalized_logistic_model(
     opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
      d_beta_cl, tmp_s_cl, tmp_r_cl, params_cl, N);
     opencl_kernels::reduce2(cl::NDRange(256*(X_s.cols()+X_r.cols())),cl::NDRange(256), d_theta_s_cl, d_theta_r_cl,
-                            tmp_s_cl, tmp_r_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
+                             tmp_s_cl, tmp_r_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
+    opencl_kernels::reduce3(cl::NDRange(d_eta_ps_cl.size()*2+d_eta_ss_cl.size()*2), d_eta_ps_cl, d_eta_ss_cl,
+                            d_eta_pr_cl, d_eta_sr_cl, tmp_s_cl, tmp_r_cl, IDp_cl, IDs_cl, N, d_eta_ps_cl.size(), d_eta_ss_cl.size());
 
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
@@ -179,21 +175,18 @@ inline var generalized_logistic_model(
   d_beta = params(0,5);
   d_base_s = params(0,6);
   d_base_r = params(0,7);
-  outtmp3 = from_matrix_cl(tmp_s_cl);
-  outtmp4 = from_matrix_cl(tmp_r_cl);
   Eigen::MatrixXd d_theta_s = from_matrix_cl(d_theta_s_cl);
   Eigen::MatrixXd d_theta_r = from_matrix_cl(d_theta_r_cl);
-  for (int i = 0; i < N; i++) {
-    
-    double tmp_s = outtmp3(0,i);
-    double tmp_r = outtmp4(0,i);
-    d_eta_ps[IDp[i] - 1] = d_eta_ps[IDp[i] - 1] + tmp_s;
-    d_eta_ss[IDs[i] - 1] = d_eta_ss[IDs[i] - 1] + tmp_s;
-    d_eta_pr[IDp[i] - 1] = d_eta_pr[IDp[i] - 1] + tmp_r;
-    d_eta_sr[IDs[i] - 1] = d_eta_sr[IDs[i] - 1] + tmp_r;
-    
-  }
+  Eigen::MatrixXd d_eta_ps = from_matrix_cl(d_eta_ps_cl);
+  Eigen::MatrixXd d_eta_ss = from_matrix_cl(d_eta_ss_cl);
+  Eigen::MatrixXd d_eta_pr = from_matrix_cl(d_eta_pr_cl);
+  Eigen::MatrixXd d_eta_sr = from_matrix_cl(d_eta_sr_cl);
 
+  const int theta_s_size = X_s.cols();
+  const int theta_r_size = X_r.cols();
+  const int p_size = d_eta_pr.size();
+  const int s_size = d_eta_sr.size();
+  
   // stack it up
   vari** varis = ChainableStack::instance_->memalloc_.alloc_array<vari*>(
       7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size);
@@ -250,19 +243,19 @@ inline var generalized_logistic_model(
     k++;
   }
   for (int i = 0; i < p_size; i++) {
-    gradients[k] = d_eta_pr[i];
+    gradients[k] = d_eta_pr(i);
     k++;
   }
   for (int i = 0; i < s_size; i++) {
-    gradients[k] = d_eta_sr[i];
+    gradients[k] = d_eta_sr(i);
     k++;
   }
   for (int i = 0; i < p_size; i++) {
-    gradients[k] = d_eta_ps[i];
+    gradients[k] = d_eta_ps(i);
     k++;
   }
   for (int i = 0; i < s_size; i++) {
-    gradients[k] = d_eta_ss[i];
+    gradients[k] = d_eta_ss(i);
     k++;
   }
   return var(new precomputed_gradients_vari(

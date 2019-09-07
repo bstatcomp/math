@@ -264,24 +264,6 @@ const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer
 // \cond
 static const char *reduce2_kernel_code = STRINGIFY(
     // \endcond
-    /**
-     * Matrix subtraction on the OpenCL device
-     * Subtracts the second matrix from the
-     * first matrix and stores the result
-     * in the third matrix (C=A-B).
-     *
-     * @param[out] C The output matrix.
-     * @param[in] B RHS input matrix.
-     * @param[in] A LHS input matrix.
-     * @param rows The number of rows for matrix A.
-     * @param cols The number of columns for matrix A.
-     * @param view_A triangular part of matrix A to use
-     * @param view_B triangular part of matrix B to use
-     * @note Code is a <code>const char*</code> held in
-     * <code>subtract_kernel_code.</code>
-     * Used in math/opencl/subtract_opencl.hpp
-     *  This kernel uses the helper macros available in helpers.cl.
-     */
     
     __kernel void reduce2(
             __global double *d_theta_s,
@@ -340,6 +322,71 @@ static const char *reduce2_kernel_code = STRINGIFY(
 const kernel_cl<out_buffer, out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
     reduce2("reduce2",
              {indexing_helpers, reduce2_kernel_code});
+
+// \cond
+static const char *reduce3_kernel_code = STRINGIFY(
+    // \endcond
+    
+    __kernel void reduce3(
+            __global double *d_eta_ps,
+            __global double *d_eta_ss,
+            __global double *d_eta_pr,
+            __global double *d_eta_sr,
+            __global double *tmp_s,
+            __global double *tmp_r,
+            __global double *IDp,
+            __global double *IDs,
+            unsigned int N,
+            unsigned int d_eta_p_size,
+            unsigned int d_eta_s_size) {
+        const int id = get_global_id(0);
+        if(id<d_eta_p_size) {
+            double sum = 0.0;
+            for(int i=0;i<N;i++) {
+                if((IDp[i]-1)==id){
+                    sum += tmp_s[i];
+                }
+            }
+            d_eta_ps[id] = sum;
+        }else if(id>=d_eta_p_size && id < 2*d_eta_p_size) {
+            const int idp = id -d_eta_p_size;            
+            double sum = 0.0;
+            for(int i=0;i<N;i++) {
+                if((IDp[i]-1)==idp){
+                    sum += tmp_r[i];
+                }
+            }
+            d_eta_pr[idp] = sum;
+        }else if(id>=(2*d_eta_p_size) && id< (2*d_eta_p_size+d_eta_s_size)) {
+            const int ids = id - 2*d_eta_p_size;
+            double sum = 0.0;
+            for(int i=0;i<N;i++) {
+                if((IDs[i]-1)==ids){
+                    sum += tmp_s[i];
+                }
+            }
+            d_eta_ss[ids] = sum;
+        }else {
+            const int idr = id - 2*d_eta_p_size - d_eta_s_size;
+            double sum = 0.0;
+            for(int i=0;i<N;i++) {
+                if((IDs[i]-1)==idr){
+                    sum += tmp_r[i];
+                }
+            }
+            d_eta_sr[idr] = sum;
+        }
+    }
+    // \cond
+);
+// \endcond
+
+/**
+ * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ */
+const kernel_cl<out_buffer, out_buffer, out_buffer, out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int>
+    reduce3("reduce3",
+             {indexing_helpers, reduce3_kernel_code});
 
 
 }  // namespace opencl_kernels

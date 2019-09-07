@@ -1038,22 +1038,6 @@ TEST(AgradRevMatrix, generalized_logistic_model_gradient) {
   EXPECT_NEAR(k_eq.adj(), -0.006582737, 1e-6);
   EXPECT_NEAR(base_s.adj(), -179.7728, 1e-4);
   EXPECT_NEAR(base_r.adj(), 71.12838, 1e-5);
-  /*EXPECT_NEAR(theta_r(0).adj(), 2696.52428, 1e-5);
-  EXPECT_NEAR(theta_s(0).adj(), -174.28271, 1e-5);
-  EXPECT_NEAR(eta_pr(0).adj(), 0.8872543, 1e-5);
-  EXPECT_NEAR(eta_sr(0).adj(), 0.8872543, 1e-5);
-  EXPECT_NEAR(eta_ps(0).adj(), -0.4095057, 1e-5);
-  EXPECT_NEAR(eta_ss(0).adj(), -0.4095057, 1e-5);
-
-  EXPECT_NEAR(eta_pr(1).adj(), 9.185231, 1e-5);
-  EXPECT_NEAR(eta_sr(1).adj(), -21.64441, 1e-5);
-  EXPECT_NEAR(eta_ps(1).adj(), -1.222985, 1e-5);
-  EXPECT_NEAR(eta_ss(1).adj(), -11.98555, 1e-5);
-
-  EXPECT_NEAR(eta_pr(eta_pr.rows() - 1).adj(), -12.25345, 1e-5);
-  EXPECT_NEAR(eta_sr(eta_sr.rows() - 1).adj(), -84.512, 1e-5);
-  EXPECT_NEAR(eta_ps(eta_ps.rows() - 1).adj(), -3.10383, 1e-5);
-  EXPECT_NEAR(eta_ss(eta_ss.rows() - 1).adj(), -47.82306, 1e-5);*/
 
   for (int i = 0; i < theta_r.size(); i++)
     EXPECT_NEAR(theta_r(i).adj(), d_theta_r_expected[i], 1e-3);

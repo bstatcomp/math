@@ -128,11 +128,13 @@ public:
   /**
    * Evaluates an expression in the block.
    * @tparam T_expression type of expression
-   * @param input input expression
+   * @param rhs input expression
    */
   template<typename T_expression, typename = enable_if_all_valid_expressions_and_none_scalar<T>>
-  const block__<T>& operator= (T_expression&& input) const{
-    auto expression = as_operation(std::forward<T_expression>(input));
+  const block__<T>& operator= (T_expression&& rhs) const{
+    check_size_match("block.operator=", "Rows of ", "rhs", rhs.rows(), "rows of ", "*this", this->rows());
+    check_size_match("block.operator=", "Cols of ", "rhs", rhs.cols(), "cols of ", "*this", this->cols());
+    auto expression = as_operation(std::forward<T_expression>(rhs));
     expression.evaluate_into(*this);
     return *this;
   }

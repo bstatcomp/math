@@ -17,8 +17,8 @@ static kernel_parts multi_result_kernel_generate(name_generator& ng, std::set<in
 
 template<typename T_res0, typename... T_expressions>
 static kernel_parts multi_result_kernel_generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j, T_res0 expression0, T_expressions... expressions){
-  kernel_parts parts0 = expression0.generate(ng, generated, i, j);
-  kernel_parts parts = multi_result_kernel_generate(ng, generated, i, j, expressions...);
+  kernel_parts parts0 = expression0.generate(generated, ng, i, j);
+  kernel_parts parts = multi_result_kernel_generate(generated, ng, i, j, expressions...);
   return {parts0.body + parts.body,parts0.args + parts.args};
 }
 

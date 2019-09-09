@@ -37,13 +37,13 @@ public:
 
   /**
  * generates kernel code for this expression.
- * @param ng name generator for this kernel
  * @param[in,out] generated set of already generated operations
+ * @param ng name generator for this kernel
  * @param i row index variable name
  * @param j column index variable name
  * @return part of kernel with code for this and nested expressions
  */
-  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
+  inline kernel_parts generate(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const {
     if (generated.count(instance) == 0) {
       generated.insert(instance);
       var_name = ng.generate();
@@ -63,13 +63,13 @@ public:
 
   /**
    * generates kernel code for this expression if it appears on the left hand side of an assigment.
-   * @param ng name generator for this kernel
-   * @param[in,out] generated set of already generated operations
-   * @param i row index variable name
+ * @param[in,out] generated set of already generated operations
+ * @param ng name generator for this kernel
+ * @param i row index variable name
    * @param j column index variable name
    * @return part of kernel with code for this expressions
    */
-  inline kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
+  inline kernel_parts generate_lhs(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const {
     kernel_parts res;
     if (generated.count(instance) == 0) {
       generated.insert(instance);

@@ -39,14 +39,14 @@ public:
 
   /**
  * generates kernel code for this and nested expressions.
- * @param ng name generator for this kernel
  * @param[in,out] generated set of already generated operations
+ * @param ng name generator for this kernel
  * @param i row index variable name
  * @param j column index variable name
  * @return part of kernel with code for this and nested expressions
  */
-  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const {
-    kernel_parts res = a_.generate(ng, generated, j, i);
+  inline kernel_parts generate(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const {
+    kernel_parts res = a_.generate(generated, ng, j, i);
     var_name = a_.var_name;
     return res;
   }

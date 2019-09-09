@@ -48,28 +48,28 @@ public:
 
   /**
    * generates kernel code for this and nested expressions.
-   * @param ng name generator for this kernel
-   * @param[in,out] generated set of already generated operations
-   * @param i row index variable name
+ * @param[in,out] generated set of already generated operations
+ * @param ng name generator for this kernel
+ * @param i row index variable name
    * @param j column index variable name
    * @return part of kernel with code for this and nested expressions
    */
-  inline kernel_parts generate(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
-    kernel_parts res = a_.generate(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
+  inline kernel_parts generate(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const{
+    kernel_parts res = a_.generate(generated, ng, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
     var_name = a_.var_name;
     return res;
   }
 
   /**
    * generates kernel code for this and nested expressions if this expression appears on the left hand side of an assignment.
-   * @param ng name generator for this kernel
-   * @param[in,out] generated set of already generated operations
-   * @param i row index variable name
+ * @param[in,out] generated set of already generated operations
+ * @param ng name generator for this kernel
+ * @param i row index variable name
    * @param j column index variable name
    * @return part of kernel with code for this and nested expressions
    */
-  inline kernel_parts generate_lhs(name_generator& ng, std::set<int>& generated, const std::string& i, const std::string& j) const{
-    return a_.generate_lhs(ng, generated, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
+  inline kernel_parts generate_lhs(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const{
+    return a_.generate_lhs(generated, ng, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
   }
 
   /**

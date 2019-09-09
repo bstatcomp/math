@@ -123,7 +123,7 @@ class opencl_context_base {
                                                    &device_properties);
       device_.getInfo<size_t>(CL_DEVICE_MAX_WORK_GROUP_SIZE,
                               &max_thread_block_size_);
-
+      std::cout << "Selected GPU: " << device_.getInfo<CL_DEVICE_NAME>() << std::endl;
       context_ = cl::Context(device_);
       if (device_properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
         command_queue_ = cl::CommandQueue(

@@ -264,28 +264,9 @@ const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer
 // \cond
 static const char *reduce2_kernel_code = STRINGIFY(
     // \endcond
-    /**
-     * Matrix subtraction on the OpenCL device
-     * Subtracts the second matrix from the
-     * first matrix and stores the result
-     * in the third matrix (C=A-B).
-     *
-     * @param[out] C The output matrix.
-     * @param[in] B RHS input matrix.
-     * @param[in] A LHS input matrix.
-     * @param rows The number of rows for matrix A.
-     * @param cols The number of columns for matrix A.
-     * @param view_A triangular part of matrix A to use
-     * @param view_B triangular part of matrix B to use
-     * @note Code is a <code>const char*</code> held in
-     * <code>subtract_kernel_code.</code>
-     * Used in math/opencl/subtract_opencl.hpp
-     *  This kernel uses the helper macros available in helpers.cl.
-     */
     
     __kernel void reduce2(
-            __global double *d_theta_s,
-            __global double *d_theta_r,
+            __global double *d_theta,
             __global double *tmp_s,
             __global double *tmp_r,
             __global double *X_s,
@@ -295,40 +276,35 @@ static const char *reduce2_kernel_code = STRINGIFY(
             unsigned int X_s_cols,
             unsigned int X_r_rows,
             unsigned int X_r_cols) {
-    const int i = get_global_id(0)%NUM;
-    const int id = get_global_id(0)/NUM;
-    const int id_r = id - X_s_cols;
-    __local double sum[NUM];  
-    sum[i] = 0.0;
-    for( int j=0;j<N;j+=NUM) {
-        if((i+j)<N) {
-            if(id < X_s_cols){
-                sum[i] += tmp_s[j+i]*X_s[id*X_s_rows+j+i];
-            }else{
-                
-                sum[i] += tmp_r[j+i]*X_r[id_r*X_r_rows+j+i];
+        const int i = get_global_id(0)%NUM;
+        const int id = get_global_id(0)/NUM;
+        const int id_s = id - X_r_cols;
+        __local double sum[NUM];  
+        sum[i] = 0.0;
+        for( int j=0;j<N;j+=NUM) {
+            if((i+j)<N) {
+                if(id < X_r_cols){
+                    sum[i] += tmp_r[j+i]*X_r[id*X_r_rows+j+i];
+                }else{                
+                    sum[i] += tmp_s[j+i]*X_s[id_s*X_s_rows+j+i];
+                }
             }
         }
-    }
-    barrier(CLK_LOCAL_MEM_FENCE);
-    if(i<NUM2){
-        for( int j=NUM2;j<NUM;j+=NUM2) {
-            if((i+j)<NUM) {  
-                sum[i] += sum[i+j];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if(i<NUM2){
+            for( int j=NUM2;j<NUM;j+=NUM2) {
+                if((i+j)<NUM) {  
+                    sum[i] += sum[i+j];
+                }
             }
         }
-    }
-    barrier(CLK_LOCAL_MEM_FENCE);
-    if(i<1){
-        for( int j=1;j<NUM2;j++) {
-            sum[0] += sum[j];
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if(i<1){
+            for( int j=1;j<NUM2;j++) {
+                sum[0] += sum[j];
+            }
+            d_theta[id] = sum[0];
         }
-        if(id < X_s_cols){
-            d_theta_s[id] = sum[0];
-        }else{
-            d_theta_r[id_r] = sum[0];
-        }
-    }
     }
     // \cond
 );
@@ -337,9 +313,135 @@ static const char *reduce2_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<out_buffer, out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
+const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
     reduce2("reduce2",
              {indexing_helpers, reduce2_kernel_code});
+
+// \cond
+static const char *reduce3_kernel_code = STRINGIFY(
+    // \endcond
+    
+    __kernel void reduce3(
+            __global double *d_eta,
+            __global double *tmp_s,
+            __global double *tmp_r,
+            __global double *IDp,
+            __global double *IDs,
+            unsigned int N,
+            unsigned int d_eta_p_size,
+            unsigned int d_eta_s_size) {
+        const int i = get_global_id(0)%NUM;
+        const int id = get_global_id(0)/NUM;
+        __local double sum[NUM];  
+        sum[i] = 0.0;
+        if(id<d_eta_p_size) {
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                     if((IDp[i+j]-1)==id){
+                        sum[i] += tmp_r[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta[id] = sum[0];
+            }            
+        }else if(id>=d_eta_p_size && id < (d_eta_p_size+d_eta_s_size)) {
+            const int idr = id - d_eta_p_size;
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDs[i+j]-1)==idr){
+                        sum[i] += tmp_r[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta[id] = sum[0];
+            }
+        }else if(id>=(d_eta_p_size+d_eta_s_size) && id< (2*d_eta_p_size+d_eta_s_size)) {
+            const int ida = id - d_eta_p_size - d_eta_s_size;
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDp[i+j]-1)==ida){
+                        sum[i] += tmp_s[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta[id] = sum[0];
+            }            
+            
+        }else {
+            const int ids = id - 2*d_eta_p_size-d_eta_s_size;
+            for( int j=0;j<N;j+=NUM) {
+                if((i+j)<N) {
+                    if((IDs[i+j]-1)==ids){
+                        sum[i] += tmp_s[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<NUM2){
+                for( int j=NUM2;j<NUM;j+=NUM2) {
+                    if((i+j)<NUM) {  
+                        sum[i] += sum[i+j];
+                    }
+                }
+            }
+            barrier(CLK_LOCAL_MEM_FENCE);
+            if(i<1){
+                for( int j=1;j<NUM2;j++) {
+                    sum[0] += sum[j];
+                }
+                d_eta[id] = sum[0];
+            }
+        }
+    }
+    // \cond
+);
+// \endcond
+
+/**
+ * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ */
+const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int>
+    reduce3("reduce3",
+             {indexing_helpers, reduce3_kernel_code});
 
 
 }  // namespace opencl_kernels

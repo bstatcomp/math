@@ -3,12 +3,6 @@
 #ifdef STAN_OPENCL
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_ALL
-#ifndef OPENCL_DEVICE_ID
-#error OPENCL_DEVICE_ID_NOT_SET
-#endif
-#ifndef OPENCL_PLATFORM_ID
-#error OPENCL_PLATFORM_ID_NOT_SET
-#endif
 
 #include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/err/check_opencl.hpp>
@@ -33,6 +27,13 @@
  */
 namespace stan {
 namespace math {
+#ifdef USE_CMDSTAN
+extern int gpu_platform;  
+extern int gpu_device;
+#else
+int gpu_platform = -1;  
+int gpu_device = -1;
+#endif
 namespace opencl {
 /**
  * A helper function to convert an array to a cl::size_t<N>.
@@ -102,22 +103,22 @@ class opencl_context_base {
     try {
       // platform
       cl::Platform::get(&platforms_);
-      if (OPENCL_PLATFORM_ID >= platforms_.size()) {
+      if (gpu_platform >= platforms_.size()) {
         system_error("OpenCL Initialization", "[Platform]", -1,
                      "CL_INVALID_PLATFORM");
       }
-      platform_ = platforms_[OPENCL_PLATFORM_ID];
+      platform_ = platforms_[gpu_platform];
       platform_name_ = platform_.getInfo<CL_PLATFORM_NAME>();
       platform_.getDevices(DEVICE_FILTER, &devices_);
       if (devices_.size() == 0) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_DEVICE_NOT_FOUND");
       }
-      if (OPENCL_DEVICE_ID >= devices_.size()) {
+      if (gpu_device >= devices_.size()) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_INVALID_DEVICE");
       }
-      device_ = devices_[OPENCL_DEVICE_ID];
+      device_ = devices_[gpu_device];
       // context and queue
       cl_command_queue_properties device_properties;
       device_.getInfo<cl_command_queue_properties>(CL_DEVICE_QUEUE_PROPERTIES,
@@ -241,7 +242,7 @@ class opencl_context {
         << opencl_context_base::getInstance()
                .platform_.getInfo<CL_PLATFORM_VENDOR>()
         << "\n";
-    msg << "\tDevice " << OPENCL_DEVICE_ID << ": "
+    msg << "\tDevice " << gpu_device << ": "
         << "\n";
     msg << "\t\tDevice Name: "
         << opencl_context_base::getInstance().device_.getInfo<CL_DEVICE_NAME>()

@@ -175,30 +175,21 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
  */
 const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer>
     generalized_logistic_model("generalized_logistic_model", {indexing_helpers, helpnow, generalized_logistic_model_kernel_code});
+
 // \cond
-static const char *reduce_kernel_code = STRINGIFY(
+static const char *reduce_rows_kernel_code = STRINGIFY(
     // \endcond
     /**
-     * Matrix subtraction on the OpenCL device
-     * Subtracts the second matrix from the
-     * first matrix and stores the result
-     * in the third matrix (C=A-B).
-     *
-     * @param[out] C The output matrix.
-     * @param[in] B RHS input matrix.
-     * @param[in] A LHS input matrix.
-     * @param rows The number of rows for matrix A.
-     * @param cols The number of columns for matrix A.
-     * @param view_A triangular part of matrix A to use
-     * @param view_B triangular part of matrix B to use
-     * @note Code is a <code>const char*</code> held in
-     * <code>subtract_kernel_code.</code>
-     * Used in math/opencl/subtract_opencl.hpp
-     *  This kernel uses the helper macros available in helpers.cl.
+     * This kernel peforms a sum reduce on each row of the matrix
+     * 
+     * @param[in] data input matrix of values to reduce sum
+     * @param[out] result a vector of reduced rows
+     * @param N number of columns in each row
+     * 
      */
     
-    __kernel void reduce(
-            __global double *in,
+    __kernel void reduce_rows(
+            __global double *data,
             __global double *result,
             unsigned int N) {
     int i = get_global_id(0)%NUM;
@@ -207,7 +198,7 @@ static const char *reduce_kernel_code = STRINGIFY(
     sum[i] = 0.0;
     for( int j=0;j<N;j+=NUM) {
         if((i+j)<N) {
-            sum[i] += in[j+i+id*N];
+            sum[i] += data[j+i+id*N];
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -229,12 +220,32 @@ static const char *reduce_kernel_code = STRINGIFY(
     // \cond
 );
 // \endcond
+/**
+ * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ */
+const kernel_cl<in_buffer, out_buffer, int>
+    reduce_rows("reduce_rows", {indexing_helpers, reduce_rows_kernel_code});
+
 
 // \cond
-static const char *reduce3_kernel_code = STRINGIFY(
+static const char *reduce_d_eta_kernel_code = STRINGIFY(
     // \endcond
-    
-    __kernel void reduce3(
+    /**
+     * This kernel peforms a specific reduce of the gradients for
+     * the eta parameters for the generalized logistic model.
+     * It computes the values to reduce on the fly from IDp,
+     * IDs and the precomputed tmp_r and tmp_s values.
+     * This is done in order to reduce the memory consumption.
+     * 
+     * @param[out] d_eta gradients of the eta parameters
+     * @param[in] the temporary results for all iterations for the gradients and intermediate results
+     * @param[in] IDp vector of patient IDs
+     * @param[in] IDs vector of study IDs
+     * @param N number of columns in each row
+     * @param d_eta_p_size size of eta_p vectors
+     * @param d_eta_s_size size of eta_s vectors
+     */
+    __kernel void reduce_d_eta(
             __global double *d_eta,
             __global double *temp_results,
             __global double *IDp,
@@ -349,11 +360,11 @@ static const char *reduce3_kernel_code = STRINGIFY(
 // \endcond
 
 /**
- * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ * See the docs for \link kernels/generalized_logistic_model.hpp reduce_d_eta() \endlink
  */
 const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, int, int, int>
-    reduce3("reduce3",
-             {indexing_helpers, reduce3_kernel_code});
+    reduce_d_eta("reduce_d_eta",
+             {indexing_helpers, reduce_d_eta_kernel_code});
 
 
 }  // namespace opencl_kernels

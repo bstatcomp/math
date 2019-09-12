@@ -55,7 +55,6 @@ inline var generalized_logistic_model(
     matrix_cl<double> tX_r_cl = to_matrix_cl<double>(X_r);
     tX_r_cl.wait_for_read_write_events();
     X_r_buf = tX_r_cl.buffer();
-
     matrix_d IDp_temp(1, IDp.size());
     matrix_d IDs_temp(1, IDs.size());
     matrix_d is_pbo_temp(is_pbo.size(), 1);
@@ -122,14 +121,20 @@ inline var generalized_logistic_model(
   matrix_cl<double> d_theta_cl(1, X_s.cols()+X_r.cols());
   matrix_cl<double> params_cl(1,8);
   try {
-    opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
-     eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, tgt_cl, tmp_s_cl, tmp_r_cl,
-      d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl, d_beta_cl);
-    opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
-     d_beta_cl, tmp_s_cl, tmp_r_cl, params_cl, N);
-    opencl_kernels::reduce2(cl::NDRange(256*(X_s.cols()+X_r.cols())),cl::NDRange(256), d_theta_cl,
+    if(N > 0) {
+      opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
+        eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, tgt_cl, tmp_s_cl, tmp_r_cl,
+          d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl, d_beta_cl);
+      opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
+        d_beta_cl, tmp_s_cl, tmp_r_cl, params_cl, N);
+    }
+    if((X_s.cols()+X_r.cols())>0 && N > 0) {
+      opencl_kernels::reduce2(cl::NDRange(256*(X_s.cols()+X_r.cols())),cl::NDRange(256), d_theta_cl,
                              tmp_s_cl, tmp_r_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
-    opencl_kernels::reduce3(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, tmp_s_cl, tmp_r_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
+    }
+    if(d_eta_size > 0 && N>0) {
+      opencl_kernels::reduce3(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, tmp_s_cl, tmp_r_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
+    }    
 
   } catch (cl::Error& e) {
     check_opencl_error("generalized_logistic_model", e);
@@ -146,7 +151,6 @@ inline var generalized_logistic_model(
   Eigen::MatrixXd d_theta = from_matrix_cl(d_theta_cl);  
   Eigen::MatrixXd d_eta = from_matrix_cl(d_eta_cl);
   const int theta_size = X_s.cols() + X_r.cols();
-
   // stack it up
   vari** varis = ChainableStack::instance_->memalloc_.alloc_array<vari*>(7 + theta_size + d_eta_size);
   varis[0] = tauv.vi_;

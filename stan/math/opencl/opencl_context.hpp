@@ -30,9 +30,11 @@ namespace math {
 #ifdef USE_CMDSTAN
 extern int gpu_platform;  
 extern int gpu_device;
+extern int use_cpu;
 #else
 int gpu_platform = OPENCL_PLATFORM_ID;  
 int gpu_device = OPENCL_DEVICE_ID;
+int use_cpu = 0;
 #endif
 namespace opencl {
 /**

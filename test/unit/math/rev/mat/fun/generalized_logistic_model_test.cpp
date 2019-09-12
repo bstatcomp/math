@@ -6,7 +6,7 @@
 #include <chrono>
 
 TEST(AgradRevMatrix, test_GLM_empty) {
-  stan::math::copied = 0;
+  stan::math::opencl_data_copied = 0;
   // test data
   std::vector<int> IDp = {};
   std::vector<int> IDs = {};
@@ -144,7 +144,7 @@ TEST(AgradRevMatrix, test_GLM_empty) {
 }
 
 TEST(AgradRevMatrix, test_GLM_22_additive) {
-  stan::math::copied = 0;
+  stan::math::opencl_data_copied = 0;
   // test data
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
@@ -399,7 +399,7 @@ TEST(AgradRevMatrix, test_GLM_22_additive) {
 }
 
 TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
-  stan::math::copied = 0;
+  stan::math::opencl_data_copied = 0;
   // test data
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
@@ -654,7 +654,7 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
 }
 
 TEST(AgradRevMatrix, test_GLM_00_additive) {
-  stan::math::copied = 0;
+  stan::math::opencl_data_copied = 0;
   // test data
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
@@ -884,7 +884,7 @@ TEST(AgradRevMatrix, test_GLM_00_additive) {
 
 TEST(AgradRevMatrix, test_GLM_21_both) {
   // test data
-  stan::math::copied = 0;
+  stan::math::opencl_data_copied = 0;
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
       4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,

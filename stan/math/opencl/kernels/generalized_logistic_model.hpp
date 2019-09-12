@@ -230,13 +230,6 @@ static const char *reduce_kernel_code = STRINGIFY(
 );
 // \endcond
 
-/**
- * See the docs for \link kernels/subtract.hpp subtract() \endlink
- */
-const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
-    reduce2("reduce2",
-             {indexing_helpers, reduce2_kernel_code});
-
 // \cond
 static const char *reduce3_kernel_code = STRINGIFY(
     // \endcond

@@ -89,25 +89,24 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         int j = 0;
         if(tmp[14]*tmp[15]>0){
             for(j=0;j<tmp[10];j++) {
-            int id_xs = j*tmp[2]+i;
-            int id_theta_s = j;
-            cov_s = cov_s + X_s[id_xs]*theta_s[id_theta_s];
+                int id_xs = j*tmp[2]+i;
+                int id_theta_s = j;
+                cov_s = cov_s + X_s[id_xs]*theta_s[id_theta_s];
             }
         }
         if(tmp[16]*tmp[17]>0){
             for(j=0;j<tmp[12];j++) {
-            int id_xr = j*tmp[2]+i;
-            int id_theta_r = j;
-            cov_r = cov_r + X_r[id_xr]*theta_r[id_theta_r];
+                int id_xr = j*tmp[2]+i;
+                int id_theta_r = j;
+                cov_r = cov_r + X_r[id_xr]*theta_r[id_theta_r];
             }
         }
-
         if (tmp[0] == 1) {
             cov_s = exp(cov_s);
         }      
         if (tmp[1] == 1) {
             cov_r = exp(cov_r);
-        }  
+        } 
 
         double temp1 = tmp[7] / (tmp[7] - tmp[6]);
         double temp2 = (exp(-tmp[6] * time[i]) - exp(-tmp[7] * time[i]));
@@ -155,6 +154,17 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         temp_results[i+6*N] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
              * ((tmp[7] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 - temp1 * exp(-tmp[6] * time[i]) * time[i]);
         temp_results[i+7*N] = d_beta;
+
+        for(int j=0;j<tmp[12];j++) {
+            int indxr = j*tmp[13]+i;
+            int indtmp = i+(8+j)*N;
+            temp_results[indtmp] = tmp_r*X_r[indxr];
+        }
+        for(int j=0;j<tmp[10];j++) {
+            int indxs = j*tmp[11]+i;
+            int indtmp = i+(8+tmp[12]+j)*N;
+            temp_results[indtmp] = tmp_s*X_s[indxs];
+        }
     }
     // \cond
 );

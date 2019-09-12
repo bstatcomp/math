@@ -122,10 +122,6 @@ inline var generalized_logistic_model(
           eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, temp_results_cl);
         opencl_kernels::reduce(cl::NDRange(256*num_of_reduced_results),cl::NDRange(256), temp_results_cl, params_cl, N);
       }
-      // if((X_s.cols()+X_r.cols())>0 && N > 0) {
-      //   opencl_kernels::reduce2(cl::NDRange(256*(X_s.cols()+X_r.cols())),cl::NDRange(256), d_theta_cl,
-      //                         temp_results_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
-      // }
       if(d_eta_size > 0 && N>0) {
         opencl_kernels::reduce3(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
       }    

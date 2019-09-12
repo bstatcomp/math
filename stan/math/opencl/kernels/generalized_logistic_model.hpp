@@ -233,60 +233,6 @@ static const char *reduce_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<in_buffer, out_buffer, int>
-    reduce("reduce", {indexing_helpers, reduce_kernel_code});
-
-// \cond
-static const char *reduce2_kernel_code = STRINGIFY(
-    // \endcond
-    
-    __kernel void reduce2(
-            __global double *d_theta,
-            __global double *temp_results,
-            __global double *X_s,
-            __global double *X_r,
-            unsigned int N,
-            unsigned int X_s_rows,
-            unsigned int X_s_cols,
-            unsigned int X_r_rows,
-            unsigned int X_r_cols) {
-        const int i = get_global_id(0)%NUM;
-        const int id = get_global_id(0)/NUM;
-        const int id_s = id - X_r_cols;
-        __local double sum[NUM];  
-        sum[i] = 0.0;
-        for( int j=0;j<N;j+=NUM) {
-            if((i+j)<N) {
-                if(id < X_r_cols){
-                    sum[i] += temp_results[j+i+2*N]*X_r[id*X_r_rows+j+i];
-                }else{                
-                    sum[i] += temp_results[j+i+N]*X_s[id_s*X_s_rows+j+i];
-                }
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if(i<NUM2){
-            for( int j=NUM2;j<NUM;j+=NUM2) {
-                if((i+j)<NUM) {  
-                    sum[i] += sum[i+j];
-                }
-            }
-        }
-        barrier(CLK_LOCAL_MEM_FENCE);
-        if(i<1){
-            for( int j=1;j<NUM2;j++) {
-                sum[0] += sum[j];
-            }
-            d_theta[id] = sum[0];
-        }
-    }
-    // \cond
-);
-// \endcond
-
-/**
- * See the docs for \link kernels/subtract.hpp subtract() \endlink
- */
 const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
     reduce2("reduce2",
              {indexing_helpers, reduce2_kernel_code});

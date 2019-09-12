@@ -31,8 +31,8 @@ namespace math {
 extern int gpu_platform;  
 extern int gpu_device;
 #else
-int gpu_platform = -1;  
-int gpu_device = -1;
+int gpu_platform = OPENCL_PLATFORM_ID;  
+int gpu_device = OPENCL_DEVICE_ID;
 #endif
 namespace opencl {
 /**
@@ -61,6 +61,27 @@ inline cl::size_t<3> to_size_t(const size_t (&values)[3]) {
   for (size_t i = 0; i < 3; i++)
     s[i] = values[i];
   return s;
+}
+inline void choose_best_device() {
+  std::vector<cl::Platform> temp_platforms_;
+  std::vector<cl::Device> temp_devices_;
+  cl::Platform::get(&temp_platforms_);
+  if(temp_platforms_.size() == 0) {
+    system_error("OpenCL Initialization", "[Platform]", -1,
+                     "No OpenCL device found");
+  }
+  int max_SMs = 0;
+  for(int i = 0;i < temp_platforms_.size(); i++) {
+    temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
+    for(int j = 0;j < temp_devices_.size(); j++) {
+      int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+      if(device_SMs > max_SMs) {
+        max_SMs = device_SMs;
+        gpu_platform = i;
+        gpu_device = j;
+      }
+    }
+  }
 }
 }  // namespace opencl
 /**
@@ -101,6 +122,10 @@ class opencl_context_base {
    */
   opencl_context_base() {
     try {
+      
+      if(gpu_platform == -1 || gpu_device == -1){
+       opencl::choose_best_device(); 
+      }
       // platform
       cl::Platform::get(&platforms_);
       if (gpu_platform >= platforms_.size()) {
@@ -125,7 +150,8 @@ class opencl_context_base {
                                                    &device_properties);
       device_.getInfo<size_t>(CL_DEVICE_MAX_WORK_GROUP_SIZE,
                               &max_thread_block_size_);
-      std::cout << "Selected GPU: " << device_.getInfo<CL_DEVICE_NAME>() << std::endl;
+      std::cout << "Selected GPU: " << device_.getInfo<CL_DEVICE_NAME>()
+                << " on platform " << platform_name_ << std::endl;
       context_ = cl::Context(device_);
       if (device_properties & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) {
         command_queue_ = cl::CommandQueue(

@@ -107,18 +107,11 @@ TEST(AgradRevMatrix, test_GLM_empty) {
   }
 
   // run
-  // std::chrono::steady_clock::time_point begin =
-  // std::chrono::steady_clock::now();
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
-  // std::chrono::steady_clock::time_point end =
-  // std::chrono::steady_clock::now(); std::cout << "ELapsed time = " <<
-  // std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-  // << " us" << std::endl;
-  // std::cout << "tgt " << std::setprecision(15) << d.val() << std::endl;
 
   // check values
   EXPECT_NEAR(d.val(), target, 1e-8);
@@ -362,18 +355,11 @@ TEST(AgradRevMatrix, test_GLM_22_additive) {
   }
 
   // run
-  // std::chrono::steady_clock::time_point begin =
-  // std::chrono::steady_clock::now();
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
-  // std::chrono::steady_clock::time_point end =
-  // std::chrono::steady_clock::now(); std::cout << "ELapsed time = " <<
-  // std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-  // << " us" << std::endl; std::cout << "tgt " << std::setprecision(17) <<
-  // d.val() << std::endl;
 
   // check values
   EXPECT_NEAR(d.val(), target, 1e-8);
@@ -617,18 +603,11 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
   }
 
   // run
-  // std::chrono::steady_clock::time_point begin =
-  // std::chrono::steady_clock::now();
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
-  // std::chrono::steady_clock::time_point end =
-  // std::chrono::steady_clock::now(); std::cout << "ELapsed time = " <<
-  // std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-  // << " us" << std::endl; std::cout << "tgt " << std::setprecision(15) <<
-  // d.val() << std::endl;
 
   // check values
   EXPECT_NEAR(d.val(), target, 1e-8);
@@ -846,18 +825,11 @@ TEST(AgradRevMatrix, test_GLM_00_additive) {
   }
 
   // run
-  // std::chrono::steady_clock::time_point begin =
-  // std::chrono::steady_clock::now();
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
-  // std::chrono::steady_clock::time_point end =
-  // std::chrono::steady_clock::now(); std::cout << "ELapsed time = " <<
-  // std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-  // << " us" << std::endl; std::cout << "tgt " << std::setprecision(15) <<
-  // d.val() << std::endl;
 
   // check values
   EXPECT_NEAR(d.val(), target, 1e-8);
@@ -1093,18 +1065,11 @@ TEST(AgradRevMatrix, test_GLM_21_both) {
   }
 
   // run
-  // std::chrono::steady_clock::time_point begin =
-  // std::chrono::steady_clock::now();
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
       eta_ss, base_s, base_r);
   d.grad();
-  // std::chrono::steady_clock::time_point end =
-  // std::chrono::steady_clock::now(); std::cout << "ELapsed time = " <<
-  // std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()
-  // << " us" << std::endl;
-  // std::cout << "tgt " << std::setprecision(15) << d.val() << std::endl;
 
   // check values
   EXPECT_NEAR(d.val(), target, 1e-8);

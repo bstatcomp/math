@@ -111,14 +111,7 @@ inline var generalized_logistic_model(
     tmp(14,0) = theta_s.cols();  tmp(15,0) = theta_s.rows();
     tmp(16,0) = theta_r.cols();  tmp(17,0) = theta_r.rows();
     matrix_cl<double> tmp_cl(tmp);  
-    matrix_cl<double> tgt_cl(1, N);
-    matrix_cl<double> tmp_s_cl(1, N);
-    matrix_cl<double> tmp_r_cl(1, N);
-    matrix_cl<double> d_tau_cl(1, N);
-    matrix_cl<double> d_beta_pbo_cl(1, N);
-    matrix_cl<double> d_k_eq_cl(1, N);
-    matrix_cl<double> d_k_el_cl(1, N);
-    matrix_cl<double> d_beta_cl(1, N);
+    matrix_cl<double> temp_results_cl(8, N);
     matrix_cl<double> d_eta_cl(1, d_eta_size);
     matrix_cl<double> d_theta_cl(1, X_s.cols()+X_r.cols());
     matrix_cl<double> params_cl(1,8);
@@ -126,17 +119,15 @@ inline var generalized_logistic_model(
     try {
       if(N > 0) {
         opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
-          eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, tgt_cl, tmp_s_cl, tmp_r_cl,
-            d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl, d_beta_cl);
-        opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), tgt_cl, d_tau_cl, d_beta_pbo_cl, d_k_eq_cl, d_k_el_cl,
-          d_beta_cl, tmp_s_cl, tmp_r_cl, params_cl, N);
+          eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, temp_results_cl);
+        opencl_kernels::reduce(cl::NDRange(256*8),cl::NDRange(256), temp_results_cl, params_cl, N);
       }
       if((X_s.cols()+X_r.cols())>0 && N > 0) {
         opencl_kernels::reduce2(cl::NDRange(256*(X_s.cols()+X_r.cols())),cl::NDRange(256), d_theta_cl,
-                              tmp_s_cl, tmp_r_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
+                              temp_results_cl, X_s_cl, X_r_cl, N, X_s.rows(), X_s.cols(), X_r.rows(), X_r.cols());
       }
       if(d_eta_size > 0 && N>0) {
-        opencl_kernels::reduce3(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, tmp_s_cl, tmp_r_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
+        opencl_kernels::reduce3(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
       }    
 
     } catch (cl::Error& e) {
@@ -144,13 +135,13 @@ inline var generalized_logistic_model(
     }
     matrix_d params = from_matrix_cl(params_cl);
     const double tgt = params(0,0);
-    const double d_tau = params(0,1);
-    const double d_beta_pbo = params(0,2);
-    const double d_k_eq = params(0,3);
-    const double d_k_el = params(0,4);
-    const double d_beta = params(0,5);
-    const double d_base_s = params(0,6);
-    const double d_base_r = params(0,7);
+    const double d_base_s = params(0,1);
+    const double d_base_r = params(0,2);
+    const double d_tau = params(0,3);
+    const double d_beta_pbo = params(0,4);
+    const double d_k_eq = params(0,5);
+    const double d_k_el = params(0,6);
+    const double d_beta = params(0,7);
     Eigen::MatrixXd d_theta = from_matrix_cl(d_theta_cl);  
     Eigen::MatrixXd d_eta = from_matrix_cl(d_eta_cl);
     const int theta_size = X_s.cols() + X_r.cols();

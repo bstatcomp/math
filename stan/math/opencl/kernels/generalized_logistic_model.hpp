@@ -79,11 +79,9 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
                            __global double *X_s, __global double *theta_s,
                            __global double *X_r, __global double *theta_r,
                            __global double *time, __global double *is_pbo, __global double *score,
-                           __global double *outtmp2,
-                           __global double *outtmp3, __global double *outtmp4,
-                           __global double *outtmp6, __global double *outtmp9,
-                           __global double *outtmp10, __global double *outtmp11, __global double *outtmp12) {
+                           __global double *temp_results) {
         int i = get_global_id(0);
+        int N = get_global_size(0);
         int idp = IDp[i];
         int ids = IDs[i];
         double cov_s = tmp[8] + eta_ps[idp-1] + eta_ss[ids-1];
@@ -147,16 +145,16 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
             tmp_r = tmp_r * cov_r;
         }
         double tgt = dbeta(score[i], muS * tmp[3], (1 - muS) * tmp[3]);
-        outtmp2[i] = tgt;
-        outtmp3[i] = tmp_s;
-        outtmp4[i] = tmp_r;
-        outtmp6[i] = d_tau;
-        outtmp9[i] = d_x_d_mu * (-is_pbo[ids - 1]) * temp1 * temp2;
-        outtmp10[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
+        temp_results[i] = tgt;
+        temp_results[i+N] = tmp_s;
+        temp_results[i+2*N] = tmp_r;
+        temp_results[i+3*N] = d_tau;
+        temp_results[i+4*N] = d_x_d_mu * (-is_pbo[ids - 1]) * temp1 * temp2;
+        temp_results[i+5*N] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
              * ((-tmp[6] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 + temp1 * exp(-tmp[7] * time[i]) * time[i]);
-        outtmp11[i] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
+        temp_results[i+6*N] = d_x_d_mu * (-is_pbo[ids - 1] * tmp[5])
              * ((tmp[7] / ((tmp[7] - tmp[6]) * (tmp[7] - tmp[6]))) * temp2 - temp1 * exp(-tmp[6] * time[i]) * time[i]);
-        outtmp12[i] = d_beta;
+        temp_results[i+7*N] = d_beta;
     }
     // \cond
 );
@@ -165,10 +163,8 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer,
-                out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer, out_buffer>
-    generalized_logistic_model("generalized_logistic_model",
-             {indexing_helpers, helpnow, generalized_logistic_model_kernel_code});
+const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer>
+    generalized_logistic_model("generalized_logistic_model", {indexing_helpers, helpnow, generalized_logistic_model_kernel_code});
 // \cond
 static const char *reduce_kernel_code = STRINGIFY(
     // \endcond
@@ -192,14 +188,7 @@ static const char *reduce_kernel_code = STRINGIFY(
      */
     
     __kernel void reduce(
-            __global double *in1,
-            __global double *in2,
-            __global double *in3,
-            __global double *in4,
-            __global double *in5,
-            __global double *in6,
-            __global double *tmp_s,
-            __global double *tmp_r,
+            __global double *in,
             __global double *result,
             unsigned int N) {
     int i = get_global_id(0)%NUM;
@@ -208,30 +197,7 @@ static const char *reduce_kernel_code = STRINGIFY(
     sum[i] = 0.0;
     for( int j=0;j<N;j+=NUM) {
         if((i+j)<N) {
-            if(id==0){
-                sum[i] += in1[j+i];
-            }
-            if(id==1){
-                sum[i] += in2[j+i];
-            }
-            if(id==2){
-                sum[i] += in3[j+i];
-            }
-            if(id==3){
-                sum[i] += in4[j+i];
-            }
-            if(id==4){
-                sum[i] += in5[j+i];
-            }
-            if(id==5){
-                sum[i] += in6[j+i];
-            }
-            if(id==6){
-                sum[i] += tmp_s[j+i];
-            }
-            if(id==7){
-                sum[i] += tmp_r[j+i];
-            }
+            sum[i] += in[j+i+id*N];
         }
     }
     barrier(CLK_LOCAL_MEM_FENCE);
@@ -257,9 +223,8 @@ static const char *reduce_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer, int>
-    reduce("reduce",
-             {indexing_helpers, reduce_kernel_code});
+const kernel_cl<in_buffer, out_buffer, int>
+    reduce("reduce", {indexing_helpers, reduce_kernel_code});
 
 // \cond
 static const char *reduce2_kernel_code = STRINGIFY(
@@ -267,8 +232,7 @@ static const char *reduce2_kernel_code = STRINGIFY(
     
     __kernel void reduce2(
             __global double *d_theta,
-            __global double *tmp_s,
-            __global double *tmp_r,
+            __global double *temp_results,
             __global double *X_s,
             __global double *X_r,
             unsigned int N,
@@ -284,9 +248,9 @@ static const char *reduce2_kernel_code = STRINGIFY(
         for( int j=0;j<N;j+=NUM) {
             if((i+j)<N) {
                 if(id < X_r_cols){
-                    sum[i] += tmp_r[j+i]*X_r[id*X_r_rows+j+i];
+                    sum[i] += temp_results[j+i+2*N]*X_r[id*X_r_rows+j+i];
                 }else{                
-                    sum[i] += tmp_s[j+i]*X_s[id_s*X_s_rows+j+i];
+                    sum[i] += temp_results[j+i+N]*X_s[id_s*X_s_rows+j+i];
                 }
             }
         }
@@ -313,7 +277,7 @@ static const char *reduce2_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
+const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, int, int, int, int, int>
     reduce2("reduce2",
              {indexing_helpers, reduce2_kernel_code});
 
@@ -323,8 +287,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
     
     __kernel void reduce3(
             __global double *d_eta,
-            __global double *tmp_s,
-            __global double *tmp_r,
+            __global double *temp_results,
             __global double *IDp,
             __global double *IDs,
             unsigned int N,
@@ -338,7 +301,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
             for( int j=0;j<N;j+=NUM) {
                 if((i+j)<N) {
                      if((IDp[i+j]-1)==id){
-                        sum[i] += tmp_r[i+j];
+                        sum[i] += temp_results[i+j+2*N];
                     }
                 }
             }
@@ -362,7 +325,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
             for( int j=0;j<N;j+=NUM) {
                 if((i+j)<N) {
                     if((IDs[i+j]-1)==idr){
-                        sum[i] += tmp_r[i+j];
+                        sum[i] += temp_results[i+j+2*N];
                     }
                 }
             }
@@ -386,7 +349,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
             for( int j=0;j<N;j+=NUM) {
                 if((i+j)<N) {
                     if((IDp[i+j]-1)==ida){
-                        sum[i] += tmp_s[i+j];
+                        sum[i] += temp_results[i+j+N];
                     }
                 }
             }
@@ -411,7 +374,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
             for( int j=0;j<N;j+=NUM) {
                 if((i+j)<N) {
                     if((IDs[i+j]-1)==ids){
-                        sum[i] += tmp_s[i+j];
+                        sum[i] += temp_results[i+j+N];
                     }
                 }
             }
@@ -439,7 +402,7 @@ static const char *reduce3_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/subtract.hpp subtract() \endlink
  */
-const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, in_buffer, int, int, int>
+const kernel_cl<out_buffer, in_buffer, in_buffer, in_buffer, int, int, int>
     reduce3("reduce3",
              {indexing_helpers, reduce3_kernel_code});
 

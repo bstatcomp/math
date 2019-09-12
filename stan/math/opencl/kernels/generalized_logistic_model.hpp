@@ -12,67 +12,6 @@ namespace opencl_kernels {
 static const char *generalized_logistic_model_kernel_code = STRINGIFY(
     // \endcond
      
-    
-    double digamma(double x)
-    {
-    double c = 8.5;
-    double euler_mascheroni = 0.57721566490153286060;
-    double r;
-    double value;
-    double x2;
-    if (x <= 0.0)
-    {
-        value = 0.0;
-        return value;
-    }
-    if (x <= 0.000001)
-    {
-        value = -euler_mascheroni - 1.0 / x + 1.6449340668482264365 * x;
-        return value;
-    }
-    value = 0.0;
-    x2 = x;
-    while (x2 < c)
-    {
-        value = value - 1.0 / x2;
-        x2 = x2 + 1.0;
-    }
-    r = 1.0 / x2;
-    value = value + log(x2) - 0.5 * r;
-
-    r = r * r;
-    
-    value = value
-        - r * (1.0 / 12.0
-        - r * (1.0 / 120.0
-            - r * (1.0 / 252.0
-            - r * (1.0 / 240.0
-                - r * (1.0 / 132.0)))));
-
-    return value;
-    }
-    double dbeta(const double x, const double a, const double b) {
-        return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
-    }
-    /**
-     * Matrix subtraction on the OpenCL device
-     * Subtracts the second matrix from the
-     * first matrix and stores the result
-     * in the third matrix (C=A-B).
-     *
-     * @param[out] C The output matrix.
-     * @param[in] B RHS input matrix.
-     * @param[in] A LHS input matrix.
-     * @param rows The number of rows for matrix A.
-     * @param cols The number of columns for matrix A.
-     * @param view_A triangular part of matrix A to use
-     * @param view_B triangular part of matrix B to use
-     * @note Code is a <code>const char*</code> held in
-     * <code>subtract_kernel_code.</code>
-     * Used in math/opencl/subtract_opencl.hpp
-     *  This kernel uses the helper macros available in helpers.cl.
-     */
-    
     __kernel void generalized_logistic_model(__global double *tmp, __global double *IDp,
                            __global double *IDs, __global double *eta_ps, __global double *eta_ss,
                            __global double *eta_pr, __global double *eta_sr,
@@ -171,10 +110,10 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
 // \endcond
 
 /**
- * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ * See the docs for \link kernels/generalized_logistic_model.hpp generalized_logistic_model() \endlink
  */
 const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer>
-    generalized_logistic_model("generalized_logistic_model", {indexing_helpers, helpnow, generalized_logistic_model_kernel_code});
+    generalized_logistic_model("generalized_logistic_model", {indexing_helpers, lbeta_helpers, generalized_logistic_model_kernel_code});
 
 // \cond
 static const char *reduce_rows_kernel_code = STRINGIFY(
@@ -221,7 +160,7 @@ static const char *reduce_rows_kernel_code = STRINGIFY(
 );
 // \endcond
 /**
- * See the docs for \link kernels/subtract.hpp subtract() \endlink
+ * See the docs for \link kernels/generalized_logistic_model.hpp reduce_rows() \endlink
  */
 const kernel_cl<in_buffer, out_buffer, int>
     reduce_rows("reduce_rows", {indexing_helpers, reduce_rows_kernel_code});

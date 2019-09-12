@@ -331,6 +331,49 @@ static const char* lbeta_helpers =
     }
     return 0.0; 
   }
+
+  double digamma(double x)
+  {
+    double c = 8.5;
+    double euler_mascheroni = 0.57721566490153286060;
+    double r;
+    double value;
+    double x2;
+    if (x <= 0.0)
+    {
+        value = 0.0;
+        return value;
+    }
+    if (x <= 0.000001)
+    {
+        value = -euler_mascheroni - 1.0 / x + 1.6449340668482264365 * x;
+        return value;
+    }
+    value = 0.0;
+    x2 = x;
+    while (x2 < c)
+    {
+        value = value - 1.0 / x2;
+        x2 = x2 + 1.0;
+    }
+    r = 1.0 / x2;
+    value = value + log(x2) - 0.5 * r;
+
+    r = r * r;
+    
+    value = value
+        - r * (1.0 / 12.0
+        - r * (1.0 / 120.0
+            - r * (1.0 / 252.0
+            - r * (1.0 / 240.0
+                - r * (1.0 / 132.0)))));
+
+    return value;
+  }
+  
+  double dbeta(const double x, const double a, const double b) {
+      return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
+  }
   )";
 }  // namespace opencl_kernels
 }  // namespace math

@@ -27,15 +27,6 @@
  */
 namespace stan {
 namespace math {
-#ifdef USE_CMDSTAN
-extern int gpu_platform;  
-extern int gpu_device;
-extern int use_cpu;
-#else
-int gpu_platform = OPENCL_PLATFORM_ID;  
-int gpu_device = OPENCL_DEVICE_ID;
-int use_cpu = 0;
-#endif
 namespace opencl {
 /**
  * A helper function to convert an array to a cl::size_t<N>.
@@ -64,27 +55,10 @@ inline cl::size_t<3> to_size_t(const size_t (&values)[3]) {
     s[i] = values[i];
   return s;
 }
-inline void choose_best_device() {
-  std::vector<cl::Platform> temp_platforms_;
-  std::vector<cl::Device> temp_devices_;
-  cl::Platform::get(&temp_platforms_);
-  if(temp_platforms_.size() == 0) {
-    system_error("OpenCL Initialization", "[Platform]", -1,
-                     "No OpenCL device found");
-  }
-  int max_SMs = 0;
-  for(int i = 0;i < temp_platforms_.size(); i++) {
-    temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
-    for(int j = 0;j < temp_devices_.size(); j++) {
-      int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-      if(device_SMs > max_SMs) {
-        max_SMs = device_SMs;
-        gpu_platform = i;
-        gpu_device = j;
-      }
-    }
-  }
-}
+static int gpu_platform = OPENCL_PLATFORM_ID;
+static int gpu_device = OPENCL_PLATFORM_ID;
+
+inline void choose_best_device();
 }  // namespace opencl
 /**
  * The <code>opencl_context_base</code> class represents an OpenCL context
@@ -125,27 +99,28 @@ class opencl_context_base {
   opencl_context_base() {
     try {
       
-      if(gpu_platform == -1 || gpu_device == -1){
-       opencl::choose_best_device(); 
-      }
+      // if(opencl_context_base::getInstance().gpu_platform == -1 || opencl_context_base::getInstance().gpu_device == -1){
+      //   std::cout << "DADADADA" << std::endl;
+      //  opencl::choose_best_device(); 
+      // }
       // platform
       cl::Platform::get(&platforms_);
-      if (gpu_platform >= platforms_.size()) {
+      if (opencl::gpu_platform >= platforms_.size()) {
         system_error("OpenCL Initialization", "[Platform]", -1,
                      "CL_INVALID_PLATFORM");
       }
-      platform_ = platforms_[gpu_platform];
+      platform_ = platforms_[opencl::gpu_platform];
       platform_name_ = platform_.getInfo<CL_PLATFORM_NAME>();
       platform_.getDevices(DEVICE_FILTER, &devices_);
       if (devices_.size() == 0) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_DEVICE_NOT_FOUND");
       }
-      if (gpu_device >= devices_.size()) {
+      if (OPENCL_DEVICE_ID >= devices_.size()) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_INVALID_DEVICE");
       }
-      device_ = devices_[gpu_device];
+      device_ = devices_[OPENCL_DEVICE_ID];
       // context and queue
       cl_command_queue_properties device_properties;
       device_.getInfo<cl_command_queue_properties>(CL_DEVICE_QUEUE_PROPERTIES,
@@ -235,7 +210,11 @@ class opencl_context_base {
     // used in math/prim/mat/fun/mdivide_left_tri
     // and math/rev/mat/fun/mdivide_left_tri
     int tri_inverse_size_worth_transfer = 100;
+    
   } tuning_opts_;
+
+  // int gpu_platform = OPENCL_PLATFORM_ID;
+  // int gpu_device = OPENCL_DEVICE_ID;
 
   static opencl_context_base& getInstance() {
     static opencl_context_base instance_;
@@ -252,7 +231,15 @@ class opencl_context_base {
 class opencl_context {
  public:
   opencl_context() = default;
-
+  int use_cpu = 0;
+  int opencl_data_copied = 0;
+  cl::Buffer IDp_buf;
+  cl::Buffer IDs_buf;
+  cl::Buffer X_s_buf;
+  cl::Buffer X_r_buf;
+  cl::Buffer is_pbo_buf;
+  cl::Buffer score_buf;
+  cl::Buffer time_buf;
   /**
    * Returns the description of the OpenCL platform and device that is used.
    * Devices will be an OpenCL and Platforms are a specific OpenCL implimenation
@@ -261,7 +248,7 @@ class opencl_context {
   inline std::string description() const {
     std::ostringstream msg;
 
-    msg << "Platform ID: " << OPENCL_DEVICE_ID << "\n";
+    msg << "Platform ID: " << OPENCL_PLATFORM_ID << "\n";
     msg << "Platform Name: "
         << opencl_context_base::getInstance()
                .platform_.getInfo<CL_PLATFORM_NAME>()
@@ -270,7 +257,7 @@ class opencl_context {
         << opencl_context_base::getInstance()
                .platform_.getInfo<CL_PLATFORM_VENDOR>()
         << "\n";
-    msg << "\tDevice " << gpu_device << ": "
+    msg << "\tDevice " << OPENCL_DEVICE_ID << ": "
         << "\n";
     msg << "\t\tDevice Name: "
         << opencl_context_base::getInstance().device_.getInfo<CL_DEVICE_NAME>()
@@ -427,8 +414,47 @@ class opencl_context {
   inline std::vector<cl::Platform> platform() {
     return {opencl_context_base::getInstance().platform_};
   }
+
+  // inline int gpu_platform() {
+  //   return opencl_context_base::getInstance().gpu_platform;
+  // }
+
+  // inline void gpu_platform(int i) {
+  //   opencl_context_base::getInstance().gpu_platform = i;
+  // }
+
+  // inline int gpu_device() {
+  //   return opencl_context_base::getInstance().gpu_device;
+  // }
+
+  // inline void gpu_device(int i) {
+  //   opencl_context_base::getInstance().gpu_device = i;
+  // }
 };
 static opencl_context opencl_context;
+namespace opencl {
+// inline void choose_best_device() {
+//   std::vector<cl::Platform> temp_platforms_;
+//   std::vector<cl::Device> temp_devices_;
+//   cl::Platform::get(&temp_platforms_);
+//   if(temp_platforms_.size() == 0) {
+//     system_error("OpenCL Initialization", "[Platform]", -1,
+//                      "No OpenCL device found");
+//   }
+//   int max_SMs = 0;
+//   for(int i = 0;i < temp_platforms_.size(); i++) {
+//     temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
+//     for(int j = 0;j < temp_devices_.size(); j++) {
+//       int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+//       if(device_SMs > max_SMs) {
+//         max_SMs = device_SMs;
+//         opencl_context.gpu_platform(i);
+//         opencl_context.gpu_device(i);
+//       }
+//     }
+//   }
+// }
+}
 }  // namespace math
 }  // namespace stan
 

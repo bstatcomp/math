@@ -3,7 +3,13 @@
 #ifdef STAN_OPENCL
 
 #define DEVICE_FILTER CL_DEVICE_TYPE_ALL
+#ifndef OPENCL_PLATFORM_ID
+#define OPENCL_PLATFORM_ID -1
+#endif
 
+#ifndef OPENCL_DEVICE_ID
+#define OPENCL_DEVICE -1
+#endif
 #include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/err/check_opencl.hpp>
 #include <stan/math/prim/scal/err/system_error.hpp>
@@ -55,10 +61,27 @@ inline cl::size_t<3> to_size_t(const size_t (&values)[3]) {
     s[i] = values[i];
   return s;
 }
-static int gpu_platform = OPENCL_PLATFORM_ID;
-static int gpu_device = OPENCL_PLATFORM_ID;
-
-inline void choose_best_device();
+inline void choose_best_device(int& gpu_platform, int& gpu_device) {
+  std::vector<cl::Platform> temp_platforms_;
+  std::vector<cl::Device> temp_devices_;
+  cl::Platform::get(&temp_platforms_);
+  if(temp_platforms_.size() == 0) {
+    system_error("OpenCL Initialization", "[Platform]", -1,
+                     "No OpenCL device found");
+  }
+  int max_SMs = 0;
+  for(int i = 0;i < temp_platforms_.size(); i++) {
+    temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
+    for(int j = 0;j < temp_devices_.size(); j++) {
+      int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+      if(device_SMs > max_SMs) {
+        max_SMs = device_SMs;
+        gpu_platform = i;
+        gpu_device = i;
+      }
+    }
+  }
+}
 }  // namespace opencl
 /**
  * The <code>opencl_context_base</code> class represents an OpenCL context
@@ -98,29 +121,29 @@ class opencl_context_base {
    */
   opencl_context_base() {
     try {
-      
-      // if(opencl_context_base::getInstance().gpu_platform == -1 || opencl_context_base::getInstance().gpu_device == -1){
-      //   std::cout << "DADADADA" << std::endl;
-      //  opencl::choose_best_device(); 
-      // }
+      int gpu_platform = OPENCL_PLATFORM_ID;
+      int gpu_device = OPENCL_DEVICE_ID;
+      if(gpu_platform == -1 || gpu_device == -1){
+        opencl::choose_best_device(gpu_platform, gpu_device); 
+      }
       // platform
       cl::Platform::get(&platforms_);
-      if (opencl::gpu_platform >= platforms_.size()) {
+      if (gpu_platform >= platforms_.size()) {
         system_error("OpenCL Initialization", "[Platform]", -1,
                      "CL_INVALID_PLATFORM");
       }
-      platform_ = platforms_[opencl::gpu_platform];
+      platform_ = platforms_[gpu_platform];
       platform_name_ = platform_.getInfo<CL_PLATFORM_NAME>();
       platform_.getDevices(DEVICE_FILTER, &devices_);
       if (devices_.size() == 0) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_DEVICE_NOT_FOUND");
       }
-      if (OPENCL_DEVICE_ID >= devices_.size()) {
+      if (gpu_device >= devices_.size()) {
         system_error("OpenCL Initialization", "[Device]", -1,
                      "CL_INVALID_DEVICE");
       }
-      device_ = devices_[OPENCL_DEVICE_ID];
+      device_ = devices_[gpu_device];
       // context and queue
       cl_command_queue_properties device_properties;
       device_.getInfo<cl_command_queue_properties>(CL_DEVICE_QUEUE_PROPERTIES,
@@ -432,29 +455,6 @@ class opencl_context {
   // }
 };
 static opencl_context opencl_context;
-namespace opencl {
-// inline void choose_best_device() {
-//   std::vector<cl::Platform> temp_platforms_;
-//   std::vector<cl::Device> temp_devices_;
-//   cl::Platform::get(&temp_platforms_);
-//   if(temp_platforms_.size() == 0) {
-//     system_error("OpenCL Initialization", "[Platform]", -1,
-//                      "No OpenCL device found");
-//   }
-//   int max_SMs = 0;
-//   for(int i = 0;i < temp_platforms_.size(); i++) {
-//     temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
-//     for(int j = 0;j < temp_devices_.size(); j++) {
-//       int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
-//       if(device_SMs > max_SMs) {
-//         max_SMs = device_SMs;
-//         opencl_context.gpu_platform(i);
-//         opencl_context.gpu_device(i);
-//       }
-//     }
-//   }
-// }
-}
 }  // namespace math
 }  // namespace stan
 

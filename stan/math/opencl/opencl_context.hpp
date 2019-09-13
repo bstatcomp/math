@@ -236,8 +236,17 @@ class opencl_context_base {
     
   } tuning_opts_;
 
-  // int gpu_platform = OPENCL_PLATFORM_ID;
-  // int gpu_device = OPENCL_DEVICE_ID;
+  int gpu_enabled = 1;
+  int data_copied = 0;
+  struct cl_buffers {
+    cl::Buffer IDp_buf;
+    cl::Buffer IDs_buf;
+    cl::Buffer X_s_buf;
+    cl::Buffer X_r_buf;
+    cl::Buffer is_pbo_buf;
+    cl::Buffer score_buf;
+    cl::Buffer time_buf;
+  } cl_buffers_;
 
   static opencl_context_base& getInstance() {
     static opencl_context_base instance_;
@@ -254,15 +263,6 @@ class opencl_context_base {
 class opencl_context {
  public:
   opencl_context() = default;
-  int gpu_enabled = 1;
-  int opencl_data_copied = 0;
-  cl::Buffer IDp_buf;
-  cl::Buffer IDs_buf;
-  cl::Buffer X_s_buf;
-  cl::Buffer X_r_buf;
-  cl::Buffer is_pbo_buf;
-  cl::Buffer score_buf;
-  cl::Buffer time_buf;
   /**
    * Returns the description of the OpenCL platform and device that is used.
    * Devices will be an OpenCL and Platforms are a specific OpenCL implimenation
@@ -438,21 +438,26 @@ class opencl_context {
     return {opencl_context_base::getInstance().platform_};
   }
 
-  // inline int gpu_platform() {
-  //   return opencl_context_base::getInstance().gpu_platform;
-  // }
+  inline int gpu_enabled() {
+    return opencl_context_base::getInstance().gpu_enabled;
+  }
 
-  // inline void gpu_platform(int i) {
-  //   opencl_context_base::getInstance().gpu_platform = i;
-  // }
+  inline void gpu_enabled(int i) {
+    opencl_context_base::getInstance().gpu_enabled = i;
+  }
 
-  // inline int gpu_device() {
-  //   return opencl_context_base::getInstance().gpu_device;
-  // }
+  inline int data_copied() {
+    return opencl_context_base::getInstance().data_copied;
+  }
 
-  // inline void gpu_device(int i) {
-  //   opencl_context_base::getInstance().gpu_device = i;
-  // }
+  inline void data_copied(int i) {
+    opencl_context_base::getInstance().data_copied = i;
+  }
+
+  inline opencl_context_base::cl_buffers& cl_buffers() {
+    return opencl_context_base::getInstance().cl_buffers_;
+  }
+
 };
 static opencl_context opencl_context;
 }  // namespace math

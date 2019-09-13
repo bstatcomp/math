@@ -7,7 +7,7 @@
 
 TEST(AgradRevMatrix, test_GLM_empty) {
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.opencl_data_copied = 0;
+  stan::math::opencl_context.data_copied(0);
 #endif
   // test data
   std::vector<int> IDp = {};
@@ -140,7 +140,7 @@ TEST(AgradRevMatrix, test_GLM_empty) {
 
 TEST(AgradRevMatrix, test_GLM_22_additive) {
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.opencl_data_copied = 0;
+  stan::math::opencl_context.data_copied(0);
 #endif
   // test data
   std::vector<int> IDp = {
@@ -390,7 +390,7 @@ TEST(AgradRevMatrix, test_GLM_22_additive) {
 
 TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.opencl_data_copied = 0;
+  stan::math::opencl_context.data_copied(0);
 #endif
   // test data
   std::vector<int> IDp = {
@@ -640,7 +640,7 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
 
 TEST(AgradRevMatrix, test_GLM_00_additive) {
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.opencl_data_copied = 0;
+  stan::math::opencl_context.data_copied(0);
 #endif
   // test data
   std::vector<int> IDp = {
@@ -865,7 +865,7 @@ TEST(AgradRevMatrix, test_GLM_00_additive) {
 TEST(AgradRevMatrix, test_GLM_21_both) {
   // test data
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.opencl_data_copied = 0;
+  stan::math::opencl_context.data_copied(0);
 #endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,

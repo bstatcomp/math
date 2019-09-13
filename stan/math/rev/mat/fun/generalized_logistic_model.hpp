@@ -38,7 +38,7 @@ inline var generalized_logistic_model(
   const double base_s = base_sv.val();
   const double base_r = base_rv.val();
 #ifdef STAN_OPENCL
-  if(!opencl_context.use_cpu) {
+  if(opencl_context.gpu_enabled) {
     const int d_eta_size = eta_ps.size()+eta_ss.size()+eta_sr.size()+eta_pr.size();
     if(opencl_context.opencl_data_copied == 0){
       matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);

@@ -254,7 +254,7 @@ class opencl_context_base {
 class opencl_context {
  public:
   opencl_context() = default;
-  int use_cpu = 0;
+  int gpu_enabled = 1;
   int opencl_data_copied = 0;
   cl::Buffer IDp_buf;
   cl::Buffer IDs_buf;

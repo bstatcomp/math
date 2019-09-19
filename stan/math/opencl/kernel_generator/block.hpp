@@ -126,7 +126,7 @@ public:
   }
 
   /**
-   * Evaluates an expression in the block.
+   * Evaluates an expression and assigns it to the block.
    * @tparam T_expression type of expression
    * @param rhs input expression
    */

@@ -90,6 +90,9 @@ protected:
   inline const Derived& derived() const {
     return *static_cast<const Derived*>(this);
   }
+
+  template<typename... T_results>
+  friend class results__;
 };
 
 template<typename Derived, typename ReturnScalar>

@@ -154,25 +154,13 @@ public:
    * @return view
    */
   matrix_cl_view view() const {
-    return a_.view();
+    return matrix_cl_view::Entire;
   }
 
 protected:
   T a_;
   std::string init_;
 };
-
-//template<typename Derived, typename T, typename Operation, bool PassZero>
-//class reduction<Derived, T, Operation, PassZero, true, true> : public operation<Derived, typename std::remove_reference_t<T>::ReturnScalar> {
-//public:
-//    using ReturnScalar = typename std::remove_reference_t<T>::ReturnScalar;
-//    using base = operation<Derived, ReturnScalar>;
-//    using base::var_name;
-//    using base::instance;
-//
-//    reduction(T&& a, const std::string& init) : a_(std::forward<T>(a)), init_(init) {}
-//
-//};
 
 /**
  * operation for sum reduction.

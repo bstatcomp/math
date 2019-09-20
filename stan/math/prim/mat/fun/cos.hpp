@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <cmath>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -28,7 +27,7 @@ struct cos_fun {
  * @tparam T Container type.
  * @return Cosine of each value in x.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<cos_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<cos_fun, T>::return_t cos(const T& x) {
   return apply_scalar_unary<cos_fun, T>::apply(x);
 }

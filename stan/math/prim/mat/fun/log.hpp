@@ -4,7 +4,6 @@
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/log.hpp>
 #include <cmath>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -36,7 +35,7 @@ struct log_fun {
  * @param[in] x Argument.
  * @return Elementwise application of natural log to the argument.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<log_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<log_fun, T>::return_t log(const T& x) {
   return apply_scalar_unary<log_fun, T>::apply(x);
 }

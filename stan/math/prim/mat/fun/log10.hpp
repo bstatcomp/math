@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <cmath>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -28,7 +27,7 @@ struct log10_fun {
  * @tparam T Container type.
  * @return Log base-10 applied to each value in x.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<log10_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<log10_fun, T>::return_t log10(const T& x) {
   return apply_scalar_unary<log10_fun, T>::apply(x);
 }

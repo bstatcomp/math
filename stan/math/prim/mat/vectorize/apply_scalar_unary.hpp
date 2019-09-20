@@ -2,16 +2,13 @@
 #define STAN_MATH_PRIM_MAT_VECTORIZE_APPLY_SCALAR_UNARY_HPP
 
 #include <stan/math/prim/mat/fun/Eigen.hpp>
+#include <stan/math/prim/meta.hpp>
 #include <vector>
+#include <type_traits>
 
 namespace stan {
 namespace math {
 
-
-template <typename F, typename T>
-struct apply_scalar_unary {
-    enum { enabled = 0 };
-};
 /**
  * Base template class for vectorization of unary scalar functions
  * defined by a template class <code>F</code> to a scalar,
@@ -36,19 +33,19 @@ struct apply_scalar_unary {
  * @tparam F Type of function to apply.
  * @tparam T Type of argument to which function is applied.
  */
-template <typename F, typename Scalar, int R, int C>
-struct apply_scalar_unary<F, Eigen::Matrix<Scalar,R,C> > {
-  enum{ enabled = 1};
+template <typename F, typename T, typename = std::enable_if_t<disjunction<is_eigen<T>, is_std_vector<T>, std::is_arithmetic<T>, is_var<T>, is_fvar<T>>::value>>
+struct apply_scalar_unary {
   /**
    * Type of underlying scalar for the matrix type T.
    */
-  using scalar_t = Scalar;
+  using scalar_t = typename Eigen::internal::traits<T>::Scalar;
 
   /**
    * Return type for applying the function elementwise to a matrix
    * expression template of type T.
    */
-  using return_t = Eigen::Matrix<Scalar, R, C>;
+  using return_t
+      = Eigen::Matrix<scalar_t, T::RowsAtCompileTime, T::ColsAtCompileTime>;
 
   /**
    * Return the result of applying the function defined by the
@@ -58,7 +55,7 @@ struct apply_scalar_unary<F, Eigen::Matrix<Scalar,R,C> > {
    * @return Componentwise application of the function specified
    * by F to the specified matrix.
    */
-  static inline return_t apply(const Eigen::Matrix<Scalar,R,C>& x) {
+  static inline return_t apply(const T& x) {
     return x.unaryExpr(
         [](scalar_t x) { return apply_scalar_unary<F, scalar_t>::apply(x); });
   }
@@ -72,7 +69,6 @@ struct apply_scalar_unary<F, Eigen::Matrix<Scalar,R,C> > {
  */
 template <typename F>
 struct apply_scalar_unary<F, double> {
-  enum{ enabled = 1};
   /**
    * The return type, double.
    */
@@ -100,7 +96,6 @@ struct apply_scalar_unary<F, double> {
  */
 template <typename F>
 struct apply_scalar_unary<F, int> {
-  enum{ enabled = 1};
   /**
    * The return type, double.
    */
@@ -129,7 +124,6 @@ struct apply_scalar_unary<F, int> {
  */
 template <typename F, typename T>
 struct apply_scalar_unary<F, std::vector<T> > {
-  enum{ enabled = apply_scalar_unary<F, T>::enabled };
   /**
    * Return type, which is calculated recursively as a standard
    * vector of the return type of the contained type T.

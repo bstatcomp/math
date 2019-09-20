@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/cbrt.hpp>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -27,7 +26,7 @@ struct cbrt_fun {
  * @tparam T Container type.
  * @return Cube root of each value in x.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<cbrt_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<cbrt_fun, T>::return_t cbrt(const T& x) {
   return apply_scalar_unary<cbrt_fun, T>::apply(x);
 }

@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <cmath>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -28,7 +27,7 @@ struct cosh_fun {
  * @tparam T Variable type.
  * @return Hyberbolic cosine of x.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<cosh_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<cosh_fun, T>::return_t cosh(const T& x) {
   return apply_scalar_unary<cosh_fun, T>::apply(x);
 }

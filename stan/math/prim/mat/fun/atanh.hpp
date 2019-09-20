@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/atanh.hpp>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -35,7 +34,7 @@ struct atanh_fun {
  * @param x Container.
  * @return Elementwise atanh of members of container.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<atanh_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<atanh_fun, T>::return_t atanh(const T& x) {
   return apply_scalar_unary<atanh_fun, T>::apply(x);
 }

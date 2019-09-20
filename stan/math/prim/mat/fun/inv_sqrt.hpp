@@ -3,7 +3,6 @@
 
 #include <stan/math/prim/mat/vectorize/apply_scalar_unary.hpp>
 #include <stan/math/prim/scal/fun/inv_sqrt.hpp>
-#include <type_traits>
 
 namespace stan {
 namespace math {
@@ -27,7 +26,7 @@ struct inv_sqrt_fun {
  * @tparam T Container type.
  * @return 1 / sqrt of each value in x.
  */
-template <typename T, typename = std::enable_if_t<apply_scalar_unary<inv_sqrt_fun, T>::enabled>>
+template <typename T>
 inline typename apply_scalar_unary<inv_sqrt_fun, T>::return_t inv_sqrt(
     const T& x) {
   return apply_scalar_unary<inv_sqrt_fun, T>::apply(x);

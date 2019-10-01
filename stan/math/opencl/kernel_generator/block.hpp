@@ -55,9 +55,17 @@ public:
    * @return part of kernel with code for this and nested expressions
    */
   inline kernel_parts generate(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const{
-    kernel_parts res = a_.generate(generated, ng, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
-    var_name = a_.var_name;
-    return res;
+    if(generated.count(instance)==0) {
+      var_name = ng.generate();
+      kernel_parts res = a_.generate(generated, ng, "(" + i + " + " + var_name + "_i)", "(" + j + " + " + var_name + "_j)");
+      generated.insert(instance);
+      res.body += type_str<ReturnScalar>::name + " " + var_name + " = " + a_.var_name + ";\n";
+      res.args += "int " + var_name + "_i, int " + var_name + "_j, ";
+      return res;
+    }
+    else{
+      return {};
+    }
   }
 
   /**
@@ -69,7 +77,15 @@ public:
    * @return part of kernel with code for this and nested expressions
    */
   inline kernel_parts generate_lhs(std::set<int>& generated, name_generator& ng, const std::string& i, const std::string& j) const{
-    return a_.generate_lhs(generated, ng, "(" + i + " + " + std::to_string(start_row_) + ")", "(" + j + " + " + std::to_string(start_col_) + ")");
+    if(generated.count(instance)==0) {
+      var_name = ng.generate();
+    }
+    kernel_parts res = a_.generate_lhs(generated, ng, "(" + i + " + " + var_name + "_i)", "(" + j + " + " + var_name + "_j)");
+    if(generated.count(instance)==0) {
+      generated.insert(instance);
+      res.args += "int " + var_name + "_i, int " + var_name + "_j, ";
+    }
+    return res;
   }
 
   /**
@@ -82,6 +98,8 @@ public:
     if(generated.count(instance)==0) {
       generated.insert(instance);
       a_.set_args(generated, kernel, arg_num);
+      kernel.setArg(arg_num++, start_row_);
+      kernel.setArg(arg_num++, start_col_);
     }
   }
 
@@ -130,7 +148,7 @@ public:
    * @tparam T_expression type of expression
    * @param rhs input expression
    */
-  template<typename T_expression, typename = enable_if_all_valid_expressions_and_none_scalar<T>>
+  template<typename T_expression, typename = enable_if_all_valid_expressions_and_none_scalar<T_expression>>
   const block__<T>& operator= (T_expression&& rhs) const{
     check_size_match("block.operator=", "Rows of ", "rhs", rhs.rows(), "rows of ", "*this", this->rows());
     check_size_match("block.operator=", "Cols of ", "rhs", rhs.cols(), "cols of ", "*this", this->cols());

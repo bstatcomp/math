@@ -7,7 +7,7 @@
 #include <stan/math/opencl/matrix_cl_view.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/kernel_cl.hpp>
-#include <CL/cl.hpp>
+#include <cl.hpp>
 #include <string>
 #include <map>
 #include <set>
@@ -73,7 +73,10 @@ public:
 
 protected:
   mutable std::string var_name;
-  static std::map<std::string, cl::Kernel> kernel_cache;
+  template<typename T_lhs>
+  struct cache {
+    static cl::Kernel kernel;
+  };
 
   /**
    * Casts the instance into its derived type.
@@ -96,7 +99,8 @@ protected:
 };
 
 template<typename Derived, typename ReturnScalar>
-std::map<std::string, cl::Kernel> operation<Derived, ReturnScalar>::kernel_cache;
+template<typename T_lhs>
+cl::Kernel operation<Derived, ReturnScalar>::cache<T_lhs>::kernel;
 
 }
 }

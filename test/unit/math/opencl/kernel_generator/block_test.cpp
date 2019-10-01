@@ -82,8 +82,9 @@ TEST(MathMatrixCL, multiple_operations_accept_lvalue_test){
 
 TEST(MathMatrixCL, lhs_block_test){
   using stan::math::block;
-  MatrixXd m1 = MatrixXd::Random(2,3);
-  MatrixXd m2 = MatrixXd::Random(5,7);
+  MatrixXd m1(2,3);
+  m1 << 1,2,3,4,5,6;
+  MatrixXd m2 = MatrixXd::Constant(5,7, 9);
 
   matrix_cl<double> m1_cl(m1);
   matrix_cl<double> m2_cl(m2);

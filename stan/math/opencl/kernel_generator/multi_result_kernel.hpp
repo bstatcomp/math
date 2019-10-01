@@ -35,6 +35,7 @@ template<int n, typename... T_results>
 struct multi_result_kernel_internal{
   template <typename... T_expressions>
   struct inner {
+    static thread_local cl::Kernel kernel_;
     using next = typename multi_result_kernel_internal<n - 1, T_results...>::template inner<T_expressions...>;
     static kernel_parts generate(std::set<int>& generated, name_generator& ng,
                                  const std::string& i, const std::string& j,
@@ -70,6 +71,10 @@ struct multi_result_kernel_internal{
     }
   };
 };
+
+template<int n, typename... T_results>
+template <typename... T_expressions>
+thread_local cl::Kernel multi_result_kernel_internal<n, T_results...>::inner<T_expressions...>::kernel_;
 
 template<typename... T_results>
 struct multi_result_kernel_internal<-1, T_results...>{
@@ -146,6 +151,7 @@ class results__{
     assignment(expressions, std::make_index_sequence<sizeof...(T_expressions)>{});
   }
 private:
+  std::tuple<T_results*...> results_;
   /**
    * Assignment of expressions to results.
    * @tparam T_expressions types of expressions
@@ -176,19 +182,18 @@ private:
     name_generator ng;
     std::set<int> generated;
 
-    kernel_parts parts = impl::generate(generated, ng, "i", "j", results, expressions);
-
-    std::string src = "kernel void calculate(" + parts.args.substr(0,parts.args.size()-2) + "){\n"
-                                                                                            "int i = get_global_id(0);"
-                                                                                            "int j = get_global_id(1);\n"
-                      + parts.body + "}";
-
     try {
-      if(T_First_Expr::kernel_cache.count(src)==0){
+      if(impl::kernel_() == NULL){
+        kernel_parts parts = impl::generate(generated, ng, "i", "j", results, expressions);
+
+        std::string src = "kernel void calculate(" + parts.args.substr(0,parts.args.size()-2) + "){\n"
+                          "int i = get_global_id(0);"
+                          "int j = get_global_id(1);\n"
+                          + parts.body + "}";
         auto opts = opencl_context.base_opts();
-        T_First_Expr::kernel_cache[src] = opencl_kernels::compile_kernel("calculate", {view_kernel_helpers, src.c_str()}, opts);
+        impl::kernel_ = opencl_kernels::compile_kernel("calculate", {view_kernel_helpers, src}, opts);
       }
-      cl::Kernel& kernel = T_First_Expr::kernel_cache[src];
+      cl::Kernel& kernel = impl::kernel_;
       int arg_num = 0;
       generated.clear();
 
@@ -202,8 +207,6 @@ private:
       check_opencl_error("result__.assignment", e);
     }
   }
-
-  std::tuple<T_results*...> results_;
 };
 
 /**

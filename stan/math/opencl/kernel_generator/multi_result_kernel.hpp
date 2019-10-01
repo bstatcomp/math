@@ -35,7 +35,7 @@ template<int n, typename... T_results>
 struct multi_result_kernel_internal{
   template <typename... T_expressions>
   struct inner {
-    static thread_local cl::Kernel kernel_;
+    static cl::Kernel kernel_;
     using next = typename multi_result_kernel_internal<n - 1, T_results...>::template inner<T_expressions...>;
     static kernel_parts generate(std::set<int>& generated, name_generator& ng,
                                  const std::string& i, const std::string& j,
@@ -74,7 +74,7 @@ struct multi_result_kernel_internal{
 
 template<int n, typename... T_results>
 template <typename... T_expressions>
-thread_local cl::Kernel multi_result_kernel_internal<n, T_results...>::inner<T_expressions...>::kernel_;
+cl::Kernel multi_result_kernel_internal<n, T_results...>::inner<T_expressions...>::kernel_;
 
 template<typename... T_results>
 struct multi_result_kernel_internal<-1, T_results...>{

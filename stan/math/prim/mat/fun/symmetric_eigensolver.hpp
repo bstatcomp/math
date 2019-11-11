@@ -11,20 +11,20 @@ namespace stan {
 namespace math {
 
 /**
- * Calculates eigenvalues and eigenvectors of a symmetric matrix.
+ * Calculates eigenvalues and eigenvectors of a selfadjoint matrix.
  * @param A The matrix
- * @param[out] eigenvalues Eigenvalues.
+ * @param[out] eigenvalues sorted Eigenvalues.
  * @param[out] eigenvectors Eigenvectors - one per column.
  */
-void symmetric_eigensolver(const Eigen::MatrixXd& A,
-                           Eigen::VectorXd& eigenvalues,
-                           Eigen::MatrixXd& eigenvectors) {
-  Eigen::MatrixXd packed;
+template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
+void selfadjoint_eigensolver(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& A,
+                           Eigen::Matrix<Real, Eigen::Dynamic,1>& eigenvalues,
+                           Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>& eigenvectors) {
+  Eigen::Matrix<Scalar,Eigen::Dynamic, Eigen::Dynamic> packed;
   internal::block_householder_tridiag(A, packed);
-  Eigen::VectorXd diagonal = packed.diagonal();
-  Eigen::VectorXd subdiagonal = packed.diagonal(1);
-  internal::tridiagonal_eigensolver(diagonal, subdiagonal, eigenvalues,
-                                    eigenvectors);
+  Eigen::Matrix<Real,Eigen::Dynamic,1> diagonal = packed.diagonal().real();
+  Eigen::Matrix<Scalar,Eigen::Dynamic,1> subdiagonal = packed.diagonal(1);
+  internal::tridiagonal_eigensolver(diagonal, subdiagonal, eigenvalues, eigenvectors);
   internal::block_apply_packed_Q(packed, eigenvectors);
 }
 

@@ -477,7 +477,7 @@ void calculate_eigenvector(
     const Eigen::Ref<const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>& subdiagonal,
     const Eigen::Index i, const Eigen::Index twist_idx,
     Eigen::Ref<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>>& eigenvectors) {
-  auto vec = eigenvectors.col(i);
+  typename Eigen::Ref<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>>::ColXpr vec = eigenvectors.col(i);
   const Eigen::Index n = vec.size();
   vec[twist_idx] = 1;
   for (Eigen::Index j = twist_idx + 1; j < n; j++) {
@@ -759,7 +759,9 @@ void sort_eigenpairs(Eigen::Matrix<Real, Eigen::Dynamic, 1>& eigenvalues,
  * @param subdiagonal Subdiagonal of T.
  * @param[out] sorted eigenvalues Eigenvlues.
  * @param[out] eigenvectors Eigenvectors.
- * @param split_threshold Threshold for splitting the problem
+ * @param split_threshold Threshold for splitting the problem. It can cause
+ * relative error of same order of magnitude. But larger values will avoid more
+ * problems with close eigenvalues
  */
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real,
     typename = typename std::enable_if<std::is_arithmetic<Real>::value>::type>
@@ -768,7 +770,7 @@ void tridiagonal_eigensolver(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& subdiagonal,
     Eigen::Matrix<Real, Eigen::Dynamic, 1>& eigenvalues,
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& eigenvectors,
-    const Real split_threshold = 1e-12) {
+    const Real split_threshold = 1e-12) { //TODO tune this for float!
   const Eigen::Index n = diagonal.size();
   eigenvectors.resize(n, n);
   eigenvalues.resize(n);

@@ -38,12 +38,12 @@ void block_householder_tridiag(
         packed.rows() - k - 1, actual_r);
 
     for (Eigen::Index j = 0; j < actual_r; j++) {
-      auto householder = packed.col(k + j).tail(packed.rows() - k - j - 1);
+      typename Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::ColXpr::SegmentReturnType householder = packed.col(k + j).tail(packed.rows() - k - j - 1);
       if (j != 0) {
-        auto householder_whole = packed.col(k + j).tail(packed.rows() - k - j);
-        householder_whole -= packed.block(k + j, k, householder_whole.size(), j)
+        Eigen::Index householder_whole_size = packed.rows() - k - j;
+        packed.col(k + j).tail(householder_whole_size) -= packed.block(k + j, k, householder_whole_size, j)
                                  * V.block(j - 1, 0, 1, j).adjoint()
-                             + V.block(j - 1, 0, householder_whole.size(), j)
+                             + V.block(j - 1, 0, householder_whole_size, j)
                                    * packed.block(k + j, k, 1, j).adjoint();
       }
       Real q = householder.squaredNorm();
@@ -60,24 +60,23 @@ void block_householder_tridiag(
         householder *= SQRT_2 / q;
       }
 
-      auto& u = householder;
       Eigen::Matrix<Scalar, Eigen::Dynamic, 1> v(householder.size() + 1);
       v.tail(householder.size())
           = packed.bottomRightCorner(packed.rows() - k - j - 1,
                                      packed.cols() - k - j - 1)
                     .template selfadjointView<Eigen::Lower>()
-                * u
-            - packed.block(k + j + 1, k, u.size(), j)
-                  * (V.bottomLeftCorner(u.size(), j).adjoint() * u)
-            - V.bottomLeftCorner(u.size(), j)
-                  * (packed.block(k + j + 1, k, u.size(), j).adjoint() * u);
+                * householder
+            - packed.block(k + j + 1, k, householder.size(), j)
+                  * (V.bottomLeftCorner(householder.size(), j).adjoint() * householder)
+            - V.bottomLeftCorner(householder.size(), j)
+                  * (packed.block(k + j + 1, k, householder.size(), j).adjoint() * householder);
       v[0] = q / SQRT_2;
-      const Real cnst = (v.tail(householder.size()).adjoint() * u).real()[0];
-      v.tail(householder.size()) -= 0.5 * cnst * u;
+      const Real cnst = (v.tail(householder.size()).adjoint() * householder).real()[0];
+      v.tail(householder.size()) -= 0.5 * cnst * householder;
 
       // calculate subdiagonal of T into superdiagonal of packed
       packed(k + j, k + j + 1)
-          = packed(k + j + 1, k + j) * q / SQRT_2 + alpha - v[0] * u[0];
+          = packed(k + j + 1, k + j) * q / SQRT_2 + alpha - v[0] * householder[0];
       V.col(j).tail(V.rows() - j) = v.tail(V.rows() - j);
     }
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> partial_update

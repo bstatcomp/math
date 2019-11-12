@@ -52,9 +52,9 @@ void block_householder_tridiag(
         alpha *= householder[0] / Eigen::numext::abs(householder[0]);
       }
 
-      q -= std::norm(householder[0]);
+      q -= Eigen::numext::abs2(householder[0]);
       householder[0] -= alpha;
-      q += std::norm(householder[0]);
+      q += Eigen::numext::abs2(householder[0]);
       q = sqrt(q);
       if (q != 0.) {
         householder *= SQRT_2 / q;

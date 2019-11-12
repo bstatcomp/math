@@ -136,7 +136,6 @@ Real get_shifted_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
   using std::conj;
   using std::fabs;
   using std::isinf;
-  using std::norm;
   using std::real;
   const Eigen::Index n = l.size();
   Real s = -shift;
@@ -148,7 +147,7 @@ Real get_shifted_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
     element_growth_denominator += d_plus[i];
     l_plus[i] = l[i] * (d[i] / d_plus[i]);
     if (isinf(d_plus[i]) && isinf(s)) {  // this happens if d_plus[i]==0 -> in next iteration d_plus==inf and s==inf
-      s = norm(l[i]) * d[i] - shift;
+      s = Eigen::numext::abs2(l[i]) * d[i] - shift;
     } else {
       s = real(l_plus[i] * conj(l[i])) * s - shift;
     }
@@ -186,7 +185,6 @@ Eigen::Index get_twisted_factorization(
   using std::conj;
   using std::copysign;
   using std::fabs;
-  using std::norm;
   using std::real;
   const Eigen::Index n = l.size();
   // calculate shifted ldl
@@ -196,7 +194,7 @@ Eigen::Index get_twisted_factorization(
     Real d_plus = s[i] + d[i];
     l_plus[i] = l[i] * (d[i] / d_plus);
     if (isNaN(l_plus[i])) {  // d_plus==0: one (or both) of d[i], l[i] is very close to 0
-      if (norm(l[i]) < norm(d[i])) {
+      if (Eigen::numext::abs2(l[i]) < Eigen::numext::abs2(d[i])) {
         l_plus[i] = d[i] * sign(l[i] * d_plus);
       } else {
         l_plus[i] = l[i] * sign(d[i] * d_plus);
@@ -204,17 +202,17 @@ Eigen::Index get_twisted_factorization(
     }
     s[i + 1] = real(l_plus[i] * conj(l[i])) * s[i] - shift;
     if (isNaN(s[i + 1])) {
-      if (norm(l_plus[i]) > norm(s[i])) {  // l_plus[i]==inf
-        if (norm(s[i]) > norm(l[i])) { // l[i]==0
+      if (Eigen::numext::abs2(l_plus[i]) > Eigen::numext::abs2(s[i])) {  // l_plus[i]==inf
+        if (Eigen::numext::abs2(s[i]) > Eigen::numext::abs2(l[i])) { // l[i]==0
           s[i + 1] = s[i] * sign(d[i] * d_plus) - shift;
         } else {  // s[i]==0
           s[i + 1] = Eigen::numext::abs(l[i]) * sign(s[i + 1]) - shift;
         }
       } else { // s[i]==inf
-        if (norm(l_plus[i]) > norm(l[i])) { // l[i]==0
+        if (Eigen::numext::abs2(l_plus[i]) > Eigen::numext::abs2(l[i])) { // l[i]==0
           s[i + 1] = Eigen::numext::abs(l_plus[i]) * sign(s[i + 1]) - shift;
         } else { // l_plus[i]==0
-          s[i + 1] = norm(l[i]) * sign(s[i] * d[i] * d_plus) - shift;
+          s[i + 1] = Eigen::numext::abs2(l[i]) * sign(s[i] * d[i] * d_plus) - shift;
         }
       }
     }
@@ -225,7 +223,7 @@ Eigen::Index get_twisted_factorization(
   Eigen::Index twist_index = n;
 
   for (Eigen::Index i = n - 1; i >= 0; i--) {
-    Real d_minus = d[i] * norm(l[i]) + p;
+    Real d_minus = d[i] * Eigen::numext::abs2(l[i]) + p;
     Real t = d[i] / d_minus;
     u_minus[i] = l[i] * t;
     if (isNaN(u_minus[i])) {
@@ -269,7 +267,6 @@ Eigen::Index get_sturm_count_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>&
                         const Eigen::Matrix<Real, Eigen::Dynamic, 1>& d,
                         const Real shift) {
   using std::isinf;
-  using std::norm;
   const Eigen::Index n = l.size();
   Real s = -shift;
   Real d_plus;
@@ -278,9 +275,9 @@ Eigen::Index get_sturm_count_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>&
     d_plus = s + d[i];
     count += d_plus >= 0;
     if (isinf(d_plus) && isinf(s)) {  // this happens if d_plus==0 -> in next iteration d_plus==inf and s==inf
-      s = norm(l[i]) * d[i] - shift;
+      s = Eigen::numext::abs2(l[i]) * d[i] - shift;
     } else {
-      s = norm(l[i]) * s * (d[i] / d_plus) - shift;
+      s = Eigen::numext::abs2(l[i]) * s * (d[i] / d_plus) - shift;
     }
   }
   d_plus = s + d[n];

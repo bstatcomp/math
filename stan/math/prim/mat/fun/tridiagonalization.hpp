@@ -29,15 +29,15 @@ template <typename Scalar>
 void block_householder_tridiag(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& A,
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& packed,
-    const int r = 60) {
+    const Eigen::Index r = 60) {
   using Real = typename Eigen::NumTraits<Scalar>::Real;
   packed = A;
-  for (size_t k = 0; k < packed.rows() - 2; k += r) {
-    const int actual_r = std::min({r, static_cast<int>(packed.rows() - k - 2)});
+  for (Eigen::Index k = 0; k < packed.rows() - 2; k += r) {
+    const Eigen::Index actual_r = std::min({r, static_cast<Eigen::Index>(packed.rows() - k - 2)});
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> V(
         packed.rows() - k - 1, actual_r);
 
-    for (size_t j = 0; j < actual_r; j++) {
+    for (Eigen::Index j = 0; j < actual_r; j++) {
       auto householder = packed.col(k + j).tail(packed.rows() - k - j - 1);
       if (j != 0) {
         auto householder_whole = packed.col(k + j).tail(packed.rows() - k - j);
@@ -48,7 +48,7 @@ void block_householder_tridiag(
       }
       Real q = householder.squaredNorm();
       Scalar alpha = -sqrt(q);
-      if (householder[0] != 0.) {
+      if (householder[0] != Scalar(0.)) {
         alpha *= householder[0] / Eigen::numext::abs(householder[0]);
       }
 
@@ -108,15 +108,15 @@ template <typename Scalar>
 void block_apply_packed_Q(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& packed,
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& A,
-    const int r = 100) {
+    const Eigen::Index r = 100) {
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> scratch_space(A.rows(),
                                                                       r);
-  for (int k = (packed.rows() - 3) / r * r; k >= 0; k -= r) {
-    const int actual_r = std::min({r, static_cast<int>(packed.rows() - k - 2)});
+  for (Eigen::Index k = (packed.rows() - 3) / r * r; k >= 0; k -= r) {
+    const Eigen::Index actual_r = std::min({r, static_cast<Eigen::Index>(packed.rows() - k - 2)});
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> W(
         packed.rows() - k - 1, actual_r);
     W.col(0) = packed.col(k).tail(W.rows());
-    for (size_t j = 1; j < actual_r; j++) {
+    for (Eigen::Index j = 1; j < actual_r; j++) {
       scratch_space.col(0).head(j).noalias()
           = packed.block(k + j + 1, k, packed.rows() - k - j - 1, j).adjoint()
             * packed.col(k + j).tail(packed.rows() - k - j - 1);

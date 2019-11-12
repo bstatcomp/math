@@ -57,7 +57,7 @@ bool isNaN(T a) {
 template <typename Real>
 struct constants {
   static constexpr Real perturbation_range = std::numeric_limits<Real>::epsilon() * 10;
-  static constexpr int bisect_k = 64 / sizeof(Real);
+  static constexpr Eigen::Index bisect_k = 64 / sizeof(Real);
 };
 
 /**
@@ -100,7 +100,7 @@ Real get_ldl(
   d_plus[0] = diagonal[0] - shift;
   Real element_growth = fabs(d_plus[0]);
   Real element_growth_denominator = d_plus[0];
-  for (int i = 0; i < subdiagonal.size(); i++) {
+  for (Eigen::Index i = 0; i < subdiagonal.size(); i++) {
     l[i] = subdiagonal[i] / d_plus[i];
     d_plus[i] *= get_random_perturbation_multiplier<Real>();
     d_plus[i + 1] = diagonal[i + 1] - shift - real(conj(l[i]) * subdiagonal[i]);
@@ -138,11 +138,11 @@ Real get_shifted_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
   using std::isinf;
   using std::norm;
   using std::real;
-  const int n = l.size();
+  const Eigen::Index n = l.size();
   Real s = -shift;
   Real element_growth = 0;
   Real element_growth_denominator = 0;
-  for (int i = 0; i < n; i++) {
+  for (Eigen::Index i = 0; i < n; i++) {
     d_plus[i] = s + d[i];
     element_growth += fabs(d_plus[i]);
     element_growth_denominator += d_plus[i];
@@ -177,7 +177,7 @@ Real get_shifted_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
  * @return Twist index.
  */
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
-int get_twisted_factorization(
+Eigen::Index get_twisted_factorization(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
     const Eigen::Matrix<Real, Eigen::Dynamic, 1>& d,
     const Real shift,
@@ -188,11 +188,11 @@ int get_twisted_factorization(
   using std::fabs;
   using std::norm;
   using std::real;
-  const int n = l.size();
+  const Eigen::Index n = l.size();
   // calculate shifted ldl
   Eigen::Matrix<Real, Eigen::Dynamic, 1> s(n + 1);
   s[0] = -shift;
-  for (int i = 0; i < n; i++) {
+  for (Eigen::Index i = 0; i < n; i++) {
     Real d_plus = s[i] + d[i];
     l_plus[i] = l[i] * (d[i] / d_plus);
     if (isNaN(l_plus[i])) {  // d_plus==0: one (or both) of d[i], l[i] is very close to 0
@@ -222,9 +222,9 @@ int get_twisted_factorization(
   // calculate shifted udu and twist index
   Real p = d[n] - shift;
   Real min_gamma = fabs(s[n] + d[n]);
-  int twist_index = n;
+  Eigen::Index twist_index = n;
 
-  for (int i = n - 1; i >= 0; i--) {
+  for (Eigen::Index i = n - 1; i >= 0; i--) {
     Real d_minus = d[i] * norm(l[i]) + p;
     Real t = d[i] / d_minus;
     u_minus[i] = l[i] * t;
@@ -265,16 +265,16 @@ int get_twisted_factorization(
  * @return Sturm count.
  */
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
-int get_sturm_count_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
+Eigen::Index get_sturm_count_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
                         const Eigen::Matrix<Real, Eigen::Dynamic, 1>& d,
                         const Real shift) {
   using std::isinf;
   using std::norm;
-  const int n = l.size();
+  const Eigen::Index n = l.size();
   Real s = -shift;
   Real d_plus;
-  int count = 0;
-  for (int i = 0; i < n; i++) {
+  Eigen::Index count = 0;
+  for (Eigen::Index i = 0; i < n; i++) {
     d_plus = s + d[i];
     count += d_plus >= 0;
     if (isinf(d_plus) && isinf(s)) {  // this happens if d_plus==0 -> in next iteration d_plus==inf and s==inf
@@ -302,7 +302,7 @@ int get_sturm_count_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
 void eigenval_bisect_refine(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
                             const Eigen::Matrix<Real, Eigen::Dynamic, 1>& d,
-                            Real& low, Real& high, const int i) {
+                            Real& low, Real& high, const Eigen::Index i) {
   using std::fabs;
   const Real eps = std::numeric_limits<Real>::epsilon() * 3;
   while (!(fabs((high - low) / (high + low)) < eps)) {  // if the condition was flipped it would be wrong for the case where division yields NaN
@@ -331,10 +331,10 @@ void get_gresgorin(
     const Eigen::Ref<const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>> subdiagonal,
     Real& min_eigval, Real& max_eigval) {
   using std::fabs;
-  const int n = diagonal.size();
+  const Eigen::Index n = diagonal.size();
   min_eigval = diagonal[0] - Eigen::numext::abs(subdiagonal[0]);
   max_eigval = diagonal[0] + Eigen::numext::abs(subdiagonal[0]);
-  for (int i = 1; i < n - 1; i++) {
+  for (Eigen::Index i = 1; i < n - 1; i++) {
     min_eigval = std::min(min_eigval, diagonal[i] - Eigen::numext::abs(subdiagonal[i]) - Eigen::numext::abs(subdiagonal[i - 1]));
     max_eigval = std::max(max_eigval, diagonal[i] + Eigen::numext::abs(subdiagonal[i]) + Eigen::numext::abs(subdiagonal[i - 1]));
   }
@@ -354,26 +354,26 @@ void get_gresgorin(
  * @return Array of Sturm counts of size Bisect_K. First `n_valid` are actual
  * results.
  */
-template <typename Real, int Bisect_K = constants<Real>::bisect_k>
-Eigen::Array<int, Bisect_K, 1> get_sturm_count_T_vec(
+template <typename Real, Eigen::Index Bisect_K = constants<Real>::bisect_k>
+Eigen::Array<Eigen::Index, Bisect_K, 1> get_sturm_count_T_vec(
     const Eigen::Ref<const Eigen::Matrix<Real, Eigen::Dynamic, 1>> diagonal,
     const Eigen::Matrix<Real, Eigen::Dynamic, 1>& subdiagonal_norm,
     const Eigen::Array<Real, constants<Real>::bisect_k, 1>& shifts,
-    const int n_valid) {
+    const Eigen::Index n_valid) {
   Eigen::Array<Real, Bisect_K, 1> d;
   d.head(n_valid) = diagonal[0] - shifts.head(n_valid);
-  Eigen::Array<int, Bisect_K, 1> counts;
-  counts.head(n_valid) = (d.head(n_valid) < 0).template cast<int>();
-  for (int j = 1; j < diagonal.size(); j++) {
+  Eigen::Array<Eigen::Index, Bisect_K, 1> counts;
+  counts.head(n_valid) = (d.head(n_valid) < 0).template cast<Eigen::Index>();
+  for (Eigen::Index j = 1; j < diagonal.size(); j++) {
     d.head(n_valid) = diagonal[j] - shifts.head(n_valid) - subdiagonal_norm[j - 1] / d.head(n_valid);
-    counts.head(n_valid) += (d.head(n_valid) < 0).template cast<int>();
+    counts.head(n_valid) += (d.head(n_valid) < 0).template cast<Eigen::Index>();
   }
   return counts;
 }
 
 template <typename Real>
 struct bisection_task {
-  int start, end;
+  Eigen::Index start, end;
   Real low, high;
 };
 
@@ -389,7 +389,7 @@ struct bisection_task {
  * @param[out] low Lower bounds on eigenvalues.
  * @param[out] high Upper bounds on eigenvalues.
  */
-template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real, int Bisect_K = constants<Real>::bisect_k>
+template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real, Eigen::Index Bisect_K = constants<Real>::bisect_k>
 void eigenvals_bisect(
     const Eigen::Ref<const Eigen::Matrix<Real, Eigen::Dynamic, 1>> diagonal,
     const Eigen::Matrix<Real, Eigen::Dynamic, 1>& subdiagonal_squared,
@@ -398,42 +398,42 @@ void eigenvals_bisect(
     Eigen::Matrix<Real, Eigen::Dynamic, 1>& high) {
   using std::fabs;
   using task = bisection_task<Real>;
-  const int n = diagonal.size();
+  const Eigen::Index n = diagonal.size();
   const Real eps = std::numeric_limits<Real>::epsilon() * 3;
 
   std::queue<task> task_queue;
   task_queue.push(task{0, n, min_eigval, max_eigval});
   while (!task_queue.empty()) {
-    const int n_valid = std::min(Bisect_K, static_cast<int>(task_queue.size()));
+    const Eigen::Index n_valid = std::min(Bisect_K, static_cast<Eigen::Index>(task_queue.size()));
     Eigen::Array<Real, Bisect_K, 1> shifts;
     task t[Bisect_K];
-    for (int i = 0; i < n_valid; i++) {
+    for (Eigen::Index i = 0; i < n_valid; i++) {
       t[i] = task_queue.front();
       task_queue.pop();
     }
-    for (int i = 0; i < Bisect_K; i++) {
-      const int task_idx = i % n_valid;
-      const int idx_in_task = i / n_valid;
-      const int task_total = Bisect_K / n_valid + (Bisect_K % n_valid > task_idx);
+    for (Eigen::Index i = 0; i < Bisect_K; i++) {
+      const Eigen::Index task_idx = i % n_valid;
+      const Eigen::Index idx_in_task = i / n_valid;
+      const Eigen::Index task_total = Bisect_K / n_valid + (Bisect_K % n_valid > task_idx);
       shifts[i] = t[task_idx].low + (t[task_idx].high - t[task_idx].low) * (idx_in_task + 1.) / (task_total + 1);
     }
-    const Eigen::Array<int, Bisect_K, 1> counts = get_sturm_count_T_vec(diagonal, subdiagonal_squared, shifts, Bisect_K);
-    for (int i = 0; i < n_valid; i++) {
+    const Eigen::Array<Eigen::Index, Bisect_K, 1> counts = get_sturm_count_T_vec(diagonal, subdiagonal_squared, shifts, Bisect_K);
+    for (Eigen::Index i = 0; i < n_valid; i++) {
       if (counts[i] >= t[i].start + 1) {
         if ((t[i].high - shifts[i]) / fabs(shifts[i]) > eps && shifts[i] - t[i].low > std::numeric_limits<Real>::min()) {
           task_queue.push({t[i].start, counts[i], t[i].low, shifts[i]});
         } else {
-          const int n_eq = counts[i] - t[i].start;
+          const Eigen::Index n_eq = counts[i] - t[i].start;
           low.segment(t[i].start, n_eq) = Eigen::Matrix<Real, Eigen::Dynamic, 1>::Constant(n_eq, t[i].low);
           high.segment(t[i].start, n_eq) = Eigen::Matrix<Real, Eigen::Dynamic, 1>::Constant(n_eq, shifts[i]);
         }
       }
     }
-    for (int i = 0; i < Bisect_K; i++) {
-      const int task_idx = i % n_valid;
-      const int idx_in_task = i / n_valid;
-      const int task_total = Bisect_K / n_valid + (Bisect_K % n_valid > task_idx);
-      int my_end = t[task_idx].end;
+    for (Eigen::Index i = 0; i < Bisect_K; i++) {
+      const Eigen::Index task_idx = i % n_valid;
+      const Eigen::Index idx_in_task = i / n_valid;
+      const Eigen::Index task_total = Bisect_K / n_valid + (Bisect_K % n_valid > task_idx);
+      Eigen::Index my_end = t[task_idx].end;
       Real my_high = t[task_idx].high;
       if (i + n_valid < Bisect_K) {
         my_end = counts[i + n_valid];
@@ -443,11 +443,11 @@ void eigenvals_bisect(
         if ((my_high - shifts[i]) / fabs(shifts[i]) > eps && my_high - shifts[i] > std::numeric_limits<Real>::min()) {
           task_queue.push({counts[i], my_end, shifts[i], my_high});
         } else {
-          int my_start = t[task_idx].start;
+          Eigen::Index my_start = t[task_idx].start;
           if (i - n_valid >= 0) {
             my_start = counts[i - n_valid];
           }
-          const int n_eq = my_end - counts[i];
+          const Eigen::Index n_eq = my_end - counts[i];
           low.segment(counts[i], n_eq) = Eigen::Matrix<Real, Eigen::Dynamic, 1>::Constant(n_eq, shifts[i]);
           high.segment(counts[i], n_eq) = Eigen::Matrix<Real, Eigen::Dynamic, 1>::Constant(n_eq, my_high);
         }
@@ -475,12 +475,12 @@ void calculate_eigenvector(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l_plus,
     const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& u_minus,
     const Eigen::Ref<const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>>& subdiagonal,
-    const int i, const int twist_idx,
+    const Eigen::Index i, const Eigen::Index twist_idx,
     Eigen::Ref<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>>& eigenvectors) {
   auto vec = eigenvectors.col(i);
-  const int n = vec.size();
+  const Eigen::Index n = vec.size();
   vec[twist_idx] = 1;
-  for (int j = twist_idx + 1; j < n; j++) {
+  for (Eigen::Index j = twist_idx + 1; j < n; j++) {
     if (vec[j - 1] != 0.) {
       vec[j] = -u_minus[j - 1] * vec[j - 1];
     } else {
@@ -490,7 +490,7 @@ void calculate_eigenvector(
       }
     }
   }
-  for (int j = twist_idx - 1; j >= 0; j--) {
+  for (Eigen::Index j = twist_idx - 1; j >= 0; j--) {
     if (vec[j + 1] != 0.) {
       vec[j] = -std::conj(l_plus[j]) * vec[j + 1];
     } else {
@@ -598,17 +598,18 @@ Real find_initial_shift(
 
 template <typename Scalar, typename Real>
 struct mrrr_task {
-  int start, end;
+  Eigen::Index start, end;
   Real shift;  // total shift, not just the last one
   Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l;
   Eigen::Matrix<Real, Eigen::Dynamic, 1> d;
-  int level;
+  Eigen::Index level;
 };
 
 /**
  * Calculates eigenvalues and eigenvectors of a irreducible tridiagonal matrix T
- * using MRRR algorithm. Use `tridiagonal_eigensolver` if any subdiagonal
- * element might be (very close to) zero.
+ * using MRRR (Multiple relatively robust representations) algorithm. Use
+ * `tridiagonal_eigensolver` if any subdiagonal element might be (very close to)
+ * zero.
  * @tparam Scalar scalar used
  * @tparam Real real valued scalar
  * @param diagonal Diagonal of of T.
@@ -630,7 +631,7 @@ void mrrr(
   using std::fabs;
   using task = mrrr_task<Scalar, Real>;
   const Real shift_error = std::numeric_limits<Real>::epsilon() * 100;
-  const int n = diagonal.size();
+  const Eigen::Index n = diagonal.size();
   Eigen::Matrix<Real, Eigen::Dynamic, 1> high(n), low(n);
   Real min_eigval;
   Real max_eigval;
@@ -638,7 +639,7 @@ void mrrr(
   Eigen::Matrix<Real, Eigen::Dynamic, 1> d(n), d0(n);
   Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l(n - 1), l0(n - 1);
   const Real shift0 = find_initial_shift(diagonal, subdiagonal, l0, d0, min_eigval, max_eigval, max_ele_growth);
-  for (int i = 0; i < n; i++) {
+  for (Eigen::Index i = 0; i < n; i++) {
     if (i != n - 1) {
       l[i] = l0[i] * get_random_perturbation_multiplier<Real>();
     }
@@ -650,7 +651,7 @@ void mrrr(
   eigenvalues = (high + low) * Real(0.5);
   low.array() -= shift0;
   high.array() -= shift0;
-  for (int i = 0; i < n; i++) {
+  for (Eigen::Index i = 0; i < n; i++) {
     low[i] = low[i] * (1 - copysign(constants<Real>::perturbation_range * n, low[i]));
     high[i] = high[i] * (1 + copysign(constants<Real>::perturbation_range * n, high[i]));
     eigenval_bisect_refine(l, d, low[i], high[i], i);
@@ -666,11 +667,11 @@ void mrrr(
     Real min_element_growth = std::numeric_limits<Real>::infinity();
     Eigen::Matrix<Real, Eigen::Dynamic, 1> d2(n);
     Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l2(n - 1), l_plus(n - 1), u_minus(n - 1);
-    for (int i = block.start; i < block.end; i++) {
+    for (Eigen::Index i = block.start; i < block.end; i++) {
       // find eigenvalue cluster size
-      int cluster_end;
+      Eigen::Index cluster_end;
       for (cluster_end = i + 1; cluster_end < block.end; cluster_end++) {
-        const int prev = cluster_end - 1;
+        const Eigen::Index prev = cluster_end - 1;
         const Real end_threshold = low[prev] * (1 - copysign(shift_error, low[prev]));
         if (high[cluster_end] < end_threshold) {
           break;
@@ -681,7 +682,7 @@ void mrrr(
         const Real max_shift = (high[i] - low[cluster_end]) * 10;
         Real next_shift, min_ele_growth;
         find_shift(block.l, block.d, low[cluster_end], high[i], max_ele_growth, max_shift, l, d, next_shift, min_ele_growth);
-        for (int j = i; j <= cluster_end; j++) {
+        for (Eigen::Index j = i; j <= cluster_end; j++) {
           low[j] = low[j] * (1 - copysign(shift_error, low[j])) - next_shift;
           high[j] = high[j] * (1 + copysign(shift_error, high[j])) - next_shift;
           eigenval_bisect_refine(l, d, low[j], high[j], j);
@@ -692,7 +693,7 @@ void mrrr(
 
         i = cluster_end;
       } else {  // isolated eigenvalue
-        int twist_idx;
+        Eigen::Index twist_idx;
         const Real low_gap = i == block.start ? std::numeric_limits<Real>::infinity() : low[i - 1] - high[i];
         const Real high_gap = i == block.end - 1 ? std::numeric_limits<Real>::infinity() : low[i] - high[i + 1];
         const Real min_gap = std::min(low_gap, high_gap);
@@ -730,16 +731,16 @@ template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Re
     typename = typename std::enable_if<std::is_arithmetic<Real>::value>::type>
 void sort_eigenpairs(Eigen::Matrix<Real, Eigen::Dynamic, 1>& eigenvalues,
                      Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& eigenvectors){
-  int n = eigenvalues.size();
-  Eigen::VectorXi indices(n);
-  for(int i=0;i<n;i++){
+  Eigen::Index n = eigenvalues.size();
+  Eigen::Matrix<Eigen::Index,Eigen::Dynamic,1> indices(n);
+  for(Eigen::Index i=0;i<n;i++){
     indices[i]=i;
   }
   std::sort(indices.data(), indices.data()+n,
-      [&eigenvalues](int a, int b){return eigenvalues[a] < eigenvalues[b];});
+      [&eigenvalues](Eigen::Index a, Eigen::Index b){return eigenvalues[a] < eigenvalues[b];});
   Eigen::Matrix<Real, Eigen::Dynamic, 1> eigenvalues2(n);
   Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> eigenvectors2(n,n);
-  for(int i=0;i<n;i++){
+  for(Eigen::Index i=0;i<n;i++){
     eigenvalues2[i] = eigenvalues[indices[i]];
     eigenvectors2.col(i) = eigenvectors.col(indices[i]);
   }
@@ -749,8 +750,9 @@ void sort_eigenpairs(Eigen::Matrix<Real, Eigen::Dynamic, 1>& eigenvalues,
 
 /**
  * Calculates eigenvalues and eigenvectors of a tridiagonal matrix T using MRRR
- * algorithm. If a subdiagonal element is close to zero compared to neighbors on
- * diagonal the problem can be split into smaller ones.
+ * (Multiple relatively robust representations) algorithm. If a subdiagonal
+ * element is close to zero compared to neighbors on diagonal the problem can be
+ * split into smaller ones.
  * @tparam Scalar scalar used
  * @tparam Real real valued scalar
  * @param diagonal Diagonal of of T.
@@ -767,11 +769,11 @@ void tridiagonal_eigensolver(
     Eigen::Matrix<Real, Eigen::Dynamic, 1>& eigenvalues,
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& eigenvectors,
     const Real split_threshold = 1e-12) {
-  const int n = diagonal.size();
+  const Eigen::Index n = diagonal.size();
   eigenvectors.resize(n, n);
   eigenvalues.resize(n);
-  int last = 0;
-  for (int i = 0; i < subdiagonal.size(); i++) {
+  Eigen::Index last = 0;
+  for (Eigen::Index i = 0; i < subdiagonal.size(); i++) {
     if (Eigen::numext::abs(subdiagonal[i] / diagonal[i]) < split_threshold && Eigen::numext::abs(subdiagonal[i] / diagonal[i + 1]) < split_threshold) {
       eigenvectors.block(last, i + 1, i + 1 - last, n - i - 1) = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Constant(i + 1 - last, n - i - 1, 0);
       eigenvectors.block(i + 1, last, n - i - 1, i + 1 - last) = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::Constant(n - i - 1, i + 1 - last, 0);

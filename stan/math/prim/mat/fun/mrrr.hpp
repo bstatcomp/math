@@ -173,6 +173,7 @@ Real get_shifted_ldl(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
  * @param shift Shift.
  * @param[out] l_plus Subdiagonal of L+.
  * @param[out] u_minus Superdiagonal of U-.
+ * @param s workspace of the same size as \c d
  * @return Twist index.
  */
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
@@ -181,14 +182,14 @@ Eigen::Index get_twisted_factorization(
     const Eigen::Matrix<Real, Eigen::Dynamic, 1>& d,
     const Real shift,
     Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l_plus,
-    Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& u_minus) {
+    Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& u_minus,
+    Eigen::Matrix<Real, Eigen::Dynamic, 1>& s) {
   using std::conj;
   using std::copysign;
   using std::fabs;
   using std::real;
   const Eigen::Index n = l.size();
   // calculate shifted ldl
-  Eigen::Matrix<Real, Eigen::Dynamic, 1> s(n + 1);
   s[0] = -shift;
   for (Eigen::Index i = 0; i < n; i++) {
     Real d_plus = s[i] + d[i];
@@ -302,7 +303,12 @@ void eigenval_bisect_refine(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
                             Real& low, Real& high, const Eigen::Index i) {
   using std::fabs;
   const Real eps = std::numeric_limits<Real>::epsilon() * 3;
-  while (!(fabs((high - low) / (high + low)) < eps)) {  // if the condition was flipped it would be wrong for the case where division yields NaN
+  while (fabs((high - low) / (high + low)) > eps
+         && fabs(high - low)
+                > std::numeric_limits<double>::min()) {   // second term is for
+                                                          // the case where the
+                                                          // eigenvalue is 0 and
+                                                          // division yields NaN
     Real mid = (high + low) * Real(0.5);
     if (get_sturm_count_ldl(l, d, mid) > i) {
       low = mid;
@@ -516,6 +522,8 @@ void calculate_eigenvector(
  * @param[out] d2 Diagonal of D2.
  * @param[out] shift Shift.
  * @param[out] min_element_growth Element growth achieved with resulting shift.
+ * @param l3 workspace of the same size as l
+ * @param d3 workspace of the same size as d
  */
 template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Real>
 void find_shift(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
@@ -523,10 +531,11 @@ void find_shift(const Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l,
                 const Real low, const Real high, const Real max_ele_growth, const Real max_shift,
                 Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l2,
                 Eigen::Matrix<Real, Eigen::Dynamic, 1>& d2,
-                Real& shift, Real& min_element_growth) {
-  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l3(l2.size());
-  Eigen::Matrix<Real, Eigen::Dynamic, 1> d3(d2.size());
-  const std::vector<Real> shifts = {
+                Real& shift, Real& min_element_growth,
+                Eigen::Matrix<Scalar, Eigen::Dynamic, 1>& l3,
+                Eigen::Matrix<Real, Eigen::Dynamic, 1>& d3
+                ) {
+  const Real shifts[]{
       low,
       high - max_shift * Real(0.1),
       low + max_shift * Real(0.1),
@@ -627,14 +636,28 @@ void mrrr(
   using std::copysign;
   using std::fabs;
   using task = mrrr_task<Scalar, Real>;
+  using RealMapType = typename Eigen::Matrix<Real, Eigen::Dynamic, 1>::MapType;
+  using ScalarMapType = typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::MapType;
   const Real shift_error = std::numeric_limits<Real>::epsilon() * 100;
   const Eigen::Index n = diagonal.size();
-  Eigen::Matrix<Real, Eigen::Dynamic, 1> high(n), low(n);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l0(n - 1),
+              l2(n - 1),
+              l_plus(n - 1),
+              u_minus(n - 1),
+              l3(n - 1);
+  Eigen::Matrix<Real, Eigen::Dynamic, 1> high(n),
+              low(n),
+              d0(n),
+              d2(n),
+              d3(n),
+              subdiagonal_norm(n);
+  Eigen::Matrix<Real, Eigen::Dynamic, 1> d(n);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l(n-1);
+
+  subdiagonal_norm = subdiagonal.array().abs2();
   Real min_eigval;
   Real max_eigval;
   get_gresgorin(diagonal, subdiagonal, min_eigval, max_eigval);
-  Eigen::Matrix<Real, Eigen::Dynamic, 1> d(n), d0(n);
-  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l(n - 1), l0(n - 1);
   const Real shift0 = find_initial_shift(diagonal, subdiagonal, l0, d0, min_eigval, max_eigval, max_ele_growth);
   for (Eigen::Index i = 0; i < n; i++) {
     if (i != n - 1) {
@@ -642,7 +665,6 @@ void mrrr(
     }
     d[i] = d0[i] * get_random_perturbation_multiplier<Real>();
   }
-  const Eigen::Matrix<Real, Eigen::Dynamic, 1> subdiagonal_norm = (subdiagonal.array().conjugate() * subdiagonal.array()).real();
 
   eigenvals_bisect<Scalar, Real>(diagonal, subdiagonal_norm, min_eigval, max_eigval, low, high);
   eigenvalues = (high + low) * Real(0.5);
@@ -662,8 +684,6 @@ void mrrr(
     block_queue.pop();
     Real shift = std::numeric_limits<Real>::infinity();
     Real min_element_growth = std::numeric_limits<Real>::infinity();
-    Eigen::Matrix<Real, Eigen::Dynamic, 1> d2(n);
-    Eigen::Matrix<Scalar, Eigen::Dynamic, 1> l2(n - 1), l_plus(n - 1), u_minus(n - 1);
     for (Eigen::Index i = block.start; i < block.end; i++) {
       // find eigenvalue cluster size
       Eigen::Index cluster_end;
@@ -678,7 +698,7 @@ void mrrr(
       if (cluster_end - i > 0) {  // cluster
         const Real max_shift = (high[i] - low[cluster_end]) * 10;
         Real next_shift, min_ele_growth;
-        find_shift(block.l, block.d, low[cluster_end], high[i], max_ele_growth, max_shift, l, d, next_shift, min_ele_growth);
+        find_shift(block.l, block.d, low[cluster_end], high[i], max_ele_growth, max_shift, l, d, next_shift, min_ele_growth, l3, d3);
         for (Eigen::Index j = i; j <= cluster_end; j++) {
           low[j] = low[j] * (1 - copysign(shift_error, low[j])) - next_shift;
           high[j] = high[j] * (1 + copysign(shift_error, high[j])) - next_shift;
@@ -699,7 +719,7 @@ void mrrr(
         if (!(fabs(min_gap / ((high[i] + low[i]) * Real(0.5))) > min_rel_sep)) {
           if (!(fabs(min_gap / ((high[i] + low[i]) * Real(0.5) - shift)) > min_rel_sep && min_element_growth < max_ele_growth)) {
             const Real max_shift = min_gap / min_rel_sep;
-            find_shift(block.l, block.d, low[i], high[i], max_ele_growth, max_shift, l2, d2, shift, min_element_growth);
+            find_shift(block.l, block.d, low[i], high[i], max_ele_growth, max_shift, l2, d2, shift, min_element_growth, l3, d3);
           }
           low[i] = low[i] * (1 - copysign(shift_error, low[i])) - shift;
           high[i] = high[i] * (1 + copysign(shift_error, high[i])) - shift;
@@ -710,7 +730,7 @@ void mrrr(
           l_ptr = &block.l;
           d_ptr = &block.d;
         }
-        twist_idx = get_twisted_factorization(*l_ptr, *d_ptr, (low[i] + high[i]) * Real(0.5), l_plus, u_minus);
+        twist_idx = get_twisted_factorization(*l_ptr, *d_ptr, (low[i] + high[i]) * Real(0.5), l_plus, u_minus, d3);
         calculate_eigenvector(l_plus, u_minus, subdiagonal, i, twist_idx, eigenvectors);
       }
     }

@@ -31,20 +31,23 @@ void block_householder_tridiag(
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& packed,
     const Eigen::Index r = 60) {
   using Real = typename Eigen::NumTraits<Scalar>::Real;
+  using MapType = typename Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::MapType;
+  using MapTypeVec = typename Eigen::Matrix<Scalar, Eigen::Dynamic, 1>::MapType;
   packed = A;
+  Eigen::Index first_actual_r = std::min({r, static_cast<Eigen::Index>(packed.rows() - 2)});
+  Eigen::Index V_size = packed.rows() * r;
+  Eigen::Index partial_update_size = (packed.rows() - first_actual_r) * (packed.rows() - first_actual_r);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> workspace(V_size + partial_update_size);
   for (Eigen::Index k = 0; k < packed.rows() - 2; k += r) {
     const Eigen::Index actual_r = std::min({r, static_cast<Eigen::Index>(packed.rows() - k - 2)});
-    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> V(
-        packed.rows() - k - 1, actual_r);
+    MapType V(workspace.data(), packed.rows() - k, actual_r);
 
     for (Eigen::Index j = 0; j < actual_r; j++) {
       typename Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::ColXpr::SegmentReturnType householder = packed.col(k + j).tail(packed.rows() - k - j - 1);
       if (j != 0) {
         Eigen::Index householder_whole_size = packed.rows() - k - j;
-        packed.col(k + j).tail(householder_whole_size) -= packed.block(k + j, k, householder_whole_size, j)
-                                 * V.block(j - 1, 0, 1, j).adjoint()
-                             + V.block(j - 1, 0, householder_whole_size, j)
-                                   * packed.block(k + j, k, 1, j).adjoint();
+        packed.col(k + j).tail(householder_whole_size) -= packed.block(k + j, k, householder_whole_size, j) * V.block(j, 0, 1, j).adjoint();
+        packed.col(k + j).tail(householder_whole_size) -= V.block(j, 0, householder_whole_size, j) * packed.block(k + j, k, 1, j).adjoint();
       }
       Real q = householder.squaredNorm();
       Scalar alpha = -sqrt(q);
@@ -60,16 +63,14 @@ void block_householder_tridiag(
         householder *= SQRT_2 / q;
       }
 
-      Eigen::Matrix<Scalar, Eigen::Dynamic, 1> v(householder.size() + 1);
-      v.tail(householder.size())
-          = packed.bottomRightCorner(packed.rows() - k - j - 1,
-                                     packed.cols() - k - j - 1)
-                    .template selfadjointView<Eigen::Lower>()
-                * householder
-            - packed.block(k + j + 1, k, householder.size(), j)
-                  * (V.bottomLeftCorner(householder.size(), j).adjoint() * householder)
-            - V.bottomLeftCorner(householder.size(), j)
-                  * (packed.block(k + j + 1, k, householder.size(), j).adjoint() * householder);
+      typename MapType::ColXpr::SegmentReturnType v = V.col(j).tail(householder.size() + 1);
+      v.tail(householder.size()).noalias() = packed.bottomRightCorner(packed.rows() - k - j - 1, packed.cols() - k - j - 1)
+                    .template selfadjointView<Eigen::Lower>() * householder;
+      MapTypeVec tmp(workspace.data() + V.size(), j);
+      tmp.noalias() = V.bottomLeftCorner(householder.size(), j).adjoint() * householder;
+      v.tail(householder.size()).noalias() -= packed.block(k + j + 1, k, householder.size(), j) * tmp;
+      tmp.noalias() = packed.block(k + j + 1, k, householder.size(), j).adjoint() * householder;
+      v.tail(householder.size()).noalias() -= V.bottomLeftCorner(householder.size(), j) * tmp;
       v[0] = q / SQRT_2;
       const Real cnst = (v.tail(householder.size()).adjoint() * householder).real()[0];
       v.tail(householder.size()) -= 0.5 * cnst * householder;
@@ -77,11 +78,10 @@ void block_householder_tridiag(
       // calculate subdiagonal of T into superdiagonal of packed
       packed(k + j, k + j + 1)
           = packed(k + j + 1, k + j) * q / SQRT_2 + alpha - v[0] * householder[0];
-      V.col(j).tail(V.rows() - j) = v.tail(V.rows() - j);
     }
-    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> partial_update
-        = packed.block(k + actual_r, k, packed.rows() - k - actual_r, actual_r)
-          * V.bottomRows(V.rows() - actual_r + 1).adjoint();
+    MapType partial_update(workspace.data() + V.size(), V.rows() - actual_r,V.rows() - actual_r);
+    partial_update.noalias() = packed.block(k + actual_r, k, packed.rows() - k - actual_r, actual_r)
+          * V.bottomRows(V.rows() - actual_r).adjoint();
     packed
         .block(k + actual_r, k + actual_r, packed.rows() - k - actual_r,
                packed.cols() - k - actual_r)
@@ -108,28 +108,27 @@ void block_apply_packed_Q(
     const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& packed,
     Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& A,
     const Eigen::Index r = 100) {
-  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> scratch_space(A.rows(),
-                                                                      r);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> workspace(A.rows(), r * 2);
+
   for (Eigen::Index k = (packed.rows() - 3) / r * r; k >= 0; k -= r) {
     const Eigen::Index actual_r = std::min({r, static_cast<Eigen::Index>(packed.rows() - k - 2)});
-    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> W(
-        packed.rows() - k - 1, actual_r);
+    typename Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>::MapType W(workspace.data() + A.rows() * actual_r, packed.rows() - k - 1, actual_r);
     W.col(0) = packed.col(k).tail(W.rows());
     for (Eigen::Index j = 1; j < actual_r; j++) {
-      scratch_space.col(0).head(j).noalias()
+      workspace.col(0).head(j).noalias()
           = packed.block(k + j + 1, k, packed.rows() - k - j - 1, j).adjoint()
             * packed.col(k + j).tail(packed.rows() - k - j - 1);
-      W.col(j).noalias() = -W.leftCols(j) * scratch_space.col(0).head(j);
+      W.col(j).noalias() = -W.leftCols(j) * workspace.col(0).head(j);
       W.col(j).tail(W.rows() - j)
           += packed.col(k + j).tail(packed.rows() - k - j - 1);
     }
-    scratch_space.transpose().bottomRows(actual_r).noalias()
+    workspace.transpose().topRows(actual_r).noalias()
         = packed.block(k + 1, k, packed.rows() - k - 1, actual_r)
               .adjoint()
               .template triangularView<Eigen::Upper>()
           * A.bottomRows(A.rows() - k - 1);
     A.bottomRows(A.cols() - k - 1).noalias()
-        -= W * scratch_space.transpose().bottomRows(actual_r);
+        -= W * workspace.transpose().topRows(actual_r);
   }
 }
 

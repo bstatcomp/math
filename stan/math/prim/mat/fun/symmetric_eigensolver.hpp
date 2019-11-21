@@ -20,12 +20,15 @@ template <typename Scalar, typename Real = typename Eigen::NumTraits<Scalar>::Re
 void selfadjoint_eigensolver(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>& A,
                            Eigen::Matrix<Real, Eigen::Dynamic,1>& eigenvalues,
                            Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>& eigenvectors) {
-  Eigen::Matrix<Scalar,Eigen::Dynamic, Eigen::Dynamic> packed;
-  internal::block_householder_tridiag(A, packed);
+  Eigen::Matrix<Scalar,Eigen::Dynamic, Eigen::Dynamic> packed = A;
+  internal::block_householder_tridiag_in_place(packed);
   Eigen::Matrix<Real,Eigen::Dynamic,1> diagonal = packed.diagonal().real();
-  Eigen::Matrix<Scalar,Eigen::Dynamic,1> subdiagonal = packed.diagonal(1);
+  Eigen::Matrix<Scalar,Eigen::Dynamic,1> subdiagonal = packed.diagonal(-1).real();
   internal::tridiagonal_eigensolver(diagonal, subdiagonal, eigenvalues, eigenvectors);
-  internal::block_apply_packed_Q(packed, eigenvectors);
+  Eigen::HouseholderSequence<Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>, Eigen::Matrix<Scalar, Eigen::Dynamic,1>>(packed, packed.diagonal(1).conjugate())
+      .setLength(packed.rows() - 1)
+      .setShift(1)
+      .applyThisOnTheLeft(eigenvectors);
 }
 
 }  // namespace math

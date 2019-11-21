@@ -40,7 +40,7 @@ TEST(MathMatrix, selfadjoint_eigensolver_large_float) {
   Eigen::MatrixXf eigenvecs;
   stan::math::selfadjoint_eigensolver(input, eigenvals, eigenvecs);
 
-  EXPECT_NEAR(input.diagonal().sum(), eigenvals.sum(), 1e-4);
+  EXPECT_NEAR(input.diagonal().sum(), eigenvals.sum(), 1e-3);
   EXPECT_TRUE((eigenvecs * eigenvecs.transpose()).isApprox(Eigen::MatrixXf::Identity(size, size), 1e-2));
   EXPECT_TRUE((input * eigenvecs).isApprox(eigenvecs * eigenvals.asDiagonal(), 1e-4));
 }
@@ -115,6 +115,6 @@ TEST(MathMatrix, selfadjoint_eigensolver_large_complex) {
   stan::math::selfadjoint_eigensolver(input, eigenvals, eigenvecs);
 
   EXPECT_NEAR(input.diagonal().sum().real(), eigenvals.sum(), 1e-11);
-  EXPECT_TRUE((eigenvecs * eigenvecs.adjoint()).isApprox(Eigen::MatrixXd::Identity(size, size), 1e-9));
+  EXPECT_TRUE((eigenvecs * eigenvecs.adjoint()).isApprox(Eigen::MatrixXd::Identity(size, size), 1e-8));
   EXPECT_TRUE((input * eigenvecs).isApprox(eigenvecs * eigenvals.asDiagonal(), 1e-10));
 }

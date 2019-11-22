@@ -21,11 +21,13 @@ void selfadjoint_eigensolver(const Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::
                            Eigen::Matrix<Real, Eigen::Dynamic,1>& eigenvalues,
                            Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>& eigenvectors) {
   Eigen::Matrix<Scalar,Eigen::Dynamic, Eigen::Dynamic> packed = A;
-  internal::block_householder_tridiag_in_place(packed);
+  Eigen::Matrix<Scalar,Eigen::Dynamic, 1> hCoeffs(A.rows()-1);
+  Eigen::Matrix<Scalar, Eigen::Dynamic, 1> tridiag_workspace(internal::block_householder_tridiag_workspace(A.rows()));
+  internal::block_householder_tridiag_in_place(packed, hCoeffs, tridiag_workspace.data());
   Eigen::Matrix<Real,Eigen::Dynamic,1> diagonal = packed.diagonal().real();
   Eigen::Matrix<Scalar,Eigen::Dynamic,1> subdiagonal = packed.diagonal(-1).real();
   internal::tridiagonal_eigensolver(diagonal, subdiagonal, eigenvalues, eigenvectors);
-  Eigen::HouseholderSequence<Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>, Eigen::Matrix<Scalar, Eigen::Dynamic,1>>(packed, packed.diagonal(1).conjugate())
+  Eigen::HouseholderSequence<Eigen::Matrix<Scalar, Eigen::Dynamic,Eigen::Dynamic>, Eigen::Matrix<Scalar, Eigen::Dynamic,1>>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1)
       .applyThisOnTheLeft(eigenvectors);

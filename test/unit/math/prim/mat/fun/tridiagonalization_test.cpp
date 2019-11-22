@@ -4,9 +4,11 @@
 TEST(MathMatrix, tridiagonalization_trivial) {
   Eigen::MatrixXd id = Eigen::MatrixXd::Identity(3, 3);
   Eigen::MatrixXd packed = id;
-  stan::math::internal::block_householder_tridiag_in_place(packed);
+  Eigen::VectorXd hCoeffs(id.rows()-1);
+  Eigen::VectorXd workspace(stan::math::internal::block_householder_tridiag_workspace(id.rows()));
+  stan::math::internal::block_householder_tridiag_in_place(packed, hCoeffs, workspace.data());
   EXPECT_TRUE(packed.isApprox(id));
-  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, packed.diagonal(1).conjugate())
+  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1);
   EXPECT_TRUE(q.isApprox(id));
@@ -19,8 +21,10 @@ TEST(MathMatrix, tridiagonalization_small) {
   input += input.transpose().eval();
   Eigen::MatrixXd packed = input;
 
-  stan::math::internal::block_householder_tridiag_in_place(packed);
-  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, packed.diagonal(1).conjugate())
+  Eigen::VectorXd hCoeffs(input.rows()-1);
+  Eigen::VectorXd workspace(stan::math::internal::block_householder_tridiag_workspace(input.rows()));
+  stan::math::internal::block_householder_tridiag_in_place(packed, hCoeffs, workspace.data());
+  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1);
 
@@ -40,8 +44,10 @@ TEST(MathMatrix, tridiagonalization_large) {
   input += input.transpose().eval();
   Eigen::MatrixXd packed = input;
 
-  stan::math::internal::block_householder_tridiag_in_place(packed);
-  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, packed.diagonal(1).conjugate())
+  Eigen::VectorXd hCoeffs(input.rows()-1);
+  Eigen::VectorXd workspace(stan::math::internal::block_householder_tridiag_workspace(input.rows()));
+  stan::math::internal::block_householder_tridiag_in_place(packed, hCoeffs, workspace.data());
+  Eigen::MatrixXd q = Eigen::HouseholderSequence<Eigen::MatrixXd, Eigen::VectorXd>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1);
 
@@ -61,8 +67,10 @@ TEST(MathMatrix, tridiagonalization_small_complex) {
   input += input.adjoint().eval();
   Eigen::MatrixXcd packed = input;
 
-  stan::math::internal::block_householder_tridiag_in_place(packed);
-  Eigen::MatrixXcd q = Eigen::HouseholderSequence<Eigen::MatrixXcd, Eigen::VectorXcd>(packed, packed.diagonal(1).conjugate())
+  Eigen::VectorXcd hCoeffs(input.rows()-1);
+  Eigen::VectorXcd workspace(stan::math::internal::block_householder_tridiag_workspace(input.rows()));
+  stan::math::internal::block_householder_tridiag_in_place(packed, hCoeffs, workspace.data());
+  Eigen::MatrixXcd q = Eigen::HouseholderSequence<Eigen::MatrixXcd, Eigen::VectorXcd>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1);
 
@@ -82,8 +90,10 @@ TEST(MathMatrix, tridiagonalization_big_complex) {
   input += input.adjoint().eval();
   Eigen::MatrixXcd packed = input;
 
-  stan::math::internal::block_householder_tridiag_in_place(packed);
-  Eigen::MatrixXcd q = Eigen::HouseholderSequence<Eigen::MatrixXcd, Eigen::VectorXcd>(packed, packed.diagonal(1).conjugate())
+  Eigen::VectorXcd hCoeffs(input.rows()-1);
+  Eigen::VectorXcd workspace(stan::math::internal::block_householder_tridiag_workspace(input.rows()));
+  stan::math::internal::block_householder_tridiag_in_place(packed, hCoeffs, workspace.data());
+  Eigen::MatrixXcd q = Eigen::HouseholderSequence<Eigen::MatrixXcd, Eigen::VectorXcd>(packed, hCoeffs.conjugate())
       .setLength(packed.rows() - 1)
       .setShift(1);
 

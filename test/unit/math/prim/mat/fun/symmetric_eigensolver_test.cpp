@@ -25,7 +25,7 @@ TEST(MathMatrix, selfadjoint_eigensolver_small_float) {
   Eigen::MatrixXf eigenvecs;
   stan::math::selfadjoint_eigensolver(input, eigenvals, eigenvecs);
 
-  EXPECT_NEAR(input.diagonal().sum(), eigenvals.sum(), 1e-6);
+  EXPECT_NEAR(input.diagonal().sum(), eigenvals.sum(), 1e-5);
   EXPECT_TRUE((eigenvecs * eigenvecs.transpose()).isApprox(Eigen::MatrixXf::Identity(size, size)));
   EXPECT_TRUE((input * eigenvecs).isApprox(eigenvecs * eigenvals.asDiagonal()));
 }

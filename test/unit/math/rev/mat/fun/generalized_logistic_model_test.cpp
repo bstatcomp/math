@@ -6,10 +6,10 @@
 #include <chrono>
 
 TEST(AgradRevMatrix, test_GLM_empty) {
-#ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
-#endif
   // test data
+#ifdef STAN_OPENCL
+  stan::math::opencl_context.clear_cache();
+#endif
   std::vector<int> IDp = {};
   std::vector<int> IDs = {};
   std::vector<double> time_tmp = {};
@@ -139,10 +139,10 @@ TEST(AgradRevMatrix, test_GLM_empty) {
 }
 
 TEST(AgradRevMatrix, test_GLM_22_additive) {
-#ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
-#endif
   // test data
+#ifdef STAN_OPENCL
+  stan::math::opencl_context.clear_cache();
+#endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
       4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,
@@ -389,10 +389,10 @@ TEST(AgradRevMatrix, test_GLM_22_additive) {
 }
 
 TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
-#ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
-#endif
   // test data
+#ifdef STAN_OPENCL
+  stan::math::opencl_context.clear_cache();
+#endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
       4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,
@@ -639,10 +639,10 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative) {
 }
 
 TEST(AgradRevMatrix, test_GLM_00_additive) {
-#ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
-#endif
   // test data
+#ifdef STAN_OPENCL
+  stan::math::opencl_context.clear_cache();
+#endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
       4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,
@@ -865,7 +865,7 @@ TEST(AgradRevMatrix, test_GLM_00_additive) {
 TEST(AgradRevMatrix, test_GLM_21_both) {
   // test data
 #ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
+  stan::math::opencl_context.clear_cache();
 #endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
@@ -1105,10 +1105,10 @@ TEST(AgradRevMatrix, test_GLM_21_both) {
 }
 
 TEST(AgradRevMatrix, test_GLM_22_multiplicative_two_calls) {
-#ifdef STAN_OPENCL
-  stan::math::opencl_context.data_copied(0);
-#endif
   // test data
+#ifdef STAN_OPENCL
+  stan::math::opencl_context.clear_cache();
+#endif
   std::vector<int> IDp = {
       1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,
       4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,
@@ -1198,12 +1198,19 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative_two_calls) {
   
   // test parameters 
   stan::math::var tau = 2.73801262072881;
+  stan::math::var tau2 = 2.73801262072881;
   stan::math::var beta = 8.38877127158839;
+  stan::math::var beta2 = 8.38877127158839;
   stan::math::var beta_pbo = 1.96814828833905;
+  stan::math::var beta_pbo2 = 1.96814828833905;
   stan::math::var k_el = 11.2106307510569;
+  stan::math::var k_el2 = 11.2106307510569;
   stan::math::var k_eq = 12.9931380492784;
+  stan::math::var k_eq2 = 12.9931380492784;
   stan::math::var base_s = -1.39488005258568;
+  stan::math::var base_s2 = -1.39488005258568;
   stan::math::var base_r = -17.8120515579588;
+  stan::math::var base_r2 = -17.8120515579588;
   std::vector<double> theta_r_tmp
       = std::vector<double>({-0.166886679994743, 5.35766544476805});
   std::vector<double> theta_s_tmp
@@ -1230,7 +1237,6 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative_two_calls) {
        3.06635469263556,   -4.9924025695829,   3.44484279999651});
   std::vector<double> eta_ss_tmp = std::vector<double>(
       {0.477696968213818, -2.52959174559639, -8.14964446719815});
-
   // expected results
   double target = 22.027955846875;
   double d_tau = 2.50537286418722;
@@ -1303,28 +1309,54 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative_two_calls) {
   Eigen::Matrix<stan::math::var, -1, 1> theta_r(theta_r_tmp.size());
   Eigen::Matrix<stan::math::var, -1, 1> theta_s(theta_s_tmp.size());
 
+  Eigen::Matrix<stan::math::var, -1, 1> eta_ps2(eta_ps_tmp.size());
+  Eigen::Matrix<stan::math::var, -1, 1> eta_pr2(eta_pr_tmp.size());
+  Eigen::Matrix<stan::math::var, -1, 1> eta_ss2(eta_ss_tmp.size());
+  Eigen::Matrix<stan::math::var, -1, 1> eta_sr2(eta_sr_tmp.size());
+
+  Eigen::Matrix<stan::math::var, -1, 1> theta_r2(theta_r_tmp.size());
+  Eigen::Matrix<stan::math::var, -1, 1> theta_s2(theta_s_tmp.size());
+
   for (unsigned int i = 0; i < eta_ps_tmp.size(); i++) {
     eta_ps(i) = eta_ps_tmp[i];
+    eta_ps2(i) = eta_ps_tmp[i];
   }
   for (unsigned int i = 0; i < eta_pr_tmp.size(); i++) {
     eta_pr(i) = eta_pr_tmp[i];
+    eta_pr2(i) = eta_pr_tmp[i];
   }
   for (unsigned int i = 0; i < eta_ss_tmp.size(); i++) {
     eta_ss(i) = eta_ss_tmp[i];
+    eta_ss2(i) = eta_ss_tmp[i];
   }
   for (unsigned int i = 0; i < eta_sr_tmp.size(); i++) {
     eta_sr(i) = eta_sr_tmp[i];
+    eta_sr2(i) = eta_sr_tmp[i];
   }
 
   for (unsigned int i = 0; i < theta_r_tmp.size(); i++) {
     theta_r(i) = theta_r_tmp[i];
+    theta_r2(i) = theta_r_tmp[i];
   }
 
   for (unsigned int i = 0; i < theta_s_tmp.size(); i++) {
     theta_s(i) = theta_s_tmp[i];
+    theta_s2(i) = theta_s_tmp[i];
   }
 
   // run
+  stan::math::vector_d time2(N);
+  stan::math::vector_d S2(N);
+  for (unsigned int i = 0; i < time_tmp.size(); i++) {
+    time2(i) = time_tmp[i]+0.2;
+  }
+  for (unsigned int i = 0; i < S_tmp.size(); i++) {
+    S2(i) = S_tmp[i]+0.01;
+  }
+  stan::math::var d1 = stan::math::generalized_logistic_model(
+      IDp, IDs, pbo_flag, time, S2, multiplicative_s, multiplicative_r, X_s, X_r,
+      tau2, beta2, beta_pbo2, k_el2, k_eq2, theta_r2, theta_s2, eta_pr2, eta_sr2, eta_ps2,
+      eta_ss2, base_s2, base_r2);
   stan::math::var d = stan::math::generalized_logistic_model(
       IDp, IDs, pbo_flag, time, S, multiplicative_s, multiplicative_r, X_s, X_r,
       tau, beta, beta_pbo, k_el, k_eq, theta_r, theta_s, eta_pr, eta_sr, eta_ps,
@@ -1352,143 +1384,4 @@ TEST(AgradRevMatrix, test_GLM_22_multiplicative_two_calls) {
     EXPECT_NEAR(eta_pr(i).adj(), d_eta_pr[i], 1e-8);
   for (int i = 0; i < eta_sr.size(); i++)
     EXPECT_NEAR(eta_sr(i).adj(), d_eta_sr[i], 1e-8);
-
-    //change data and run again
-  // test parameters 
-  tau = 2.73801262072881;
-  beta = 8.38877127158839;
-  beta_pbo = 1.96814828833905;
-  k_el = 11.2106307510569;
-  k_eq = 12.9931380492784;
-  base_s = -1.39488005258568;
-  base_r = -17.8120515579588;
-
-    // expected results
-  double target2 = 21.784498469460321;
-  double d_tau2 =  2.0611537475353985;
-  double d_beta2 = 1.80237854655498e-06;
-  double d_beta_pbo2 = -1.96333857288434;
-  double d_k_el2 = 0.503424610734966;
-  double d_k_eq2 = 0.140288307766531;
-  double d_base_s2 = 1.4443927646861106;
-  double d_base_r2 = 0.000336934160504221;
-
-  std::vector<double> d_theta_r2
-      = std::vector<double>({-0.042715975035413446, 0.00057338746238430052});
-  std::vector<double> d_theta_s2
-      = std::vector<double>({-0.82014983017637855, 0.31109620082070233});
-
-  std::vector<double> d_eta_ss2 = std::vector<double>(
-      {-0.80179739776274261, 1.3460047659575, 0.900185396491329});
-  std::vector<double> d_eta_pr2 = std::vector<double>(
-      {-7.32498661293924e-10, 0.00426652625694412,   0.0001406449261978,
-       -1.57825767003064e-07, 5.26426042581785e-07,  -5.37407353631647e-07,
-       -8.10422406967397e-10, -0.000132225788156588, -4.44470841751188e-07,
-       6.69884432835136e-10,  -1.51207685741159e-07, -6.89957440007384e-08,
-       -0.000265022934015023, -0.0033393367406075,   7.09976200886983e-08,
-       -0.000323751974487783, -5.62730092344097e-06, -1.80285163260596e-07,
-       -2.77064627936281e-09, -1.60708788094888e-09, 2.94310161527191e-10,
-       -9.40856339615754e-07, -2.40891449285421e-06, 2.52117384558656e-08});
-  std::vector<double> d_eta_sr2 = std::vector<double>(
-      {-7.32498661293924e-10, 0.00440701335737492, -0.00407007846437204});
-  std::vector<double> d_eta_ps2 = std::vector<double>(
-      {-0.80179739776274261,     0.000273492713229746,  1.34674788444173,
-       -0.00101661119746031,  4.64614132195341e-05,  -0.00240093689329879,
-       -0.361205767520691,    -3.16670309785369e-07, -0.000252466295031208,
-       0.00087286965493034,   -0.00275339879130376,  -0.000378707661905515,
-       -0.00429177233767151,  -0.0014326662176339,   0.03849030684057,
-       -7.13083527663983e-10, -0.000195130784413283, -2.084388051418,
-       -0.0251019067002009,   -0.0266072617745591,   1.16441493869591,
-       -0.00044280571603414,  -1.02887217732966e-10, 2.20581200948373});
-
-    // preapare arguments
-  stan::math::vector_d time2(N);
-  stan::math::vector_d S2(N);
-  Eigen::Matrix<double, -1, -1> X_s2(N, theta_s_tmp.size());
-  Eigen::Matrix<double, -1, -1> X_r2(N, theta_r_tmp.size());
-
-  for (int j = 0; j < theta_s_tmp.size(); j++) {
-    for (int i = 0; i < N; i++) {
-      X_s2(i, j) = X_s_tmp[j * N + i];
-    }
-  }
-  X_s2(0,0)=0;
-
-  for (int j = 0; j < theta_r_tmp.size(); j++) {
-    for (int i = 0; i < N; i++) {
-      X_r2(i, j) = X_r_tmp[j * N + i];
-    }
-  }
-   X_r2(0, 0)=-12.875;
-
-  for (unsigned int i = 0; i < time_tmp.size(); i++) {
-    time2(i) = time_tmp[i];
-  }
-  time2(0)=0.5;
-  for (unsigned int i = 0; i < S_tmp.size(); i++) {
-    S2(i) = S_tmp[i];
-  }
-  S2(0)=0.895192848;
-  Eigen::Matrix<stan::math::var, -1, 1> eta_ps2(eta_ps_tmp.size());
-  Eigen::Matrix<stan::math::var, -1, 1> eta_pr2(eta_pr_tmp.size());
-  Eigen::Matrix<stan::math::var, -1, 1> eta_ss2(eta_ss_tmp.size());
-  Eigen::Matrix<stan::math::var, -1, 1> eta_sr2(eta_sr_tmp.size());
-
-  Eigen::Matrix<stan::math::var, -1, 1> theta_r2(theta_r_tmp.size());
-  Eigen::Matrix<stan::math::var, -1, 1> theta_s2(theta_s_tmp.size());
-
-  for (unsigned int i = 0; i < eta_ps_tmp.size(); i++) {
-    eta_ps2(i) = eta_ps_tmp[i];
-  }
-  for (unsigned int i = 0; i < eta_pr_tmp.size(); i++) {
-    eta_pr2(i) = eta_pr_tmp[i];
-  }
-  for (unsigned int i = 0; i < eta_ss_tmp.size(); i++) {
-    eta_ss2(i) = eta_ss_tmp[i];
-  }
-  for (unsigned int i = 0; i < eta_sr_tmp.size(); i++) {
-    eta_sr2(i) = eta_sr_tmp[i];
-  }
-
-  for (unsigned int i = 0; i < theta_r_tmp.size(); i++) {
-    theta_r2(i) = theta_r_tmp[i];
-  }
-
-  for (unsigned int i = 0; i < theta_s_tmp.size(); i++) {
-    theta_s2(i) = theta_s_tmp[i];
-  }
-
-  // run
-  stan::math::var d2 = stan::math::generalized_logistic_model(
-      IDp, IDs, pbo_flag, time2, S2, multiplicative_s, multiplicative_r, X_s2, X_r2,
-      tau, beta, beta_pbo, k_el, k_eq, theta_r2, theta_s2, eta_pr2, eta_sr2, eta_ps2,
-      eta_ss2, base_s, base_r);
-  d2.grad();
-
-  // check values
-  EXPECT_NEAR(d2.val(), target2, 1e-8);
-  EXPECT_NEAR(beta.adj(), d_beta2, 1e-8);
-  EXPECT_NEAR(tau.adj(), d_tau2, 1e-8);
-  EXPECT_NEAR(beta_pbo.adj(), d_beta_pbo2, 1e-8);
-  EXPECT_NEAR(k_el.adj(), d_k_el2, 1e-8);
-  EXPECT_NEAR(k_eq.adj(), d_k_eq2, 1e-8);
-  EXPECT_NEAR(base_s.adj(), d_base_s2, 1e-8);
-  EXPECT_NEAR(base_r.adj(), d_base_r2, 1e-8);
-  for (int i = 0; i < theta_r2.size(); i++)
-    EXPECT_NEAR(theta_r2(i).adj(), d_theta_r2[i], 1e-8);
-  for (int i = 0; i < theta_s2.size(); i++)
-    EXPECT_NEAR(theta_s2(i).adj(), d_theta_s2[i], 1e-8);
-  for (int i = 0; i < eta_ss2.size(); i++)
-    EXPECT_NEAR(eta_ss2(i).adj(), d_eta_ss2[i], 1e-8);
-  for (int i = 0; i < eta_ps2.size(); i++)
-    EXPECT_NEAR(eta_ps2(i).adj(), d_eta_ps2[i], 1e-8);
-  for (int i = 0; i < eta_pr2.size(); i++)
-    EXPECT_NEAR(eta_pr2(i).adj(), d_eta_pr2[i], 1e-8);
-  for (int i = 0; i < eta_sr2.size(); i++)
-    EXPECT_NEAR(eta_sr2(i).adj(), d_eta_sr2[i], 1e-8);
-
-
-
-
-
 }

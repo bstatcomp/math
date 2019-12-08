@@ -237,16 +237,20 @@ class opencl_context_base {
   } tuning_opts_;
 
   int gpu_enabled = 1;
-  int data_copied = 0;
-  struct cl_buffers {
-    cl::Buffer IDp_buf;
-    cl::Buffer IDs_buf;
-    cl::Buffer X_s_buf;
-    cl::Buffer X_r_buf;
-    cl::Buffer is_pbo_buf;
-    cl::Buffer score_buf;
-    cl::Buffer time_buf;
-  } cl_buffers_;
+  
+  struct cl_buffer_ {
+    int used;
+    const void* address;
+    cl::Buffer buffer;
+  };
+
+  cl_buffer_ X_s_buf[2];
+  cl_buffer_ X_r_buf[2];
+  cl_buffer_ score_buf[2];
+  cl_buffer_ time_buf[2];
+  cl_buffer_ IDp_buf[2];
+  cl_buffer_ IDs_buf[2];
+  cl_buffer_ is_pbo_buf[2];
 
   static opencl_context_base& getInstance() {
     static opencl_context_base instance_;
@@ -446,18 +450,190 @@ class opencl_context {
     opencl_context_base::getInstance().gpu_enabled = i;
   }
 
-  inline int data_copied() {
-    return opencl_context_base::getInstance().data_copied;
+  inline int X_s_copied(const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().X_s_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().X_s_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().X_s_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().X_s_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
   }
 
-  inline void data_copied(int i) {
-    opencl_context_base::getInstance().data_copied = i;
+  inline cl::Buffer& X_s(int ind) {
+    return opencl_context_base::getInstance().X_s_buf[ind].buffer;
+  }
+  
+  inline void X_s_addr(int ind, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& x) {
+    opencl_context_base::getInstance().X_s_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().X_s_buf[ind].used = 1;
+  }
+  
+  inline int X_r_copied(const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().X_r_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().X_r_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().X_r_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().X_r_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
   }
 
-  inline opencl_context_base::cl_buffers& cl_buffers() {
-    return opencl_context_base::getInstance().cl_buffers_;
+  inline cl::Buffer& X_r(int ind) {
+    return opencl_context_base::getInstance().X_r_buf[ind].buffer;
+  }
+    
+  inline void X_r_addr(int ind, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& x) {
+    opencl_context_base::getInstance().X_r_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().X_r_buf[ind].used = 1;
   }
 
+  inline int score_copied(const vector_d& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().score_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().score_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().score_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().score_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
+  }
+
+  inline cl::Buffer& score(int ind) {
+    return opencl_context_base::getInstance().score_buf[ind].buffer;
+  }
+  
+  inline void score_addr(int ind, const vector_d& x) {
+    opencl_context_base::getInstance().score_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().score_buf[ind].used = 1;
+  }
+
+  inline int time_copied(const vector_d& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().time_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().time_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().time_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().time_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
+  }
+
+  inline cl::Buffer& time(int ind) {
+    return opencl_context_base::getInstance().time_buf[ind].buffer;
+  }
+  
+  inline void time_addr(int ind, const vector_d& x) {
+    opencl_context_base::getInstance().time_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().time_buf[ind].used = 1;
+  }
+
+  inline int IDp_copied(const std::vector<int>& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().IDp_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().IDp_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().IDp_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().IDp_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
+  }
+
+  inline cl::Buffer& IDp(int ind) {
+    return opencl_context_base::getInstance().IDp_buf[ind].buffer;
+  }
+  
+  inline void IDp_addr(int ind, const std::vector<int>& x) {
+    opencl_context_base::getInstance().IDp_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().IDp_buf[ind].used = 1;
+  }
+
+  inline int IDs_copied(const std::vector<int>& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().IDs_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().IDs_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().IDs_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().IDs_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
+  }
+
+  inline cl::Buffer& IDs(int ind) {
+    return opencl_context_base::getInstance().IDs_buf[ind].buffer;
+  }
+  
+  inline void IDs_addr(int ind, const std::vector<int>& x) {
+    opencl_context_base::getInstance().IDs_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().IDs_buf[ind].used = 1;
+  }
+
+  inline int is_pbo_copied(const std::vector<int>& x) {
+    const void* addr = static_cast<const void*>(&x);
+    if(opencl_context_base::getInstance().is_pbo_buf[0].used == 0) {
+      return -1;
+    } else if(opencl_context_base::getInstance().is_pbo_buf[0].address == addr) {
+      return 0;
+    } else if(opencl_context_base::getInstance().is_pbo_buf[1].used == 0) {
+      return -2;
+    } else if(opencl_context_base::getInstance().is_pbo_buf[1].address == addr)  {
+      return 1;
+    }
+    // this should not happen
+    return -5;
+  }
+
+  inline cl::Buffer& is_pbo(int ind) {
+    return opencl_context_base::getInstance().is_pbo_buf[ind].buffer;
+  }
+  
+  inline void is_pbo_addr(int ind, const std::vector<int>& x) {
+    opencl_context_base::getInstance().is_pbo_buf[ind].address = static_cast<const void*>(&x);
+    opencl_context_base::getInstance().is_pbo_buf[ind].used = 1;
+  }
+
+  inline void clear_cache() {
+    opencl_context_base::getInstance().X_s_buf[0].used = 0;
+    opencl_context_base::getInstance().X_s_buf[1].used = 0;
+    opencl_context_base::getInstance().X_r_buf[0].used = 0;
+    opencl_context_base::getInstance().X_r_buf[1].used = 0;
+    opencl_context_base::getInstance().score_buf[0].used = 0;
+    opencl_context_base::getInstance().score_buf[1].used = 0;
+    opencl_context_base::getInstance().time_buf[0].used = 0;
+    opencl_context_base::getInstance().time_buf[1].used = 0;
+    opencl_context_base::getInstance().IDp_buf[0].used = 0;
+    opencl_context_base::getInstance().IDp_buf[1].used = 0;
+    opencl_context_base::getInstance().IDs_buf[0].used = 0;
+    opencl_context_base::getInstance().IDs_buf[1].used = 0;
+    opencl_context_base::getInstance().is_pbo_buf[0].used = 0;
+    opencl_context_base::getInstance().is_pbo_buf[1].used = 0;
+  }
 };
 static opencl_context opencl_context;
 }  // namespace math

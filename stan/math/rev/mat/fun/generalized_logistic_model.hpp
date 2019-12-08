@@ -40,49 +40,90 @@ inline var generalized_logistic_model(
 #ifdef STAN_OPENCL
   if(opencl_context.gpu_enabled()) {
     const int d_eta_size = eta_ps.size()+eta_ss.size()+eta_sr.size()+eta_pr.size();
-    if(opencl_context.data_copied() == 0){
+
+    int X_s_copy = opencl_context.X_s_copied(X_s);
+    if(X_s_copy < 0) {
       matrix_cl<double> tX_s_cl = to_matrix_cl<double>(X_s);
       tX_s_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().X_s_buf = tX_s_cl.buffer();
+      X_s_copy *= -1;
+      X_s_copy--;
+      opencl_context.X_s(X_s_copy) = tX_s_cl.buffer();
+    }
+
+    int X_r_copy = opencl_context.X_r_copied(X_r);
+    if(X_r_copy < 0) {
       matrix_cl<double> tX_r_cl = to_matrix_cl<double>(X_r);
       tX_r_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().X_r_buf = tX_r_cl.buffer();
+      X_r_copy *= -1;
+      X_r_copy--;
+      opencl_context.X_r(X_r_copy) = tX_r_cl.buffer();
+    }
+
+    int score_copy = opencl_context.score_copied(score);
+    if(score_copy < 0) {
+      matrix_cl<double> tscore_cl = to_matrix_cl<double>(score);
+      tscore_cl.wait_for_read_write_events();
+      score_copy *= -1;
+      score_copy--;
+      opencl_context.score(score_copy) = tscore_cl.buffer();
+      opencl_context.score_addr(score_copy, score);
+    }
+
+    int time_copy = opencl_context.time_copied(time);
+    if(time_copy < 0) {          
+      matrix_cl<double> ttime_cl = to_matrix_cl<double>(time);
+      ttime_cl.wait_for_read_write_events();
+      time_copy *= -1;
+      time_copy--;
+      opencl_context.time(time_copy) = ttime_cl.buffer();
+    }
+
+    int IDp_copy = opencl_context.IDp_copied(IDp);
+    if(IDp_copy < 0) {          
       matrix_d IDp_temp(1, IDp.size());
-      matrix_d IDs_temp(1, IDs.size());
-      matrix_d is_pbo_temp(is_pbo.size(), 1);
       for(int i=0;i<IDp.size();i++) {
         IDp_temp(i) = static_cast<double>(IDp[i]);
       }
-      for(int i=0;i<IDs.size();i++) {
-        IDs_temp(i) = static_cast<double>(IDs[i]);
-      }
-      for(int i=0;i<is_pbo.size();i++) {
-        is_pbo_temp(i, 0) = is_pbo[i];
-      } 
       matrix_cl<double> tIDp_cl = to_matrix_cl<double>(IDp_temp);
       tIDp_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().IDp_buf = tIDp_cl.buffer();
+      IDp_copy *= -1;
+      IDp_copy--;
+      opencl_context.IDp(IDp_copy) = tIDp_cl.buffer();
+    }
+
+    int IDs_copy = opencl_context.IDp_copied(IDp);
+    if(IDs_copy < 0) {          
+      matrix_d IDs_temp(1, IDs.size());
+      for(int i=0;i<IDs.size();i++) {
+        IDs_temp(i) = static_cast<double>(IDs[i]);
+      } 
       matrix_cl<double> tIDs_cl = to_matrix_cl<double>(IDs_temp);
-      tIDs_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().IDs_buf = tIDs_cl.buffer();
+      tIDs_cl.wait_for_read_write_events();      
+      IDs_copy *= -1;
+      IDs_copy--;
+      opencl_context.IDs(IDs_copy) = tIDs_cl.buffer();
+    }
+
+    int is_pbo_copy = opencl_context.is_pbo_copied(is_pbo);
+    if(is_pbo_copy < 0) {          
+      matrix_d is_pbo_temp(is_pbo.size(), 1);
+      for(int i=0;i<is_pbo.size();i++) {
+        is_pbo_temp(i, 0) = is_pbo[i];
+      }
       matrix_cl<double> tis_pbo_cl = to_matrix_cl<double>(is_pbo_temp);
       tis_pbo_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().is_pbo_buf = tis_pbo_cl.buffer();    
-      matrix_cl<double> tscore_cl = to_matrix_cl<double>(score);
-      tscore_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().score_buf = tscore_cl.buffer();
-      matrix_cl<double> ttime_cl = to_matrix_cl<double>(time);
-      ttime_cl.wait_for_read_write_events();
-      opencl_context.cl_buffers().time_buf = ttime_cl.buffer();
-      opencl_context.data_copied(1);
+      is_pbo_copy *= -1;
+      is_pbo_copy--;
+      opencl_context.is_pbo(is_pbo_copy) = tis_pbo_cl.buffer();
     }
-    matrix_cl<double> IDp_cl(opencl_context.cl_buffers().IDp_buf, 1, N);
-    matrix_cl<double> IDs_cl(opencl_context.cl_buffers().IDs_buf, 1, N);
-    matrix_cl<double> X_s_cl(opencl_context.cl_buffers().X_s_buf, 1, N);
-    matrix_cl<double> X_r_cl(opencl_context.cl_buffers().X_r_buf, 1, N);
-    matrix_cl<double> time_cl(opencl_context.cl_buffers().time_buf, 1, N);
-    matrix_cl<double> score_cl(opencl_context.cl_buffers().score_buf, 1, N);
-    matrix_cl<double> is_pbo_cl(opencl_context.cl_buffers().is_pbo_buf, 1, N);
+    matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), 1, N);
+    matrix_cl<double> X_r_cl(opencl_context.X_r(X_r_copy), 1, N);
+    matrix_cl<double> score_cl(opencl_context.score(score_copy), 1, N);
+    stan::math::matrix_d aa = stan::math::from_matrix_cl(score_cl);
+    matrix_cl<double> time_cl(opencl_context.time(time_copy), 1, N);
+    matrix_cl<double> IDp_cl(opencl_context.IDp(IDp_copy), 1, N);
+    matrix_cl<double> IDs_cl(opencl_context.IDs(IDs_copy), 1, N);
+    matrix_cl<double> is_pbo_cl(opencl_context.is_pbo(is_pbo_copy), 1, N);
     
     matrix_d t1 = eta_ps.val();  matrix_d t2 = eta_ss.val();
     matrix_d t3 = eta_pr.val();  matrix_d t4 = eta_sr.val();
@@ -205,6 +246,7 @@ inline var generalized_logistic_model(
     const int p_size = d_eta_pr.size();
     const int s_size = d_eta_sr.size();
     double tgt = 0;
+    std::cout << score[0] << std::endl;
     for (int i = 0; i < N; i++) {
       int IDp_i = IDp[i] - 1;
       int IDs_i = IDs[i] - 1;

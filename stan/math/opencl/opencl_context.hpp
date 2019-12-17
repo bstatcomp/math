@@ -69,6 +69,7 @@ inline void choose_best_device(int& gpu_platform, int& gpu_device) {
     system_error("OpenCL Initialization", "[Platform]", -1,
                      "No OpenCL device found");
   }
+  
   int max_SMs = 0;
   for(int i = 0;i < temp_platforms_.size(); i++) {
     temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
@@ -77,7 +78,7 @@ inline void choose_best_device(int& gpu_platform, int& gpu_device) {
       if(device_SMs > max_SMs) {
         max_SMs = device_SMs;
         gpu_platform = i;
-        gpu_device = i;
+        gpu_device = j;
       }
     }
   }

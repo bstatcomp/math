@@ -116,10 +116,10 @@ inline var generalized_logistic_model(
       is_pbo_copy--;
       opencl_context.is_pbo(is_pbo_copy) = tis_pbo_cl.buffer();
     }
-    matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), 1, N);
-    matrix_cl<double> X_r_cl(opencl_context.X_r(X_r_copy), 1, N);
+
+    matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), N, X_s.cols());
+    matrix_cl<double> X_r_cl(opencl_context.X_r(X_r_copy), N, X_r.cols());
     matrix_cl<double> score_cl(opencl_context.score(score_copy), 1, N);
-    stan::math::matrix_d aa = stan::math::from_matrix_cl(score_cl);
     matrix_cl<double> time_cl(opencl_context.time(time_copy), 1, N);
     matrix_cl<double> IDp_cl(opencl_context.IDp(IDp_copy), 1, N);
     matrix_cl<double> IDs_cl(opencl_context.IDs(IDs_copy), 1, N);

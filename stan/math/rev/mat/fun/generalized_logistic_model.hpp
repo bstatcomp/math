@@ -116,8 +116,8 @@ inline var generalized_logistic_model(
       is_pbo_copy--;
       opencl_context.is_pbo(is_pbo_copy) = tis_pbo_cl.buffer();
     }
-    matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), 1, N);
-    matrix_cl<double> X_r_cl(opencl_context.X_r(X_r_copy), 1, N);
+    matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), 1, theta_s.cols()*theta_s.rows()*N);
+    matrix_cl<double> X_r_cl(opencl_context.X_r(X_r_copy), 1, theta_r.cols()*theta_r.rows()*N);
     matrix_cl<double> score_cl(opencl_context.score(score_copy), 1, N);
     stan::math::matrix_d aa = stan::math::from_matrix_cl(score_cl);
     matrix_cl<double> time_cl(opencl_context.time(time_copy), 1, N);
@@ -233,9 +233,8 @@ inline var generalized_logistic_model(
     double d_base_s = 0;
     double d_base_r = 0;
 
-    const int theta_s_size = X_s.cols();
-    const int theta_r_size = X_r.cols();
-
+    const int theta_s_size = theta_s.size();
+    const int theta_r_size = theta_r.size();
     std::vector<double> d_eta_pr(eta_pr.size());
     std::vector<double> d_eta_sr(eta_sr.size());
     std::vector<double> d_eta_ps(eta_ps.size());
@@ -246,7 +245,6 @@ inline var generalized_logistic_model(
     const int p_size = d_eta_pr.size();
     const int s_size = d_eta_sr.size();
     double tgt = 0;
-    std::cout << score[0] << std::endl;
     for (int i = 0; i < N; i++) {
       int IDp_i = IDp[i] - 1;
       int IDs_i = IDs[i] - 1;
@@ -255,9 +253,11 @@ inline var generalized_logistic_model(
       double cov_r = base_r + eta_pr(IDp_i).val() + eta_sr(IDs_i).val();
 
       if (theta_s.size() > 0)
-        cov_s = cov_s + (X_s.row(i) * theta_s.col(0))(0, 0).val();
+        for (int p=0;p<theta_s_size;p++)
+          cov_s = cov_s + (X_s(i, p) * theta_s(p)).val();
       if (theta_r.size() > 0) {
-        cov_r = cov_r + (X_r.row(i) * theta_r.col(0))(0, 0).val();
+        for (int p=0;p<theta_r_size;p++)
+          cov_r = cov_r + (X_r(i, p) * theta_r(p)).val();
       }
       if (multiplicative_s == 1) {
         cov_s = exp(cov_s);
@@ -265,7 +265,6 @@ inline var generalized_logistic_model(
       if (multiplicative_r == 1) {
         cov_r = exp(cov_r);
       }
-
       const double S0 = 1 / (1 + exp(-cov_s));
       const double d_k_eq_el = k_eq - k_el;
       const double k_eq_n = k_eq / (d_k_eq_el);
@@ -290,10 +289,9 @@ inline var generalized_logistic_model(
       double d_x_d_mu = tau
                         * (log_score - log_score_compl - dg_muS_tau_prod
                           + dg_tau_muS_tau_prod);
-      d_tau += muS
-                  * (log_score - log_score_compl - dg_muS_tau_prod
-                      + dg_tau_muS_tau_prod)
-              + log_score_compl - dg_tau_muS_tau_prod + digamma(tau);
+      d_tau += muS * (log_score - log_score_compl - dg_muS_tau_prod + dg_tau_muS_tau_prod)
+               + log_score_compl - dg_tau_muS_tau_prod + digamma(tau);
+
       const double d_k_eq_el_sq = d_k_eq_el * d_k_eq_el;
 
       d_beta_pbo = d_beta_pbo + d_x_d_mu * (-is_pbo_i) * k_eq_n * exp_k_el_eq_t;
@@ -350,10 +348,10 @@ inline var generalized_logistic_model(
                         / alpha_beta_pow);
       tgt += dbeta(score[i], muS_tau_prod, (1 - muS) * tau);
     }
-
+     
     // stack it up
     vari** varis = ChainableStack::instance_->memalloc_.alloc_array<vari*>(
-        7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size);
+        7 + theta_r_size + theta_s_size + eta_pr.size() + eta_ps.size() + eta_sr.size() + eta_ss.size());
     varis[0] = tauv.vi_;
     varis[1] = betav.vi_;
     varis[2] = beta_pbov.vi_;
@@ -387,8 +385,9 @@ inline var generalized_logistic_model(
       varis[k] = eta_ss(i).vi_;
       k++;
     }
+     
     double* gradients = ChainableStack::instance_->memalloc_.alloc_array<double>(
-        7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size);
+        7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_ps.size() + d_eta_sr.size() + d_eta_ss.size());
     gradients[0] = d_tau;
     gradients[1] = d_beta;
     gradients[2] = d_beta_pbo;
@@ -398,32 +397,32 @@ inline var generalized_logistic_model(
     gradients[6] = d_base_r;
 
     k = 7;
-    for (int i = 0; i < theta_r.size(); i++) {
+    for (int i = 0; i < d_theta_r.size(); i++) {
       gradients[k] = d_theta_r[i];
       k++;
     }
-    for (int i = 0; i < theta_s.size(); i++) {
+    for (int i = 0; i < d_theta_s.size(); i++) {
       gradients[k] = d_theta_s[i];
       k++;
     }
-    for (int i = 0; i < p_size; i++) {
+    for (int i = 0; i < d_eta_pr.size(); i++) {
       gradients[k] = d_eta_pr[i];
       k++;
     }
-    for (int i = 0; i < s_size; i++) {
+    for (int i = 0; i < d_eta_sr.size(); i++) {
       gradients[k] = d_eta_sr[i];
       k++;
     }
-    for (int i = 0; i < p_size; i++) {
+    for (int i = 0; i < d_eta_ps.size(); i++) {
       gradients[k] = d_eta_ps[i];
       k++;
     }
-    for (int i = 0; i < s_size; i++) {
+    for (int i = 0; i < d_eta_ss.size(); i++) {
       gradients[k] = d_eta_ss[i];
       k++;
     }
     return var(new precomputed_gradients_vari(
-        tgt, 7 + theta_r_size + theta_s_size + p_size + p_size + s_size + s_size,
+        tgt, 7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_sr.size() + d_eta_ps.size() + d_eta_ss.size(),
         varis, gradients));
 #ifdef STAN_OPENCL
   }

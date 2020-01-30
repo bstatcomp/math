@@ -4,13 +4,14 @@
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
 #include <stan/math/prim/scal/fun/lbeta.hpp>
+#include <stan/math/prim/scal.hpp>
 #include <algorithm>
 
 namespace stan {
 namespace math {
 
 inline double dbeta(const double x, const double a, const double b) {
-  return log(x) * (a - 1) + log(1 - x) * (b - 1) - lbeta(a, b);
+  return std::log(x) * (a - 1) + std::log(1 - x) * (b - 1) - lbeta(a, b);
 }
 
 inline double generalized_logistic_model(
@@ -41,25 +42,26 @@ inline double generalized_logistic_model(
       cov_r = cov_r + (X_r.row(i) * theta_r.col(0))(0, 0);
     }
     if (multiplicative_s == 1) {
-      cov_s = exp(cov_s);
+      cov_s = std::exp(cov_s);
     }
     if (multiplicative_r == 1) {
-      cov_r = exp(cov_r);
+      cov_r = std::exp(cov_r);
     }
 
-    const double S0 = 1 / (1 + exp(-cov_s));
+    const double S0 = 1.0 / (1.0 + std::exp((double)-cov_s));
     const double d_k_eq_el = k_eq - k_el;
     const double k_eq_n = k_eq / (d_k_eq_el);
-    const double exp_k_el_eq_t = (exp(-k_el * time[i]) - exp(-k_eq * time[i]));
+    const double exp_k_el_eq_t = (std::exp(-k_el * time[i]) - std::exp(-k_eq * time[i]));
     const double pbo_eff = beta_pbo * k_eq_n * exp_k_el_eq_t;
     const double is_pbo_i = is_pbo[IDs_i];
     const double inv_beta = 1.0 / beta;
     const double S0_beta_pow = std::pow(S0, beta);
     const double beta_cov_t_prod = -beta * cov_r * time[i];
-    const double exp_beta_cov_t_prod = exp(beta_cov_t_prod);
+    const double exp_beta_cov_t_prod = std::exp(beta_cov_t_prod);
     const double alpha = std::pow(
         S0_beta_pow + (1 - S0_beta_pow) * exp_beta_cov_t_prod, inv_beta);
     double muS = S0 / alpha - is_pbo_i * pbo_eff;
+
     check_positive_finite("generalized_logistic_model", "First shape parameter", muS*tau);
     check_positive_finite("generalized_logistic_model", "Second shape parameter", (1 - muS) * tau);
     tgt += dbeta(score[i], muS * tau, (1 - muS) * tau);

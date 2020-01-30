@@ -266,7 +266,7 @@ inline var generalized_logistic_model(
       if (multiplicative_r == 1) {
         cov_r = exp(cov_r);
       }
-      const double S0 = 1 / (1 + exp(-cov_s));
+      const double S0 = 1.0 / (1.0 + exp(-cov_s));
       const double d_k_eq_el = k_eq - k_el;
       const double k_eq_n = k_eq / (d_k_eq_el);
       const double exp_k_el_eq_t = (exp(-k_el * time[i]) - exp(-k_eq * time[i]));
@@ -347,6 +347,7 @@ inline var generalized_logistic_model(
                         - exp_beta_cov_t_prod * cov_r * time[i]
                               * (1 - S0_beta_pow)))
                         / alpha_beta_pow);
+
       check_positive_finite("generalized_logistic_model", "First shape parameter", muS_tau_prod);
       check_positive_finite("generalized_logistic_model", "Second shape parameter", (1 - muS) * tau);
       tgt += dbeta(score[i], muS_tau_prod, (1 - muS) * tau);

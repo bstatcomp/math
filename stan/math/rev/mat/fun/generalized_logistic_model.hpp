@@ -162,6 +162,7 @@ inline var generalized_logistic_model(
     }
     matrix_d params = from_matrix_cl(params_cl);
     const double tgt = params(0,0);
+    check_finite("generalized_logistic_model", "target", tgt);
     const double d_base_s = params(1,0);
     const double d_base_r = params(2,0);
     const double d_tau = params(3,0);
@@ -346,6 +347,8 @@ inline var generalized_logistic_model(
                         - exp_beta_cov_t_prod * cov_r * time[i]
                               * (1 - S0_beta_pow)))
                         / alpha_beta_pow);
+      check_positive_finite("generalized_logistic_model", "First shape parameter", muS_tau_prod);
+      check_positive_finite("generalized_logistic_model", "Second shape parameter", (1 - muS) * tau);
       tgt += dbeta(score[i], muS_tau_prod, (1 - muS) * tau);
     }
      

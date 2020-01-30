@@ -60,6 +60,8 @@ inline double generalized_logistic_model(
     const double alpha = std::pow(
         S0_beta_pow + (1 - S0_beta_pow) * exp_beta_cov_t_prod, inv_beta);
     double muS = S0 / alpha - is_pbo_i * pbo_eff;
+    check_positive_finite("generalized_logistic_model", "First shape parameter", muS*tau);
+    check_positive_finite("generalized_logistic_model", "Second shape parameter", (1 - muS) * tau);
     tgt += dbeta(score[i], muS * tau, (1 - muS) * tau);
   }
   return tgt;

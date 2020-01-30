@@ -82,7 +82,7 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
         if (tmp[1] == 1) {
             tmp_r = tmp_r * cov_r;
         }
-        double tgt = dbeta(score[i], muS * tmp[3], (1 - muS) * tmp[3]);
+        double tgt = (muS * tmp[3]>=0) && (!isinf(muS * tmp[3])) && ((1 - muS) * tmp[3] >=0) && (!isinf((1 - muS) * tmp[3]) ? dbeta(score[i], muS * tmp[3], (1 - muS) * tmp[3]):INFINITY;
         temp_results[i] = tgt;
         temp_results[i+N] = tmp_s;
         temp_results[i+2*N] = tmp_r;

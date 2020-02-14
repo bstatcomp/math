@@ -1,11 +1,12 @@
 #ifndef STAN_MATH_PRIM_MAT_FUN_GENERALIZED_LOGISTIC_MODEL_HPP
 #define STAN_MATH_PRIM_MAT_FUN_GENERALIZED_LOGISTIC_MODEL_HPP
-
+#include <algorithm>
+#include <vector>
 #include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/prim/mat/fun/typedefs.hpp>
 #include <stan/math/prim/scal/fun/lbeta.hpp>
 #include <stan/math/prim/scal.hpp>
-#include <algorithm>
+
 
 namespace stan {
 namespace math {
@@ -48,10 +49,11 @@ inline double generalized_logistic_model(
       cov_r = std::exp(cov_r);
     }
 
-    const double S0 = 1.0 / (1.0 + std::exp((double)-cov_s));
+    const double S0 = 1.0 / (1.0 + std::exp(-cov_s));
     const double d_k_eq_el = k_eq - k_el;
     const double k_eq_n = k_eq / (d_k_eq_el);
-    const double exp_k_el_eq_t = (std::exp(-k_el * time[i]) - std::exp(-k_eq * time[i]));
+    const double exp_k_el_eq_t = (std::exp(-k_el * time[i])
+                               - std::exp(-k_eq * time[i]));
     const double pbo_eff = beta_pbo * k_eq_n * exp_k_el_eq_t;
     const double is_pbo_i = is_pbo[IDs_i];
     const double inv_beta = 1.0 / beta;
@@ -71,4 +73,4 @@ inline double generalized_logistic_model(
 }  // namespace math
 }  // namespace stan
 
-#endif
+#endif  // STAN_MATH_PRIM_MAT_FUN_GENERALIZED_LOGISTIC_MODEL_HPP

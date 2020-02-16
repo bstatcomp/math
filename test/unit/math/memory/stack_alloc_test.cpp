@@ -25,7 +25,7 @@ TEST(MemoryStackAlloc, allocArrayBigger) {
   stan::math::stack_alloc allocator;
   biggy* x = allocator.alloc_array<biggy>(N);
   for (size_t i = 0; i < N; ++i)
-    for (size_t k = 1; k < K; ++k)
+    for (size_t k = 0; k < K; ++k)
       x[i].r[k] = k * i;
   for (size_t i = 0; i < N; ++i)
     for (size_t k = 0; k < K; ++k)
@@ -104,9 +104,11 @@ TEST(stack_alloc, in_stack) {
 TEST(stack_alloc, in_stack_second_block) {
   stan::math::stack_alloc allocator;
 
-  char* x = allocator.alloc_array<char>(stan::math::DEFAULT_INITIAL_NBYTES);
+  char* x = allocator.alloc_array<char>(
+      stan::math::internal::DEFAULT_INITIAL_NBYTES);
   EXPECT_TRUE(allocator.in_stack(x));
-  EXPECT_FALSE(allocator.in_stack(x + stan::math::DEFAULT_INITIAL_NBYTES));
+  EXPECT_FALSE(
+      allocator.in_stack(x + stan::math::internal::DEFAULT_INITIAL_NBYTES));
 
   char* y = allocator.alloc_array<char>(1);
   EXPECT_TRUE(allocator.in_stack(x));

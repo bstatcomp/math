@@ -2,58 +2,62 @@
 @Library('StanUtils')
 import org.stan.Utils
 
-def setupCC(Boolean failOnError = true) {
-    errorStr = failOnError ? "-Werror " : ""
-    "echo CC=${env.CXX} ${errorStr}> make/local"
-}
-
-def setup(Boolean failOnError = true) {
-    sh """
-        git clean -xffd
-        ${setupCC(failOnError)}
-    """
-}
-
-def mailBuildResults(String label, additionalEmails='') {
-    emailext (
-        subject: "[StanJenkins] ${label}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-        body: """${label}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]': Check console output at ${env.BUILD_URL}""",
-        recipientProviders: [[$class: 'RequesterRecipientProvider']],
-        to: "${env.CHANGE_AUTHOR_EMAIL}, ${additionalEmails}"
-    )
-}
-
 def runTests(String testPath) {
     sh "./runTests.py -j${env.PARALLEL} ${testPath} --make-only"
     try { sh "./runTests.py -j${env.PARALLEL} ${testPath}" }
     finally { junit 'test/**/*.xml' }
 }
 
+def runTestsWin(String testPath, boolean buildLibs = true) {
+    withEnv(['PATH+TBB=./lib/tbb']) {
+       bat "echo $PATH"
+       if (buildLibs){
+           bat "mingw32-make.exe -f make/standalone math-libs"
+       }
+       bat "runTests.py -j${env.PARALLEL} ${testPath} --make-only"
+       try { bat "runTests.py -j${env.PARALLEL} ${testPath}" }
+       finally { junit 'test/**/*.xml' }
+    }
+}
+
+def deleteDirWin() {
+    bat "attrib -r -s /s /d"
+    deleteDir()
+}
+
 def utils = new org.stan.Utils()
 
 def isBranch(String b) { env.BRANCH_NAME == b }
 
-def alsoNotify() {
+String alsoNotify() {
     if (isBranch('master') || isBranch('develop')) {
         "stan-buildbot@googlegroups.com"
     } else ""
 }
-def isPR() { env.CHANGE_URL != null }
-def fork() { env.CHANGE_FORK ?: "stan-dev" }
-def branchName() { isPR() ? env.CHANGE_BRANCH :env.BRANCH_NAME }
+Boolean isPR() { env.CHANGE_URL != null }
+String fork() { env.CHANGE_FORK ?: "stan-dev" }
+String branchName() { isPR() ? env.CHANGE_BRANCH :env.BRANCH_NAME }
+String cmdstan_pr() { params.cmdstan_pr ?: ( env.CHANGE_TARGET == "master" ? "downstream_hotfix" : "downstream_tests" ) }
+String stan_pr() { params.stan_pr ?: ( env.CHANGE_TARGET == "master" ? "downstream_hotfix" : "downstream_tests" ) }
 
 pipeline {
     agent none
     parameters {
-        string(defaultValue: 'downstream tests', name: 'cmdstan_pr',
+        string(defaultValue: '', name: 'cmdstan_pr',
           description: 'PR to test CmdStan upstream against e.g. PR-630')
-        string(defaultValue: 'downstream tests', name: 'stan_pr',
+        string(defaultValue: '', name: 'stan_pr',
           description: 'PR to test Stan upstream against e.g. PR-630')
         booleanParam(defaultValue: false, description:
         'Run additional distribution tests on RowVectors (takes 5x as long)',
         name: 'withRowVector')
     }
-    options { skipDefaultCheckout() }
+    options {
+        skipDefaultCheckout()
+        preserveStashes(buildCount: 7)
+    }
+    environment {
+        STAN_NUM_THREADS = '4'
+    }
     stages {
         stage('Kill previous builds') {
             when {
@@ -70,6 +74,7 @@ pipeline {
             agent any
             steps {
                 sh "printenv"
+                deleteDir()
                 retry(3) { checkout scm }
                 withCredentials([usernamePassword(credentialsId: 'a630aebc-6861-4e69-b497-fd7f496ec46b',
                     usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -116,66 +121,96 @@ pipeline {
             agent any
             steps {
                 script {
+                    deleteDir()
                     retry(3) { checkout scm }
-                    setup(false)
+                    sh "git clean -xffd"
                     stash 'MathSetup'
-                    sh setupCC()
+                    sh "echo CXX=${env.CXX} -Werror > make/local"
+                    sh "echo BOOST_PARALLEL_JOBS=${env.PARALLEL} >> make/local"
                     parallel(
                         CppLint: { sh "make cpplint" },
-                        Dependencies: { sh 'make test-math-dependencies' } ,
-                        Documentation: { sh 'make doxygen' },
-                        Headers: { sh "make -j${env.PARALLEL} test-headers" }
+                        Dependencies: { sh """#!/bin/bash
+                            set -o pipefail
+                            make test-math-dependencies 2>&1 | tee dependencies.log""" } ,
+                        Documentation: { sh "make doxygen" },
                     )
                 }
             }
             post {
                 always {
-                    warnings consoleParsers: [[parserName: 'CppLint']], canRunOnFailed: true
-                    warnings consoleParsers: [[parserName: 'math-dependencies']], canRunOnFailed: true
+                    recordIssues enabledForFailure: true, tools:
+                        [cppLint(),
+                         groovyScript(parserId: 'mathDependencies', pattern: '**/dependencies.log')]
                     deleteDir()
                 }
             }
         }
-        stage('Tests') {
+        stage('Headers checks') {
             parallel {
-                stage('Unit') {
-                    agent any
-                    steps {
-                        unstash 'MathSetup'
-                        sh setupCC()
-                        runTests("test/unit")
-                    }
-                    post { always { retry(3) { deleteDir() } } }
+              stage('Headers check') {
+                agent any
+                steps {
+                    deleteDir()
+                    unstash 'MathSetup'
+                    sh "echo CXX=${env.CXX} -Werror > make/local"
+                    sh "make -j${env.PARALLEL} test-headers"
                 }
-                stage('Unit with GPU') {
-                    agent { label "gelman-group-mac" }
-                    steps {
-                        unstash 'MathSetup'
-                        sh setupCC()
-                        sh "echo STAN_OPENCL=true>> make/local"
-                        sh "echo OPENCL_PLATFORM_ID=0>> make/local"
-                        sh "echo OPENCL_DEVICE_ID=0>> make/local"
-                        runTests("test/unit")
-                    }
-                    post { always { retry(3) { deleteDir() } } }
+                post { always { deleteDir() } }
+              }
+              stage('Headers check with OpenCL') {
+                agent { label "gpu" }
+                steps {
+                    deleteDir()
+                    unstash 'MathSetup'
+                    sh "echo CXX=${env.CXX} -Werror > make/local"
+                    sh "echo STAN_OPENCL=true>> make/local"
+                    sh "echo OPENCL_PLATFORM_ID=0>> make/local"
+                    sh "echo OPENCL_DEVICE_ID=${OPENCL_DEVICE_ID}>> make/local"
+                    sh "make -j${env.PARALLEL} test-headers"
                 }
-                stage('Unit with MPI') {
-                    agent any
+                post { always { deleteDir() } }
+              }
+           }
+        }
+        stage('Always-run tests part 1') {
+            parallel {
+                stage('Linux Unit with MPI') {
+                    agent { label 'linux && mpi' }
                     steps {
+                        deleteDir()
                         unstash 'MathSetup'
-                        sh "echo CC=${MPICXX} -cxx=${CXX} >> make/local"
+                        sh "echo CXX=${MPICXX} >> make/local"
+                        sh "echo CXX_TYPE=gcc >> make/local"                        
                         sh "echo STAN_MPI=true >> make/local"
                         runTests("test/unit")
                     }
                     post { always { retry(3) { deleteDir() } } }
                 }
+                stage('Full unit with GPU') {
+                    agent { label "gpu" }
+                    steps {
+                        deleteDir()
+                        unstash 'MathSetup'
+                        sh "echo CXX=${env.CXX} -Werror > make/local"
+                        sh "echo STAN_OPENCL=true>> make/local"
+                        sh "echo OPENCL_PLATFORM_ID=0>> make/local"
+                        sh "echo OPENCL_DEVICE_ID=${OPENCL_DEVICE_ID}>> make/local"
+                        runTests("test/unit")
+                    }
+                    post { always { retry(3) { deleteDir() } } }
+                }
+            }
+        }
+        stage('Always-run tests part 2') {
+            parallel {
                 stage('Distribution tests') {
                     agent { label "distribution-tests" }
                     steps {
+                        deleteDir()
                         unstash 'MathSetup'
                         sh """
-                            ${setupCC(false)}
-                            echo 'O=0' >> make/local
+                            echo CXX=${env.CXX} > make/local
+                            echo O=0 >> make/local
                             echo N_TESTS=${env.N_TESTS} >> make/local
                             """
                         script {
@@ -192,27 +227,85 @@ pipeline {
                         }
                         failure {
                             echo "Distribution tests failed. Check out dist.log.zip artifact for test logs."
-                        }
+                            }
                     }
+                }
+                stage('Threading tests') {
+                    agent any
+                    steps {
+                        deleteDir()
+                        unstash 'MathSetup'
+                        sh "echo CXX=${env.CXX} -Werror > make/local"
+                        sh "echo CPPFLAGS+=-DSTAN_THREADS >> make/local"
+                        runTests("test/unit -f thread")
+                        sh "find . -name *_test.xml | xargs rm"
+                        runTests("test/unit -f map_rect")
+                    }
+                    post { always { retry(3) { deleteDir() } } }
+                }
+                stage('Windows Headers & Unit') {
+                    agent { label 'windows' }
+                    steps {
+                        deleteDirWin()
+                        unstash 'MathSetup'
+                        bat "mingw32-make.exe -f make/standalone math-libs"
+                        bat "mingw32-make -j${env.PARALLEL} test-headers"
+                        runTestsWin("test/unit", false)
+                    }
+                }
+                stage('Windows Threading') {
+                    agent { label 'windows' }
+                    steps {
+                        deleteDirWin()
+                        unstash 'MathSetup'
+                        bat "echo CXX=${env.CXX} -Werror > make/local"
+                        bat "echo CXXFLAGS+=-DSTAN_THREADS >> make/local"
+                        runTestsWin("test/unit -f thread")
+                        runTestsWin("test/unit -f map_rect")
+                    }
+                }
+            }
+        }
+        stage('Additional merge tests') {
+            when { anyOf { branch 'develop'; branch 'master' } }
+            parallel {
+                stage('Linux Unit with Threading') {
+                    agent { label 'linux' }
+                    steps {
+                        deleteDir()
+                        unstash 'MathSetup'
+                        sh "echo CXX=${GCC} >> make/local"
+                        sh "echo CXXFLAGS=-DSTAN_THREADS >> make/local"
+                        runTests("test/unit")
+                    }
+                    post { always { retry(3) { deleteDir() } } }
+                }
+                stage('Mac Unit with Threading') {
+                    agent  { label 'osx' }
+                    steps {
+                        deleteDir()
+                        unstash 'MathSetup'
+                        sh "echo CC=${env.CXX} -Werror > make/local"
+                        sh "echo CXXFLAGS+=-DSTAN_THREADS >> make/local"
+                        runTests("test/unit")
+                    }
+                    post { always { retry(3) { deleteDir() } } }
                 }
             }
         }
         stage('Upstream tests') {
-            parallel {
-                stage('Stan Upstream Tests') {
-                    when { expression { env.BRANCH_NAME ==~ /PR-\d+/ } }
-                    steps {
-                        build(job: "Stan/${params.stan_pr}",
-                              parameters: [string(name: 'math_pr', value: env.BRANCH_NAME),
-                                           string(name: 'cmdstan_pr', value: params.cmdstan_pr)])
-                    }
-                }
+            when { expression { env.BRANCH_NAME ==~ /PR-\d+/ } }
+            steps {
+                build(job: "Stan/${stan_pr()}",
+                        parameters: [string(name: 'math_pr', value: env.BRANCH_NAME),
+                                    string(name: 'cmdstan_pr', value: cmdstan_pr())])
             }
         }
         stage('Upload doxygen') {
             agent any
-            when { branch 'master'}
+            when { branch 'develop'}
             steps {
+                deleteDir()
                 retry(3) { checkout scm }
                 withCredentials([usernamePassword(credentialsId: 'a630aebc-6861-4e69-b497-fd7f496ec46b',
                                                   usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
@@ -237,15 +330,16 @@ pipeline {
     post {
         always {
             node("osx || linux") {
-                warnings consoleParsers: [[parserName: 'GNU C Compiler 4 (gcc)']], canRunOnFailed: true
-                warnings consoleParsers: [[parserName: 'Clang (LLVM based)']], canRunOnFailed: true
+                recordIssues enabledForFailure: false, tool: clang()
             }
         }
         success {
-            script { utils.updateUpstream(env, 'stan') }
-            mailBuildResults("SUCCESSFUL")
+            script {
+                utils.updateUpstream(env, 'stan')
+                utils.mailBuildResults("SUCCESSFUL")
+            }
         }
-        unstable { mailBuildResults("UNSTABLE", alsoNotify()) }
-        failure { mailBuildResults("FAILURE", alsoNotify()) }
+        unstable { script { utils.mailBuildResults("UNSTABLE", alsoNotify()) } }
+        failure { script { utils.mailBuildResults("FAILURE", alsoNotify()) } }
     }
 }

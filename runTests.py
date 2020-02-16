@@ -17,7 +17,6 @@ import time
 
 winsfx = ".exe"
 testsfx = "_test.cpp"
-batchSize = 25
 
 
 def processCLIArgs():
@@ -37,14 +36,13 @@ def processCLIArgs():
 
     tests_help_msg = "The path(s) to the test case(s) to run.\n"
     tests_help_msg += "Example: 'test/unit', 'test/prob', and/or\n"
-    tests_help_msg += "         'test/unit/math/prim/scal/fun/abs_test.cpp'"
+    tests_help_msg += "         'test/unit/math/prim/fun/abs_test.cpp'"
     parser.add_argument("tests", nargs="+", type=str,
                         help=tests_help_msg)
     f_help_msg = "Only tests with file names matching these will be executed.\n"
-    f_help_msg += "Example: '-f chol', '-f gpu', '-f prim mat'"
-    parser.add_argument("-f", nargs="+", type=str, default = "",
+    f_help_msg += "Example: '-f chol', '-f opencl', '-f prim'"
+    parser.add_argument("-f", type=str, default = [], action="append",
                         help=f_help_msg)
-
     parser.add_argument("-d", "--debug", dest="debug", action="store_true",
                         help="request additional script debugging output.")
     parser.add_argument("-m", "--make-only", dest="make_only",
@@ -66,6 +64,10 @@ def stopErr(msg, returncode):
 def isWin():
     return (platform.system().lower().startswith("windows")
             or os.name.lower().startswith("windows"))
+
+
+batchSize = 20 if isWin() else 200
+
 
 def mungeName(name):
     """Set up the makefile target name"""
@@ -90,12 +92,18 @@ def doCommand(command, exit_on_failure=True):
 
 def generateTests(j):
     """Generate all tests and pass along the j parameter to make."""
-    doCommand('make -j%d generate-tests -s' % (j or 1))
+    if isWin():
+        doCommand('mingw32-make -j%d generate-tests -s' % (j or 1))
+    else:
+        doCommand('make -j%d generate-tests -s' % (j or 1))
 
 
 def makeTest(name, j):
     """Run the make command for a given single test."""
-    doCommand('make -j%d %s' % (j or 1, name))
+    if isWin():
+        doCommand('mingw32-make -j%d %s' % (j or 1, name))
+    else:
+        doCommand('make -j%d %s' % (j or 1, name))
 
 def commandExists(command):
     p = subprocess.Popen(command, shell=True,
@@ -155,6 +163,8 @@ def main():
     tests = findTests(inputs.tests, inputs.f)
     if not tests:
         stopErr("No matching tests found.", -1)
+    if inputs.debug:
+        print("Collected the following tests:\n", tests)
 
     # pass 1: make test executables
     for batch in batched(tests):

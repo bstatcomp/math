@@ -1,24 +1,25 @@
 #ifndef STAN_MATH_REV_CORE_OPERATOR_ADDITION_HPP
 #define STAN_MATH_REV_CORE_OPERATOR_ADDITION_HPP
 
+#include <stan/math/prim/meta.hpp>
 #include <stan/math/rev/core/var.hpp>
 #include <stan/math/rev/core/vv_vari.hpp>
 #include <stan/math/rev/core/vd_vari.hpp>
-#include <stan/math/prim/scal/fun/is_nan.hpp>
-#include <limits>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/is_any_nan.hpp>
 
 namespace stan {
 namespace math {
 
-namespace {
+namespace internal {
 class add_vv_vari : public op_vv_vari {
  public:
   add_vv_vari(vari* avi, vari* bvi)
       : op_vv_vari(avi->val_ + bvi->val_, avi, bvi) {}
   void chain() {
-    if (unlikely(is_nan(avi_->val_) || is_nan(bvi_->val_))) {
-      avi_->adj_ = std::numeric_limits<double>::quiet_NaN();
-      bvi_->adj_ = std::numeric_limits<double>::quiet_NaN();
+    if (unlikely(is_any_nan(avi_->val_, bvi_->val_))) {
+      avi_->adj_ = NOT_A_NUMBER;
+      bvi_->adj_ = NOT_A_NUMBER;
     } else {
       avi_->adj_ += adj_;
       bvi_->adj_ += adj_;
@@ -30,13 +31,14 @@ class add_vd_vari : public op_vd_vari {
  public:
   add_vd_vari(vari* avi, double b) : op_vd_vari(avi->val_ + b, avi, b) {}
   void chain() {
-    if (unlikely(is_nan(avi_->val_) || is_nan(bd_)))
-      avi_->adj_ = std::numeric_limits<double>::quiet_NaN();
-    else
+    if (unlikely(is_any_nan(avi_->val_, bd_))) {
+      avi_->adj_ = NOT_A_NUMBER;
+    } else {
       avi_->adj_ += adj_;
+    }
   }
 };
-}  // namespace
+}  // namespace internal
 
 /**
  * Addition operator for variables (C++).
@@ -76,8 +78,8 @@ class add_vd_vari : public op_vd_vari {
  * @param b Second variable operand.
  * @return Variable result of adding two variables.
  */
-inline var operator+(const var& a, const var& b) {
-  return var(new add_vv_vari(a.vi_, b.vi_));
+inline var operator+(var a, var b) {
+  return {new internal::add_vv_vari(a.vi_, b.vi_)};
 }
 
 /**
@@ -87,14 +89,17 @@ inline var operator+(const var& a, const var& b) {
  *
  * \f$\frac{d}{dx} (x + c) = 1\f$.
  *
+ * @tparam Arith An arithmetic type
  * @param a First variable operand.
  * @param b Second scalar operand.
  * @return Result of adding variable and scalar.
  */
-inline var operator+(const var& a, double b) {
-  if (b == 0.0)
+template <typename Arith, require_arithmetic_t<Arith>...>
+inline var operator+(var a, Arith b) {
+  if (b == 0.0) {
     return a;
-  return var(new add_vd_vari(a.vi_, b));
+  }
+  return {new internal::add_vd_vari(a.vi_, b)};
 }
 
 /**
@@ -104,14 +109,17 @@ inline var operator+(const var& a, double b) {
  *
  * \f$\frac{d}{dy} (c + y) = 1\f$.
  *
+ * @tparam Arith An arithmetic type
  * @param a First scalar operand.
  * @param b Second variable operand.
  * @return Result of adding variable and scalar.
  */
-inline var operator+(double a, const var& b) {
-  if (a == 0.0)
+template <typename Arith, require_arithmetic_t<Arith>...>
+inline var operator+(Arith a, var b) {
+  if (a == 0.0) {
     return b;
-  return var(new add_vd_vari(b.vi_, a));  // by symmetry
+  }
+  return {new internal::add_vd_vari(b.vi_, a)};  // by symmetry
 }
 
 }  // namespace math

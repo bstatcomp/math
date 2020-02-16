@@ -1,7 +1,7 @@
 #ifndef STAN_MATH_REV_CORE_PRECOMPUTED_GRADIENTS_HPP
 #define STAN_MATH_REV_CORE_PRECOMPUTED_GRADIENTS_HPP
 
-#include <stan/math/prim/scal/err/check_consistent_sizes.hpp>
+#include <stan/math/prim/err/check_consistent_sizes.hpp>
 #include <stan/math/rev/core/vari.hpp>
 #include <stan/math/rev/core/var.hpp>
 #include <algorithm>
@@ -41,6 +41,9 @@ class precomputed_gradients_vari : public vari {
    * Construct a precomputed vari with the specified value,
    * operands, and gradients.
    *
+   * @tparam Arith An arithmetic type
+   * @tparam VecVar A vector of vars
+   * @tparam VecArith A vector of arithmetic types
    * @param[in] val The value of the variable.
    * @param[in] vars Vector of operands.
    * @param[in] gradients Vector of partial derivatives of value
@@ -48,18 +51,22 @@ class precomputed_gradients_vari : public vari {
    * @throws std::invalid_argument if the sizes of the vectors
    * don't match.
    */
-  precomputed_gradients_vari(double val, const std::vector<var>& vars,
-                             const std::vector<double>& gradients)
+  template <typename Arith, typename VecVar, typename VecArith,
+            require_arithmetic_t<Arith>...,
+            require_vector_like_vt<is_var, VecVar>...,
+            require_vector_like_vt<std::is_arithmetic, VecArith>...>
+  precomputed_gradients_vari(Arith val, VecVar&& vars, VecArith&& gradients)
       : vari(val),
         size_(vars.size()),
-        varis_(ChainableStack::instance().memalloc_.alloc_array<vari*>(
+        varis_(ChainableStack::instance_->memalloc_.alloc_array<vari*>(
             vars.size())),
-        gradients_(ChainableStack::instance().memalloc_.alloc_array<double>(
+        gradients_(ChainableStack::instance_->memalloc_.alloc_array<double>(
             vars.size())) {
     check_consistent_sizes("precomputed_gradients_vari", "vars", vars,
                            "gradients", gradients);
-    for (size_t i = 0; i < vars.size(); ++i)
+    for (size_t i = 0; i < vars.size(); ++i) {
       varis_[i] = vars[i].vi_;
+    }
     std::copy(gradients.begin(), gradients.end(), gradients_);
   }
 
@@ -68,8 +75,9 @@ class precomputed_gradients_vari : public vari {
    * prestored operands and gradient.
    */
   void chain() {
-    for (size_t i = 0; i < size_; ++i)
+    for (size_t i = 0; i < size_; ++i) {
       varis_[i]->adj_ += adj_ * gradients_[i];
+    }
   }
 };
 
@@ -78,17 +86,26 @@ class precomputed_gradients_vari : public vari {
  * specified value, vector of operands, and vector of partial
  * derivatives of value with respect to the operands.
  *
+ * @tparam Arith An arithmetic type
+ * @tparam VecVar A vector of vars
+ * @tparam VecArith A vector of arithmetic types
  * @param[in] value The value of the resulting dependent variable.
  * @param[in] operands operands.
  * @param[in] gradients vector of partial derivatives of result with
  * respect to operands.
- * @return An auto-diff variable that uses the precomputed
- *   gradients provided.
+ * @return An autodiff variable that uses the precomputed
+ * gradients provided.
  */
-inline var precomputed_gradients(double value, const std::vector<var>& operands,
-                                 const std::vector<double>& gradients) {
-  return var(new precomputed_gradients_vari(value, operands, gradients));
+template <typename Arith, typename VecVar, typename VecArith,
+          require_arithmetic_t<Arith>...,
+          require_vector_like_vt<is_var, VecVar>...,
+          require_vector_like_vt<std::is_arithmetic, VecArith>...>
+inline var precomputed_gradients(Arith value, VecVar&& operands,
+                                 VecArith&& gradients) {
+  return {new precomputed_gradients_vari(value, std::forward<VecVar>(operands),
+                                         std::forward<VecArith>(gradients))};
 }
+
 }  // namespace math
 }  // namespace stan
 #endif

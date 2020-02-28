@@ -3,12 +3,15 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/erf.hpp>
-#include <stan/math/prim/scal/fun/erfc.hpp>
-#include <stan/math/prim/scal/fun/owens_t.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/erf.hpp>
+#include <stan/math/prim/fun/erfc.hpp>
+#include <stan/math/prim/fun/exp.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/owens_t.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -62,7 +65,7 @@ return_type_t<T_y, T_loc, T_scale, T_shape> skew_normal_cdf(
     cdf *= cdf_;
 
     const T_partials_return deriv_erfc
-        = SQRT_TWO_OVER_SQRT_PI * 0.5 * exp(-scaled_diff_sq) / sigma_dbl;
+        = INV_SQRT_TWO_PI * exp(-scaled_diff_sq) / sigma_dbl;
     const T_partials_return deriv_owens
         = erf(alpha_dbl * scaled_diff) * exp(-scaled_diff_sq)
           / SQRT_TWO_OVER_SQRT_PI / (-TWO_PI) / sigma_dbl;
@@ -86,22 +89,22 @@ return_type_t<T_y, T_loc, T_scale, T_shape> skew_normal_cdf(
   }
 
   if (!is_constant_all<T_y>::value) {
-    for (size_t n = 0; n < size(y); ++n) {
+    for (size_t n = 0; n < stan::math::size(y); ++n) {
       ops_partials.edge1_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_loc>::value) {
-    for (size_t n = 0; n < size(mu); ++n) {
+    for (size_t n = 0; n < stan::math::size(mu); ++n) {
       ops_partials.edge2_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_scale>::value) {
-    for (size_t n = 0; n < size(sigma); ++n) {
+    for (size_t n = 0; n < stan::math::size(sigma); ++n) {
       ops_partials.edge3_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_shape>::value) {
-    for (size_t n = 0; n < size(alpha); ++n) {
+    for (size_t n = 0; n < stan::math::size(alpha); ++n) {
       ops_partials.edge4_.partials_[n] *= cdf;
     }
   }

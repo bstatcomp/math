@@ -3,11 +3,11 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/lmgamma.hpp>
-#include <stan/math/prim/mat/fun/trace.hpp>
-#include <stan/math/prim/mat/fun/log_determinant_ldlt.hpp>
-#include <stan/math/prim/mat/fun/mdivide_left_ldlt.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
+#include <stan/math/prim/fun/lmgamma.hpp>
+#include <stan/math/prim/fun/trace.hpp>
+#include <stan/math/prim/fun/log_determinant_ldlt.hpp>
+#include <stan/math/prim/fun/mdivide_left_ldlt.hpp>
+#include <stan/math/prim/fun/constants.hpp>
 
 namespace stan {
 namespace math {
@@ -53,7 +53,7 @@ return_type_t<T_y, T_dof, T_scale> wishart_lpdf(
   using Eigen::Lower;
   using Eigen::Matrix;
 
-  typename index_type<Matrix<T_scale, Dynamic, Dynamic> >::type k = W.rows();
+  index_type_t<Matrix<T_scale, Dynamic, Dynamic>> k = W.rows();
   return_type_t<T_y, T_dof, T_scale> lp(0.0);
   check_greater(function, "Degrees of freedom parameter", nu, k - 1);
   check_square(function, "random variable", W);
@@ -68,7 +68,7 @@ return_type_t<T_y, T_dof, T_scale> wishart_lpdf(
   check_ldlt_factor(function, "LDLT_Factor of scale parameter", ldlt_S);
 
   if (include_summand<propto, T_dof>::value) {
-    lp += nu * k * NEG_LOG_TWO_OVER_TWO;
+    lp -= nu * k * HALF_LOG_TWO;
   }
 
   if (include_summand<propto, T_dof>::value) {
@@ -81,7 +81,7 @@ return_type_t<T_y, T_dof, T_scale> wishart_lpdf(
 
   if (include_summand<propto, T_scale, T_y>::value) {
     Matrix<return_type_t<T_y, T_scale>, Dynamic, Dynamic> Sinv_W(
-        mdivide_left_ldlt(ldlt_S, static_cast<Matrix<T_y, Dynamic, Dynamic> >(
+        mdivide_left_ldlt(ldlt_S, static_cast<Matrix<T_y, Dynamic, Dynamic>>(
                                       W.template selfadjointView<Lower>())));
     lp -= 0.5 * trace(Sinv_W);
   }

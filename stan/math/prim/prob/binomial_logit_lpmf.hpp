@@ -3,13 +3,15 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/inv_logit.hpp>
-#include <stan/math/prim/scal/fun/log_inv_logit.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
-#include <stan/math/prim/scal/fun/binomial_coefficient_log.hpp>
-#include <stan/math/prim/scal/fun/lbeta.hpp>
-#include <stan/math/prim/scal/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/binomial_coefficient_log.hpp>
+#include <stan/math/prim/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/inv_logit.hpp>
+#include <stan/math/prim/fun/lbeta.hpp>
+#include <stan/math/prim/fun/log_inv_logit.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 
 namespace stan {
 namespace math {
@@ -66,14 +68,14 @@ return_type_t<T_prob> binomial_logit_lpmf(const T_n& n, const T_N& N,
   }
 
   VectorBuilder<true, T_partials_return, T_prob> log_inv_logit_alpha(
-      size(alpha));
-  for (size_t i = 0; i < size(alpha); ++i) {
+      stan::math::size(alpha));
+  for (size_t i = 0; i < stan::math::size(alpha); ++i) {
     log_inv_logit_alpha[i] = log_inv_logit(value_of(alpha_vec[i]));
   }
 
   VectorBuilder<true, T_partials_return, T_prob> log_inv_logit_neg_alpha(
-      size(alpha));
-  for (size_t i = 0; i < size(alpha); ++i) {
+      stan::math::size(alpha));
+  for (size_t i = 0; i < stan::math::size(alpha); ++i) {
     log_inv_logit_neg_alpha[i] = log_inv_logit(-value_of(alpha_vec[i]));
   }
 

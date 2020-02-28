@@ -4,6 +4,9 @@
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err/throw_domain_error.hpp>
 #include <stan/math/prim/err/throw_domain_error_vec.hpp>
+#include <stan/math/prim/fun/get.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
 #include <string>
 
 namespace stan {
@@ -40,7 +43,7 @@ struct bounded<T_y, T_low, T_high, true> {
                     const T_low& low, const T_high& high) {
     scalar_seq_view<T_low> low_vec(low);
     scalar_seq_view<T_high> high_vec(high);
-    for (size_t n = 0; n < size(y); n++) {
+    for (size_t n = 0; n < stan::math::size(y); n++) {
       if (!(low_vec[n] <= stan::get(y, n) && stan::get(y, n) <= high_vec[n])) {
         std::stringstream msg;
         msg << ", but must be in the interval ";

@@ -4,9 +4,9 @@
 #include <stan/math/rev/meta.hpp>
 #include <stan/math/rev/core.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/squared_distance.hpp>
-#include <stan/math/prim/mat/fun/Eigen.hpp>
-#include <stan/math/prim/mat/fun/typedefs.hpp>
+#include <stan/math/prim/fun/squared_distance.hpp>
+#include <stan/math/prim/fun/Eigen.hpp>
+#include <stan/math/prim/fun/typedefs.hpp>
 #include <vector>
 
 namespace stan {
@@ -66,7 +66,7 @@ class squared_distance_vv_vari : public vari {
   inline static double var_squared_distance(
       const Eigen::Matrix<var, R1, C1>& v1,
       const Eigen::Matrix<var, R2, C2>& v2) {
-    using idx_t = typename index_type<matrix_v>::type;
+    using idx_t = index_type_t<matrix_v>;
 
     return (Eigen::Ref<const vector_v>(v1).val()
             - Eigen::Ref<const vector_v>(v2).val())
@@ -103,7 +103,7 @@ class squared_distance_vd_vari : public vari {
   inline static double var_squared_distance(
       const Eigen::Matrix<var, R1, C1>& v1,
       const Eigen::Matrix<double, R2, C2>& v2) {
-    using idx_t = typename index_type<matrix_d>::type;
+    using idx_t = index_type_t<matrix_d>;
 
     return (Eigen::Ref<const vector_v>(v1).val()
             - Eigen::Ref<const vector_d>(v2))

@@ -3,13 +3,16 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
-#include <stan/math/prim/scal/fun/digamma.hpp>
-#include <stan/math/prim/scal/fun/beta.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/grad_reg_inc_beta.hpp>
-#include <stan/math/prim/scal/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/beta.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/digamma.hpp>
+#include <stan/math/prim/fun/grad_reg_inc_beta.hpp>
+#include <stan/math/prim/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/log.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -90,7 +93,7 @@ return_type_t<T_y, T_loc, T_prec> beta_proportion_lcdf(const T_y& y,
       digamma_kappa_mukappa[i] = digamma(kappa_mukappa_dbl);
     }
 
-    for (size_t i = 0; i < size(kappa); i++) {
+    for (size_t i = 0; i < stan::math::size(kappa); i++) {
       digamma_kappa[i] = digamma(value_of(kappa_vec[i]));
     }
   }

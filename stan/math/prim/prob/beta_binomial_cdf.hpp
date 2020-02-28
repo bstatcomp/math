@@ -3,14 +3,17 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/beta.hpp>
-#include <stan/math/prim/scal/fun/digamma.hpp>
-#include <stan/math/prim/scal/fun/lgamma.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
-#include <stan/math/prim/scal/fun/F32.hpp>
-#include <stan/math/prim/scal/fun/grad_F32.hpp>
+#include <stan/math/prim/fun/beta.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/digamma.hpp>
+#include <stan/math/prim/fun/exp.hpp>
+#include <stan/math/prim/fun/F32.hpp>
+#include <stan/math/prim/fun/grad_F32.hpp>
+#include <stan/math/prim/fun/lgamma.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -67,7 +70,7 @@ return_type_t<T_size1, T_size2> beta_binomial_cdf(const T_n& n, const T_N& N,
 
   // Explicit return for extreme values
   // The gradients are technically ill-defined, but treated as zero
-  for (size_t i = 0; i < size(n); i++) {
+  for (size_t i = 0; i < stan::math::size(n); i++) {
     if (value_of(n_vec[i]) < 0) {
       return ops_partials.build(0.0);
     }
@@ -129,12 +132,12 @@ return_type_t<T_size1, T_size2> beta_binomial_cdf(const T_n& n, const T_N& N,
   }
 
   if (!is_constant_all<T_size1>::value) {
-    for (size_t i = 0; i < size(alpha); ++i) {
+    for (size_t i = 0; i < stan::math::size(alpha); ++i) {
       ops_partials.edge1_.partials_[i] *= P;
     }
   }
   if (!is_constant_all<T_size2>::value) {
-    for (size_t i = 0; i < size(beta); ++i) {
+    for (size_t i = 0; i < stan::math::size(beta); ++i) {
       ops_partials.edge2_.partials_[i] *= P;
     }
   }

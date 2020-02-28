@@ -3,12 +3,14 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/is_inf.hpp>
-#include <stan/math/prim/scal/fun/lgamma.hpp>
-#include <stan/math/prim/scal/fun/multiply_log.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/is_inf.hpp>
+#include <stan/math/prim/fun/lgamma.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/multiply_log.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 
 namespace stan {
 namespace math {
@@ -40,7 +42,8 @@ return_type_t<T_rate> poisson_lpmf(const T_n& n, const T_rate& lambda) {
   scalar_seq_view<T_rate> lambda_vec(lambda);
   size_t max_size_seq_view = max_size(n, lambda);
 
-  for (size_t i = 0, size_lambda = size(lambda); i < size_lambda; i++) {
+  for (size_t i = 0, size_lambda = stan::math::size(lambda); i < size_lambda;
+       i++) {
     if (is_inf(lambda_vec[i])) {
       return LOG_ZERO;
     }
@@ -56,7 +59,7 @@ return_type_t<T_rate> poisson_lpmf(const T_n& n, const T_rate& lambda) {
   VectorBuilder<include_summand<propto>::value, T_partials_return, T_n>
       lgamma_n_plus_one(size(n));
   if (include_summand<propto>::value) {
-    for (size_t i = 0, size_n = size(n); i < size_n; i++) {
+    for (size_t i = 0, size_n = stan::math::size(n); i < size_n; i++) {
       lgamma_n_plus_one[i] = lgamma(n_vec[i] + 1.0);
     }
   }

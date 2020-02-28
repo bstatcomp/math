@@ -3,10 +3,12 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
-#include <stan/math/prim/scal/fun/beta.hpp>
-#include <stan/math/prim/scal/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/beta.hpp>
+#include <stan/math/prim/fun/inc_beta.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -59,7 +61,7 @@ return_type_t<T_prob> binomial_cdf(const T_n& n, const T_N& N,
 
   // Explicit return for extreme values
   // The gradients are technically ill-defined, but treated as zero
-  for (size_t i = 0; i < size(n); i++) {
+  for (size_t i = 0; i < stan::math::size(n); i++) {
     if (value_of(n_vec[i]) < 0) {
       return ops_partials.build(0.0);
     }
@@ -89,7 +91,7 @@ return_type_t<T_prob> binomial_cdf(const T_n& n, const T_N& N,
   }
 
   if (!is_constant_all<T_prob>::value) {
-    for (size_t i = 0; i < size(theta); ++i) {
+    for (size_t i = 0; i < stan::math::size(theta); ++i) {
       ops_partials.edge1_.partials_[i] *= P;
     }
   }

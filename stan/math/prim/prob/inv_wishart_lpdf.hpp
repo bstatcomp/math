@@ -3,14 +3,15 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/mat/fun/log_determinant_ldlt.hpp>
-#include <stan/math/prim/mat/fun/mdivide_left_ldlt.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/lmgamma.hpp>
-#include <stan/math/prim/mat/fun/trace.hpp>
+#include <stan/math/prim/fun/log_determinant_ldlt.hpp>
+#include <stan/math/prim/fun/mdivide_left_ldlt.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/lmgamma.hpp>
+#include <stan/math/prim/fun/trace.hpp>
 
 namespace stan {
 namespace math {
+
 /** \ingroup multivar_dists
  * The log of the Inverse-Wishart density for the given W, degrees
  * of freedom, and scale matrix.
@@ -50,7 +51,7 @@ return_type_t<T_y, T_dof, T_scale> inv_wishart_lpdf(
   using Eigen::Dynamic;
   using Eigen::Matrix;
 
-  typename index_type<Matrix<T_scale, Dynamic, Dynamic> >::type k = S.rows();
+  index_type_t<Matrix<T_scale, Dynamic, Dynamic>> k = S.rows();
   return_type_t<T_y, T_dof, T_scale> lp(0.0);
 
   check_greater(function, "Degrees of freedom parameter", nu, k - 1);
@@ -85,13 +86,12 @@ return_type_t<T_y, T_dof, T_scale> inv_wishart_lpdf(
     Eigen::Matrix<return_type_t<T_y, T_scale>, Eigen::Dynamic, Eigen::Dynamic>
         Winv_S(mdivide_left_ldlt(
             ldlt_W,
-            static_cast<
-                Eigen::Matrix<T_scale, Eigen::Dynamic, Eigen::Dynamic> >(
+            static_cast<Eigen::Matrix<T_scale, Eigen::Dynamic, Eigen::Dynamic>>(
                 S.template selfadjointView<Eigen::Lower>())));
     lp -= 0.5 * trace(Winv_S);
   }
   if (include_summand<propto, T_dof, T_scale>::value) {
-    lp += nu * k * NEG_LOG_TWO_OVER_TWO;
+    lp -= nu * k * HALF_LOG_TWO;
   }
   return lp;
 }

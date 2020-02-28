@@ -4,17 +4,16 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/mat/fun/value_of_rec.hpp>
-#include <stan/math/prim/arr/fun/value_of_rec.hpp>
-#include <stan/math/prim/mat/fun/value_of.hpp>
-#include <stan/math/prim/arr/fun/value_of.hpp>
-#include <stan/math/prim/mat/fun/sum.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/sum.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
+#include <stan/math/prim/fun/value_of_rec.hpp>
 #include <stan/math/opencl/copy.hpp>
+#include <stan/math/opencl/kernel_generator.hpp>
 #include <stan/math/opencl/matrix_cl.hpp>
 #include <stan/math/opencl/multiply.hpp>
-#include <stan/math/opencl/kernel_generator.hpp>
 #include <stan/math/opencl/kernels/poisson_log_glm_lpmf.hpp>
 #include <cmath>
 
@@ -63,7 +62,7 @@ return_type_t<T_alpha, T_beta> poisson_log_glm_lpmf(
   check_consistent_size(function, "Weight vector", beta, M);
   if (is_vector<T_alpha>::value) {
     check_size_match(function, "Rows of ", "x_cl", N, "size of ", "alpha",
-                     size(alpha));
+                     stan::math::size(alpha));
   }
   if (N == 0) {
     return 0;
@@ -97,7 +96,8 @@ return_type_t<T_alpha, T_beta> poisson_log_glm_lpmf(
     opencl_kernels::poisson_log_glm(
         cl::NDRange(local_size * wgs), cl::NDRange(local_size),
         theta_derivative_cl, theta_derivative_sum_cl, logp_cl, y_cl, x_cl,
-        alpha_cl, beta_cl, N, M, y_cl.size() != 1, size(alpha) != 1, need_logp);
+        alpha_cl, beta_cl, N, M, y_cl.size() != 1, stan::math::size(alpha) != 1,
+        need_logp);
   } catch (const cl::Error& e) {
     check_opencl_error(function, e);
   }

@@ -3,13 +3,16 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/erf.hpp>
-#include <stan/math/prim/scal/fun/inv.hpp>
-#include <stan/math/prim/scal/fun/is_inf.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/square.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/erf.hpp>
+#include <stan/math/prim/fun/exp.hpp>
+#include <stan/math/prim/fun/inv.hpp>
+#include <stan/math/prim/fun/is_inf.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/square.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -49,7 +52,7 @@ return_type_t<T_y, T_loc, T_scale, T_inv_scale> exp_mod_normal_cdf(
   scalar_seq_view<T_inv_scale> lambda_vec(lambda);
   size_t N = max_size(y, mu, sigma, lambda);
 
-  for (size_t n = 0, size_y = size(y); n < size_y; n++) {
+  for (size_t n = 0, size_y = stan::math::size(y); n < size_y; n++) {
     if (is_inf(y_vec[n]) && y_vec[n] < 0.0) {
       return ops_partials.build(0.0);
     }
@@ -72,10 +75,10 @@ return_type_t<T_y, T_loc, T_scale, T_inv_scale> exp_mod_normal_cdf(
 
     const T_partials_return deriv_1 = lambda_dbl * exp_term * erf_calc;
     const T_partials_return deriv_2
-        = SQRT_TWO_OVER_SQRT_PI * 0.5 * exp_term
+        = INV_SQRT_TWO_PI * exp_term
           * exp(-square(scaled_diff - v_over_sqrt_two)) * inv_sigma;
     const T_partials_return deriv_3
-        = SQRT_TWO_OVER_SQRT_PI * 0.5 * exp(-square(scaled_diff)) * inv_sigma;
+        = INV_SQRT_TWO_PI * exp(-square(scaled_diff)) * inv_sigma;
 
     const T_partials_return cdf_n
         = 0.5 + 0.5 * erf(u / (v * SQRT_TWO)) - exp_term * erf_calc;
@@ -97,7 +100,7 @@ return_type_t<T_y, T_loc, T_scale, T_inv_scale> exp_mod_normal_cdf(
     if (!is_constant_all<T_inv_scale>::value) {
       ops_partials.edge4_.partials_[n]
           += exp_term
-             * (SQRT_TWO_OVER_SQRT_PI * 0.5 * sigma_dbl
+             * (INV_SQRT_TWO_PI * sigma_dbl
                     * exp(-square(v_over_sqrt_two - scaled_diff))
                 - (v * sigma_dbl - diff) * erf_calc)
              / cdf_n;
@@ -105,22 +108,22 @@ return_type_t<T_y, T_loc, T_scale, T_inv_scale> exp_mod_normal_cdf(
   }
 
   if (!is_constant_all<T_y>::value) {
-    for (size_t n = 0; n < size(y); ++n) {
+    for (size_t n = 0; n < stan::math::size(y); ++n) {
       ops_partials.edge1_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_loc>::value) {
-    for (size_t n = 0; n < size(mu); ++n) {
+    for (size_t n = 0; n < stan::math::size(mu); ++n) {
       ops_partials.edge2_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_scale>::value) {
-    for (size_t n = 0; n < size(sigma); ++n) {
+    for (size_t n = 0; n < stan::math::size(sigma); ++n) {
       ops_partials.edge3_.partials_[n] *= cdf;
     }
   }
   if (!is_constant_all<T_inv_scale>::value) {
-    for (size_t n = 0; n < size(lambda); ++n) {
+    for (size_t n = 0; n < stan::math::size(lambda); ++n) {
       ops_partials.edge4_.partials_[n] *= cdf;
     }
   }

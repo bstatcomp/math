@@ -2,6 +2,7 @@
 #define STAN_MATH_PRIM_PROB_BETA_LOG_HPP
 
 #include <stan/math/prim/meta.hpp>
+#include <stan/math/prim/fun/size.hpp>
 #include <stan/math/prim/prob/beta_lpdf.hpp>
 
 namespace stan {
@@ -9,8 +10,8 @@ namespace math {
 
 /** \ingroup prob_dists
  * The log of the beta density for the specified scalar(s) given the specified
- * sample size(s). y, alpha, or beta can each either be scalar or a vector.
- * Any vector inputs must be the same length.
+ * sample size(s). y, alpha, or beta can each either be scalar or a
+ * vector. Any vector inputs must be the same length.
  *
  * <p> The result log probability is defined to be the sum of
  * the log probabilities for each observation/alpha/beta triple.

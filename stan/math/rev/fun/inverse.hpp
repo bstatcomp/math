@@ -1,12 +1,12 @@
 #ifndef STAN_MATH_REV_FUN_INVERSE_HPP
 #define STAN_MATH_REV_FUN_INVERSE_HPP
 
-#include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/rev/core.hpp>
 #include <stan/math/rev/meta.hpp>
-#include <stan/math/prim/err.hpp>
 #include <stan/math/rev/fun/typedefs.hpp>
-#include <stan/math/prim/mat/fun/typedefs.hpp>
+#include <stan/math/prim/err.hpp>
+#include <stan/math/prim/fun/Eigen.hpp>
+#include <stan/math/prim/fun/typedefs.hpp>
 
 namespace stan {
 namespace math {
@@ -70,12 +70,17 @@ class inverse_vari : public vari {
 /**
  * Reverse mode specialization of calculating the inverse of the matrix.
  *
- * @param m Specified matrix.
- * @return Inverse of the matrix.
+ * @param m specified matrix
+ * @return Inverse of the matrix (an empty matrix if the specified matrix has
+ * size zero).
+ * @throw std::invalid_argument if the matrix is not square.
  */
 inline matrix_v inverse(const matrix_v &m) {
   check_square("inverse", "m", m);
-  check_nonempty("inverse", "m", m);
+  if (m.size() == 0) {
+    return {};
+  }
+
   matrix_v res(m.rows(), m.cols());
   internal::inverse_vari *baseVari = new internal::inverse_vari(m);
   res.vi() = Eigen::Map<matrix_vi>(baseVari->vari_ref_A_inv_, res.rows(),

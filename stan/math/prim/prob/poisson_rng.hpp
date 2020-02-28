@@ -3,7 +3,8 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/size.hpp>
 #include <boost/random/poisson_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
@@ -36,7 +37,7 @@ inline typename VectorBuilder<true, int, T_rate>::type poisson_rng(
   check_less(function, "Rate parameter", lambda, POISSON_MAX_RATE);
 
   scalar_seq_view<T_rate> lambda_vec(lambda);
-  size_t N = size(lambda);
+  size_t N = stan::math::size(lambda);
   VectorBuilder<true, int, T_rate> output(N);
 
   for (size_t n = 0; n < N; ++n) {

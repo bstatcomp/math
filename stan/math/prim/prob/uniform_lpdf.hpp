@@ -3,9 +3,11 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/log.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -49,10 +51,10 @@ return_type_t<T_y, T_low, T_high> uniform_lpdf(const T_y& y, const T_low& alpha,
   check_not_nan(function, "Random variable", y);
   check_finite(function, "Lower bound parameter", alpha);
   check_finite(function, "Upper bound parameter", beta);
-  check_greater(function, "Upper bound parameter", beta, alpha);
   check_consistent_sizes(function, "Random variable", y,
                          "Lower bound parameter", alpha,
                          "Upper bound parameter", beta);
+  check_greater(function, "Upper bound parameter", beta, alpha);
 
   if (!include_summand<propto, T_y, T_low, T_high>::value) {
     return 0.0;

@@ -3,6 +3,7 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
+#include <stan/math/prim/fun/size.hpp>
 #include <boost/random/bernoulli_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 
@@ -35,7 +36,7 @@ inline typename VectorBuilder<true, int, T_theta>::type bernoulli_rng(
   check_bounded(function, "Probability parameter", theta, 0.0, 1.0);
 
   scalar_seq_view<T_theta> theta_vec(theta);
-  size_t N = size(theta);
+  size_t N = stan::math::size(theta);
   VectorBuilder<true, int, T_theta> output(N);
 
   for (size_t n = 0; n < N; ++n) {

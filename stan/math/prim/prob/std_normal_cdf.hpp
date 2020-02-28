@@ -3,9 +3,13 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/erf.hpp>
+#include <stan/math/prim/fun/erfc.hpp>
+#include <stan/math/prim/fun/exp.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -39,7 +43,7 @@ inline return_type_t<T_y> std_normal_cdf(const T_y& y) {
   operands_and_partials<T_y> ops_partials(y);
 
   scalar_seq_view<T_y> y_vec(y);
-  size_t N = size(y);
+  size_t N = stan::math::size(y);
 
   for (size_t n = 0; n < N; n++) {
     const T_partials_return y_dbl = value_of(y_vec[n]);
@@ -59,9 +63,9 @@ inline return_type_t<T_y> std_normal_cdf(const T_y& y) {
 
     if (!is_constant_all<T_y>::value) {
       const T_partials_return rep_deriv
-          = (y_dbl < -37.5) ? 0.0
-                            : SQRT_TWO_OVER_SQRT_PI * 0.5
-                                  * exp(-scaled_y * scaled_y) / cdf_n;
+          = (y_dbl < -37.5)
+                ? 0.0
+                : INV_SQRT_TWO_PI * exp(-scaled_y * scaled_y) / cdf_n;
       if (!is_constant_all<T_y>::value) {
         ops_partials.edge1_.partials_[n] += rep_deriv;
       }

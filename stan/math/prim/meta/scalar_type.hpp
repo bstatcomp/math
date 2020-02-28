@@ -1,7 +1,7 @@
 #ifndef STAN_MATH_PRIM_META_SCALAR_TYPE_HPP
 #define STAN_MATH_PRIM_META_SCALAR_TYPE_HPP
 
-#include <stan/math/prim/mat/fun/Eigen.hpp>
+#include <stan/math/prim/fun/Eigen.hpp>
 #include <stan/math/prim/meta/is_eigen.hpp>
 #include <stan/math/prim/meta/value_type.hpp>
 #include <stan/math/prim/meta/is_vector.hpp>
@@ -13,7 +13,7 @@ namespace stan {
 /** \ingroup type_trait
  * End of recursion to determine base scalar type of a type
  * The underlying base scalar type. If T is not a container then this
- * has a static member nameed type with the type T.
+ * has a static member named type with the type T.
  * @tparam T the type.
  */
 template <typename T, typename = void>
@@ -41,7 +41,7 @@ template <typename T>
 using scalar_type_decay_t = typename scalar_type<std::decay_t<T>>::type;
 
 /** \ingroup type_trait
- * Specialization of scalar_type for vector to recursivly return the inner
+ * Specialization of scalar_type for vector to recursively return the inner
  * scalar type.
  */
 template <typename T>

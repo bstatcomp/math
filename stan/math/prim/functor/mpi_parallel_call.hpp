@@ -6,8 +6,8 @@
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/functor/mpi_cluster.hpp>
 #include <stan/math/prim/functor/mpi_distributed_apply.hpp>
-#include <stan/math/prim/mat/fun/to_array_1d.hpp>
-#include <stan/math/prim/mat/fun/dims.hpp>
+#include <stan/math/prim/fun/to_array_1d.hpp>
+#include <stan/math/prim/fun/dims.hpp>
 
 #include <mutex>
 #include <algorithm>
@@ -407,10 +407,10 @@ class mpi_parallel_call {
   /**
    * Performs a cached scatter of a 2D array (nested std::vector). On the
    * first call the data on the root is scattered to all workers and
-   * is stored in the cache locally. Each worker only recieves its
+   * is stored in the cache locally. Each worker only receives its
    * respective chunk and marks the cache as valid such that
-   * any subsequent calls will immediatley return the cached
-   * chunk. Thus, after calling this function it is guranteed that
+   * any subsequent calls will immediately return the cached
+   * chunk. Thus, after calling this function it is guaranteed that
    * on all workers a call to T_cache::data() will return the same
    * chunk within each process of the cluster.
    *
@@ -469,8 +469,8 @@ class mpi_parallel_call {
    * Performs a cached broadcast of a 1D array (std::vector). On the
    * first call the data on the root is broadcasted to all workers and
    * is stored in the cache locally. This marks the cache as valid and
-   * any subsequent calls will immediatley return the cached
-   * results. Thus, after calling this function it is guranteed that
+   * any subsequent calls will immediately return the cached
+   * results. Thus, after calling this function it is guaranteed that
    * on all workers a call to T_cache::data() will return the same
    * vector within each process of the cluster.
    *

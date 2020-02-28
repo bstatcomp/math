@@ -4,7 +4,7 @@
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err/check_nonzero_size.hpp>
 #include <stan/math/prim/err/constraint_tolerance.hpp>
-#include <stan/math/prim/mat/fun/Eigen.hpp>
+#include <stan/math/prim/fun/Eigen.hpp>
 #include <stan/math/prim/err/throw_domain_error.hpp>
 #include <sstream>
 #include <string>
@@ -16,7 +16,7 @@ namespace math {
  * Check if the specified vector is simplex.
  * To be a simplex, all values must be greater than or equal to 0
  * and the values must sum to 1.
- * A valid simplex is one where the sum of hte elements is equal
+ * A valid simplex is one where the sum of the elements is equal
  * to 1.  This function tests that the sum is within the tolerance
  * specified by <code>CONSTRAINT_TOLERANCE</code>. This function
  * only accepts Eigen vectors, statically typed vectors, not
@@ -33,8 +33,7 @@ namespace math {
 template <typename T_prob>
 void check_simplex(const char* function, const char* name,
                    const Eigen::Matrix<T_prob, Eigen::Dynamic, 1>& theta) {
-  using size_type =
-      typename index_type<Eigen::Matrix<T_prob, Eigen::Dynamic, 1> >::type;
+  using size_type = index_type_t<Eigen::Matrix<T_prob, Eigen::Dynamic, 1>>;
   using std::fabs;
   check_nonzero_size(function, name, theta);
   if (!(fabs(1.0 - theta.sum()) <= CONSTRAINT_TOLERANCE)) {
@@ -58,6 +57,7 @@ void check_simplex(const char* function, const char* name,
     }
   }
 }
+
 }  // namespace math
 }  // namespace stan
 #endif

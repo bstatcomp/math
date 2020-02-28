@@ -2,12 +2,12 @@
 #define STAN_MATH_REV_FUN_TCROSSPROD_HPP
 
 #include <stan/math/rev/meta.hpp>
-#include <stan/math/prim/mat/fun/Eigen.hpp>
 #include <stan/math/rev/core.hpp>
 #include <stan/math/rev/fun/Eigen_NumTraits.hpp>
 #include <stan/math/rev/fun/typedefs.hpp>
 #include <stan/math/rev/fun/dot_product.hpp>
 #include <stan/math/rev/fun/dot_self.hpp>
+#include <stan/math/prim/fun/Eigen.hpp>
 
 namespace stan {
 namespace math {
@@ -15,6 +15,9 @@ namespace math {
 /**
  * Returns the result of post-multiplying a matrix by its
  * own transpose.
+ *
+ * @tparam R number of rows, can be Eigen::Dynamic
+ * @tparam C number of columns, can be Eigen::Dynamic
  * @param M Matrix to multiply.
  * @return M times its transpose.
  */
@@ -22,7 +25,7 @@ template <int R, int C>
 inline Eigen::Matrix<var, -1, -1> tcrossprod(
     const Eigen::Matrix<var, R, C>& M) {
   if (M.rows() == 0) {
-    return matrix_v(0, 0);
+    return {};
   }
   // if (M.rows() == 1)
   //   return M * M.transpose();

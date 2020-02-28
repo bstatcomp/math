@@ -3,11 +3,14 @@
 
 #include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/scal/fun/size_zero.hpp>
-#include <stan/math/prim/scal/fun/constants.hpp>
-#include <stan/math/prim/scal/fun/value_of.hpp>
-#include <stan/math/prim/scal/fun/digamma.hpp>
-#include <stan/math/prim/scal/fun/lgamma.hpp>
+#include <stan/math/prim/fun/constants.hpp>
+#include <stan/math/prim/fun/digamma.hpp>
+#include <stan/math/prim/fun/lgamma.hpp>
+#include <stan/math/prim/fun/log.hpp>
+#include <stan/math/prim/fun/max_size.hpp>
+#include <stan/math/prim/fun/size.hpp>
+#include <stan/math/prim/fun/size_zero.hpp>
+#include <stan/math/prim/fun/value_of.hpp>
 #include <cmath>
 
 namespace stan {
@@ -52,7 +55,7 @@ return_type_t<T_y, T_dof> chi_square_lpdf(const T_y& y, const T_dof& nu) {
   scalar_seq_view<T_dof> nu_vec(nu);
   size_t N = max_size(y, nu);
 
-  for (size_t n = 0; n < size(y); n++) {
+  for (size_t n = 0; n < stan::math::size(y); n++) {
     if (value_of(y_vec[n]) < 0) {
       return LOG_ZERO;
     }
@@ -67,13 +70,13 @@ return_type_t<T_y, T_dof> chi_square_lpdf(const T_y& y, const T_dof& nu) {
   VectorBuilder<include_summand<propto, T_y, T_dof>::value, T_partials_return,
                 T_y>
       log_y(size(y));
-  for (size_t i = 0; i < size(y); i++) {
+  for (size_t i = 0; i < stan::math::size(y); i++) {
     log_y[i] = log(value_of(y_vec[i]));
   }
 
   VectorBuilder<include_summand<propto, T_y>::value, T_partials_return, T_y>
       inv_y(size(y));
-  for (size_t i = 0; i < size(y); i++) {
+  for (size_t i = 0; i < stan::math::size(y); i++) {
     if (include_summand<propto, T_y>::value) {
       inv_y[i] = 1.0 / value_of(y_vec[i]);
     }
@@ -84,7 +87,7 @@ return_type_t<T_y, T_dof> chi_square_lpdf(const T_y& y, const T_dof& nu) {
   VectorBuilder<!is_constant_all<T_dof>::value, T_partials_return, T_dof>
       digamma_half_nu_over_two(size(nu));
 
-  for (size_t i = 0; i < size(nu); i++) {
+  for (size_t i = 0; i < stan::math::size(nu); i++) {
     T_partials_return half_nu = 0.5 * value_of(nu_vec[i]);
     if (include_summand<propto, T_dof>::value) {
       lgamma_half_nu[i] = lgamma(half_nu);
@@ -102,7 +105,7 @@ return_type_t<T_y, T_dof> chi_square_lpdf(const T_y& y, const T_dof& nu) {
     const T_partials_return nu_dbl = value_of(nu_vec[n]);
     const T_partials_return half_nu = 0.5 * nu_dbl;
     if (include_summand<propto, T_dof>::value) {
-      logp += nu_dbl * NEG_LOG_TWO_OVER_TWO - lgamma_half_nu[n];
+      logp -= nu_dbl * HALF_LOG_TWO + lgamma_half_nu[n];
     }
     logp += (half_nu - 1.0) * log_y[n];
 
@@ -114,9 +117,8 @@ return_type_t<T_y, T_dof> chi_square_lpdf(const T_y& y, const T_dof& nu) {
       ops_partials.edge1_.partials_[n] += (half_nu - 1.0) * inv_y[n] - 0.5;
     }
     if (!is_constant_all<T_dof>::value) {
-      ops_partials.edge2_.partials_[n] += NEG_LOG_TWO_OVER_TWO
-                                          - digamma_half_nu_over_two[n]
-                                          + log_y[n] * 0.5;
+      ops_partials.edge2_.partials_[n]
+          -= HALF_LOG_TWO + digamma_half_nu_over_two[n] - log_y[n] * 0.5;
     }
   }
   return ops_partials.build(logp);

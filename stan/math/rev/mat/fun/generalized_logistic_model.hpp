@@ -7,6 +7,7 @@
 #include <stan/math/opencl/kernels/generalized_logistic_model.hpp>
 #include <stan/math/opencl/err/check_matching_dims.hpp>
 #include <stan/math/opencl/err/check_opencl.hpp>
+#include <chrono>
 #endif
 #include <stan/math/rev/core.hpp>
 #include <algorithm>
@@ -29,6 +30,8 @@ inline var generalized_logistic_model(
     const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ps,
     const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ss,
     var& base_sv, var& base_rv) {
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
   const int N = IDp.size();
   const double tau = tauv.val();
   const double beta = betav.val();
@@ -154,7 +157,10 @@ inline var generalized_logistic_model(
         opencl_kernels::reduce_rows(cl::NDRange(256*num_of_reduced_results),cl::NDRange(256), temp_results_cl, params_cl, N);
       }
       if(d_eta_size > 0 && N>0) {
-        opencl_kernels::reduce_d_eta(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
+        std::cout << d_eta_size << std::endl;
+        int block_size = 128;
+        int new_size = ((d_eta_size + block_size-1)/block_size)*block_size;
+        opencl_kernels::reduce_d_eta(cl::NDRange(new_size), cl::NDRange(128), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
       }    
 
     } catch (cl::Error& e) {
@@ -223,6 +229,8 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta(i);
       k++;
     }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     return var(new precomputed_gradients_vari(tgt, 7 + theta_size + d_eta_size, varis, gradients));
   } else  {
 #endif
@@ -425,6 +433,7 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta_ss[i];
       k++;
     }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     return var(new precomputed_gradients_vari(
         tgt, 7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_sr.size() + d_eta_ps.size() + d_eta_ss.size(),
         varis, gradients));

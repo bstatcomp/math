@@ -75,6 +75,17 @@ inline void choose_best_device(int& gpu_platform, int& gpu_device) {
     temp_platforms_[i].getDevices(DEVICE_FILTER, &temp_devices_);
     for(int j = 0;j < temp_devices_.size(); j++) {
       int device_SMs = temp_devices_[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+      int vendor_id = temp_devices_[j].getInfo<CL_DEVICE_VENDOR_ID>();
+      int device_type = temp_devices_[j].getInfo<CL_DEVICE_TYPE>();
+      // multiply the number of SMs for GPUs
+      if(device_type == CL_DEVICE_TYPE_GPU) {
+        device_SMs *= 100;
+      }
+      // multiply the number of SMs for NVIDIA and AMD
+      // Intel has a larger number of SMs but performs worse
+      if(vendor_id == 0x10de || vendor_id == 0x1002){
+        device_SMs *= 100;
+      }
       if(device_SMs > max_SMs) {
         max_SMs = device_SMs;
         gpu_platform = i;

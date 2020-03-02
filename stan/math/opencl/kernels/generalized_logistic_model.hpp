@@ -197,106 +197,39 @@ static const char *reduce_d_eta_kernel_code = STRINGIFY(
             unsigned int N,
             unsigned int d_eta_p_size,
             unsigned int d_eta_s_size) {
-        const int i = get_global_id(0)%NUM;
-        const int id = get_global_id(0)/NUM;
-        __local double sum[NUM];  
-        sum[i] = 0.0;
+        const int id = get_global_id(0);
+        double sum = 0.0;
         if(id<d_eta_p_size) {
-            for( int j=0;j<N;j+=NUM) {
-                if((i+j)<N) {
-                     if((IDp[i+j]-1)==id){
-                        sum[i] += temp_results[i+j+2*N];
-                    }
+            for( int j=0;j<N;j++) {
+                if((IDp[j]-1)==id){
+                    sum += temp_results[j+2*N];
                 }
             }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<NUM2){
-                for( int j=NUM2;j<NUM;j+=NUM2) {
-                    if((i+j)<NUM) {  
-                        sum[i] += sum[i+j];
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<1){
-                for( int j=1;j<NUM2;j++) {
-                    sum[0] += sum[j];
-                }
-                d_eta[id] = sum[0];
-            }            
+            d_eta[id] = sum;
         }else if(id>=d_eta_p_size && id < (d_eta_p_size+d_eta_s_size)) {
             const int idr = id - d_eta_p_size;
-            for( int j=0;j<N;j+=NUM) {
-                if((i+j)<N) {
-                    if((IDs[i+j]-1)==idr){
-                        sum[i] += temp_results[i+j+2*N];
-                    }
+            for( int j=0;j<N;j++) {
+                if((IDs[j]-1)==idr){
+                    sum += temp_results[j+2*N];
                 }
             }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<NUM2){
-                for( int j=NUM2;j<NUM;j+=NUM2) {
-                    if((i+j)<NUM) {  
-                        sum[i] += sum[i+j];
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<1){
-                for( int j=1;j<NUM2;j++) {
-                    sum[0] += sum[j];
-                }
-                d_eta[id] = sum[0];
-            }
+            d_eta[id] = sum;
         }else if(id>=(d_eta_p_size+d_eta_s_size) && id< (2*d_eta_p_size+d_eta_s_size)) {
             const int ida = id - d_eta_p_size - d_eta_s_size;
-            for( int j=0;j<N;j+=NUM) {
-                if((i+j)<N) {
-                    if((IDp[i+j]-1)==ida){
-                        sum[i] += temp_results[i+j+N];
-                    }
+            for( int j=0;j<N;j++) {
+                if((IDp[j]-1)==ida){
+                    sum += temp_results[j+N];
                 }
             }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<NUM2){
-                for( int j=NUM2;j<NUM;j+=NUM2) {
-                    if((i+j)<NUM) {  
-                        sum[i] += sum[i+j];
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<1){
-                for( int j=1;j<NUM2;j++) {
-                    sum[0] += sum[j];
-                }
-                d_eta[id] = sum[0];
-            }            
-            
+            d_eta[id] = sum;            
         }else {
             const int ids = id - 2*d_eta_p_size-d_eta_s_size;
-            for( int j=0;j<N;j+=NUM) {
-                if((i+j)<N) {
-                    if((IDs[i+j]-1)==ids){
-                        sum[i] += temp_results[i+j+N];
-                    }
+            for( int j=0;j<N;j++) {
+                if((IDs[j]-1)==ids){
+                    sum += temp_results[j+N];
                 }
             }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<NUM2){
-                for( int j=NUM2;j<NUM;j+=NUM2) {
-                    if((i+j)<NUM) {  
-                        sum[i] += sum[i+j];
-                    }
-                }
-            }
-            barrier(CLK_LOCAL_MEM_FENCE);
-            if(i<1){
-                for( int j=1;j<NUM2;j++) {
-                    sum[0] += sum[j];
-                }
-                d_eta[id] = sum[0];
-            }
+            d_eta[id] = sum;
         }
     }
     // \cond

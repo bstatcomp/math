@@ -11,16 +11,81 @@ namespace opencl_kernels {
 // \cond
 static const char *generalized_logistic_model_kernel_code = STRINGIFY(
     // \endcond
-     
+    
+    _Pragma ("OPENCL EXTENSION cl_khr_fp64: enable")
+    _Pragma ("OPENCL EXTENSION cl_khr_int64_base_atomics: enable")
+    inline void atomicAddLocal(__local double *val, const double delta) {
+    
+      union {
+        double f;
+        ulong  i;
+      } old;
+      union {
+        double f;
+        ulong  i;
+      } new;
+      do {
+        old.f = *val;
+        new.f = old.f + delta;
+      } while (atom_cmpxchg ( (volatile __local ulong *)val, old.i, new.i) != old.i);
+    }
+
+    inline void atomicAddGlobal(__global double *val, const double delta) {
+    
+      union {
+        double f;
+        ulong  i;
+      } old;
+      union {
+        double f;
+        ulong  i;
+      } new;
+      do {
+        old.f = *val;
+        new.f = old.f + delta;
+      } while (atom_cmpxchg ( (volatile __global ulong *)val, old.i, new.i) != old.i);
+    }
+    
     __kernel void generalized_logistic_model(__global double *tmp, __global double *IDp,
                            __global double *IDs, __global double *eta_ps, __global double *eta_ss,
                            __global double *eta_pr, __global double *eta_sr,
                            __global double *X_s, __global double *theta_s,
                            __global double *X_r, __global double *theta_r,
                            __global double *time, __global double *is_pbo, __global double *score,
-                           __global double *temp_results) {
+                           __global double *d_eta,
+                           __global double *temp_results,
+                           int eta_p_size,
+                           int eta_s_size) {
         int i = get_global_id(0);
         int N = get_global_size(0);
+        int local_i = get_local_id(0);
+        __local int idp_offset;
+        __local int ids_offset;
+        __local int idp_max;
+        __local int ids_max;
+
+        if (local_i==0){
+            idp_offset=IDp[i]-1;
+            ids_offset=IDs[i]-1;
+        }
+        if (local_i==get_local_size(0)-1){
+            ids_max=IDs[i];
+            idp_max=IDp[i];
+        }
+        
+        __local double d_eta_ps_l[L_MEM_SIZE];
+        __local double d_eta_ss_l[L_MEM_SIZE];
+        __local double d_eta_pr_l[L_MEM_SIZE];
+        __local double d_eta_sr_l[L_MEM_SIZE];
+        
+        for(int i_eta=local_i;i_eta<L_MEM_SIZE;i_eta+=get_local_size(0)){
+            d_eta_ps_l[i_eta]=0.0;
+            d_eta_ss_l[i_eta]=0.0;
+            d_eta_pr_l[i_eta]=0.0;
+            d_eta_sr_l[i_eta]=0.0;
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+        
         int idp = IDp[i];
         int ids = IDs[i];
         double cov_s = tmp[8] + eta_ps[idp-1] + eta_ss[ids-1];
@@ -109,6 +174,23 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
             int indtmp = i+(8+tmp[12]+j)*N;
             temp_results[indtmp] = tmp_s*X_s[indxs];
         }
+        atomicAddLocal(&d_eta_ps_l[-idp_offset+idp-1], tmp_s);
+        atomicAddLocal(&d_eta_ss_l[-ids_offset+ids-1], tmp_s);
+        atomicAddLocal(&d_eta_pr_l[-idp_offset+idp-1], tmp_r);
+        atomicAddLocal(&d_eta_sr_l[-ids_offset+ids-1], tmp_r);
+        
+        barrier(CLK_LOCAL_MEM_FENCE);
+        if (local_i<L_MEM_SIZE){
+            double val1=d_eta_pr_l[local_i];
+            double val2=d_eta_ps_l[local_i];  
+            atomicAddGlobal(&d_eta[idp_offset+local_i], val1);
+            atomicAddGlobal(&d_eta[eta_p_size+eta_s_size+idp_offset+local_i], val2);
+
+            val1=d_eta_sr_l[local_i];
+            val2=d_eta_ss_l[local_i];
+            atomicAddGlobal(&d_eta[ids_offset+eta_p_size+local_i], val1);
+            atomicAddGlobal(&d_eta[ids_offset+2*eta_p_size+eta_s_size+local_i], val2);
+        }
     }
     // \cond
 );
@@ -117,7 +199,7 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
 /**
  * See the docs for \link kernels/generalized_logistic_model.hpp generalized_logistic_model() \endlink
  */
-const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer>
+const kernel_cl<in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, in_buffer, out_buffer, out_buffer, int, int>
     generalized_logistic_model("generalized_logistic_model", {indexing_helpers, lbeta_helpers, generalized_logistic_model_kernel_code});
 
 // \cond

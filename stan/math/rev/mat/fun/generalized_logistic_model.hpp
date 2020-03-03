@@ -29,6 +29,7 @@ inline var generalized_logistic_model(
     const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ps,
     const Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>& eta_ss,
     var& base_sv, var& base_rv) {
+    auto tm1 = std::chrono::high_resolution_clock::now();
   const int N = IDp.size();
   const double tau = tauv.val();
   const double beta = betav.val();
@@ -48,6 +49,7 @@ inline var generalized_logistic_model(
       X_s_copy *= -1;
       X_s_copy--;
       opencl_context.X_s(X_s_copy) = tX_s_cl.buffer();
+      opencl_context.X_s_addr(X_s_copy, X_s);
     }
 
     int X_r_copy = opencl_context.X_r_copied(X_r);
@@ -57,6 +59,7 @@ inline var generalized_logistic_model(
       X_r_copy *= -1;
       X_r_copy--;
       opencl_context.X_r(X_r_copy) = tX_r_cl.buffer();
+      opencl_context.X_r_addr(X_r_copy, X_r);
     }
 
     int score_copy = opencl_context.score_copied(score);
@@ -76,6 +79,7 @@ inline var generalized_logistic_model(
       time_copy *= -1;
       time_copy--;
       opencl_context.time(time_copy) = ttime_cl.buffer();
+      opencl_context.time_addr(time_copy, time);
     }
 
     int IDp_copy = opencl_context.IDp_copied(IDp);
@@ -89,9 +93,10 @@ inline var generalized_logistic_model(
       IDp_copy *= -1;
       IDp_copy--;
       opencl_context.IDp(IDp_copy) = tIDp_cl.buffer();
+      opencl_context.IDp_addr(IDp_copy, IDp);
     }
 
-    int IDs_copy = opencl_context.IDp_copied(IDp);
+    int IDs_copy = opencl_context.IDp_copied(IDs);
     if(IDs_copy < 0) {          
       matrix_d IDs_temp(1, IDs.size());
       for(int i=0;i<IDs.size();i++) {
@@ -102,6 +107,7 @@ inline var generalized_logistic_model(
       IDs_copy *= -1;
       IDs_copy--;
       opencl_context.IDs(IDs_copy) = tIDs_cl.buffer();
+      opencl_context.IDs_addr(IDs_copy, IDs);
     }
 
     int is_pbo_copy = opencl_context.is_pbo_copied(is_pbo);
@@ -115,6 +121,7 @@ inline var generalized_logistic_model(
       is_pbo_copy *= -1;
       is_pbo_copy--;
       opencl_context.is_pbo(is_pbo_copy) = tis_pbo_cl.buffer();
+      opencl_context.is_pbo_addr(is_pbo_copy, is_pbo);
     }
 
     matrix_cl<double> X_s_cl(opencl_context.X_s(X_s_copy), N, X_s.cols());
@@ -146,16 +153,17 @@ inline var generalized_logistic_model(
     matrix_cl<double> temp_results_cl(num_of_reduced_results, N);
     matrix_cl<double> d_eta_cl(1, d_eta_size);
     matrix_cl<double> params_cl(num_of_reduced_results, 1);
+    d_eta_cl.zeros();
     params_cl.zeros();
     try {
       if(N > 0) {
         opencl_kernels::generalized_logistic_model(cl::NDRange(N), tmp_cl, IDp_cl, IDs_cl, eta_ps_cl, eta_ss_cl, eta_pr_cl,
-          eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, temp_results_cl);
+          eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, d_eta_cl, temp_results_cl, eta_ps.size(), eta_ss.size());
         opencl_kernels::reduce_rows(cl::NDRange(256*num_of_reduced_results),cl::NDRange(256), temp_results_cl, params_cl, N);
       }
-      if(d_eta_size > 0 && N>0) {
+      /*if(d_eta_size > 0 && N>0) {
         opencl_kernels::reduce_d_eta(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
-      }    
+      } */   
 
     } catch (cl::Error& e) {
       check_opencl_error("generalized_logistic_model", e);
@@ -223,6 +231,14 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta(i);
       k++;
     }
+    auto tm2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( tm2 - tm1 ).count();
+    std::cout <<"GPU time\t"<< duration << std::endl;
+    /*for (int i =0; i <  7 + theta_size + d_eta_size;i++){
+        if (i%1000==0){
+            std::cout <<"GPU\t"<< i << " " <<gradients[i]<< std::endl;
+        }
+      }*/
     return var(new precomputed_gradients_vari(tgt, 7 + theta_size + d_eta_size, varis, gradients));
   } else  {
 #endif
@@ -425,6 +441,14 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta_ss[i];
       k++;
     }
+    auto tm2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( tm2 - tm1 ).count();
+    std::cout <<"CPU time\t"<< duration << std::endl;
+    /*for (int i =0; i <  7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_ps.size() + d_eta_sr.size() + d_eta_ss.size();i++){
+        if (i%1000==0){
+            std::cout <<"CPU\t"<< i << " " <<gradients[i]<< std::endl;
+        }
+      }*/
     return var(new precomputed_gradients_vari(
         tgt, 7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_sr.size() + d_eta_ps.size() + d_eta_ss.size(),
         varis, gradients));

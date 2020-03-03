@@ -58,6 +58,7 @@ static const char* indexing_helpers =
   #define S4 0.0008417508417508417508417508
   #define NUM 256
   #define NUM2 16
+  #define L_MEM_SIZE 512
   )";
 
 /*

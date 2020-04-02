@@ -236,6 +236,7 @@ inline var generalized_logistic_model(
       }      
       k++;
     }
+    std::cout << std::endl;
     return var(new precomputed_gradients_vari(tgt, 7 + theta_size + d_eta_size, varis, gradients));
   } else  {
 #endif
@@ -445,14 +446,7 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta_ss[i];
       k++;
     }
-    auto tm2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( tm2 - tm1 ).count();
-    std::cout <<"CPU time\t"<< duration << std::endl;
-    /*for (int i =0; i <  7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_ps.size() + d_eta_sr.size() + d_eta_ss.size();i++){
-        if (i%1000==0){
-            std::cout <<"CPU\t"<< i << " " <<gradients[i]<< std::endl;
-        }
-      }*/
+    std::cout << std::endl;
     return var(new precomputed_gradients_vari(
         tgt, 7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_sr.size() + d_eta_ps.size() + d_eta_ss.size(),
         varis, gradients));

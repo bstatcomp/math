@@ -420,7 +420,7 @@ inline var generalized_logistic_model(
     for (int i = 0; i < d_eta_pr.size(); i++) {
       gradients[k] = d_eta_pr[i];
       if(i<10){
-        std::cout << d_eta_pr(i) << ", ";
+        std::cout << d_eta_pr[i] << ", ";
       }
       k++;
     }

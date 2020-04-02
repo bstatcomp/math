@@ -133,7 +133,7 @@ inline var generalized_logistic_model(
     matrix_cl<double> IDs_cl(opencl_context.IDs(IDs_copy), 1, N);
     matrix_cl<double> is_pbo_cl(opencl_context.is_pbo(is_pbo_copy), 1, N);
     
-    Eigen::MatrixXi a = from_matrix_cl(IDp_cl);
+    Eigen::MatrixXd a = from_matrix_cl(IDp_cl);
     std::cout << a(0,0) << ", " << a(0,1) << ", " << a(0,2) << std::endl;
 
     matrix_d t1 = eta_ps.val();  matrix_d t2 = eta_ss.val();

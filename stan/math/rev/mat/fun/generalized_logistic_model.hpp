@@ -226,12 +226,12 @@ inline var generalized_logistic_model(
     }
     for (int i = 0; i < d_eta_size; i++) {
       gradients[k] = d_eta(i);
-      if(i<10){
-        std::cout << d_eta(i) << ", ";
-      }
+      // if(i<10){
+      //   std::cout << d_eta(i) << ", ";
+      // }
       k++;
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
     return var(new precomputed_gradients_vari(tgt, 7 + theta_size + d_eta_size, varis, gradients));
   } else  {
 #endif
@@ -419,9 +419,9 @@ inline var generalized_logistic_model(
     }
     for (int i = 0; i < d_eta_pr.size(); i++) {
       gradients[k] = d_eta_pr[i];
-      if(i<10){
-        std::cout << d_eta_pr[i] << ", ";
-      }
+      // if(i<10){
+      //   std::cout << d_eta_pr[i] << ", ";
+      // }
       k++;
     }
     for (int i = 0; i < d_eta_sr.size(); i++) {
@@ -436,7 +436,7 @@ inline var generalized_logistic_model(
       gradients[k] = d_eta_ss[i];
       k++;
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
     return var(new precomputed_gradients_vari(
         tgt, 7 + theta_r_size + theta_s_size + d_eta_pr.size() + d_eta_sr.size() + d_eta_ps.size() + d_eta_ss.size(),
         varis, gradients));

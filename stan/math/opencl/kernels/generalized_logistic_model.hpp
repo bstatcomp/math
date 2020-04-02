@@ -174,7 +174,10 @@ static const char *generalized_logistic_model_kernel_code = STRINGIFY(
             int indtmp = i+(8+tmp[12]+j)*N;
             temp_results[indtmp] = tmp_s*X_s[indxs];
         }
-        printf("access: %d %f %d\n",i , tgt, -idp_offset+idp-1);
+        if((-idp_offset+idp-1)<0 || (-idp_offset+idp-1)>511){
+            printf("error!\n");
+        }
+        //printf("access: %d %f %d\n",i , tgt, );
         atomicAddLocal(&d_eta_ps_l[-idp_offset+idp-1], tmp_s);
         atomicAddLocal(&d_eta_ss_l[-ids_offset+ids-1], tmp_s);
         atomicAddLocal(&d_eta_pr_l[-idp_offset+idp-1], tmp_r);

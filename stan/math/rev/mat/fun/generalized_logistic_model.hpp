@@ -38,6 +38,7 @@ inline var generalized_logistic_model(
   const double k_eq = k_eqv.val();
   const double base_s = base_sv.val();
   const double base_r = base_rv.val();
+  std::cout << IDp[0] << ", " << IDp[1] << ", " << IDp[2] << std::endl;
 #ifdef STAN_OPENCL
   if(opencl_context.gpu_enabled()) {
     const int d_eta_size = eta_ps.size()+eta_ss.size()+eta_sr.size()+eta_pr.size();
@@ -132,6 +133,9 @@ inline var generalized_logistic_model(
     matrix_cl<double> IDs_cl(opencl_context.IDs(IDs_copy), 1, N);
     matrix_cl<double> is_pbo_cl(opencl_context.is_pbo(is_pbo_copy), 1, N);
     
+    Eigen::MatrixXd a = from_matrix_cl(IDp_cl);
+    std::cout << a[0] << ", " << a[1] << ", " << a[2] << std::endl;
+
     matrix_d t1 = eta_ps.val();  matrix_d t2 = eta_ss.val();
     matrix_d t3 = eta_pr.val();  matrix_d t4 = eta_sr.val();
     matrix_d t5 = theta_r.val();  matrix_d t6 = theta_s.val();

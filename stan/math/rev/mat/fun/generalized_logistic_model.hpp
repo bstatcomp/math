@@ -38,7 +38,6 @@ inline var generalized_logistic_model(
   const double k_eq = k_eqv.val();
   const double base_s = base_sv.val();
   const double base_r = base_rv.val();
-  std::cout << IDp[0] << ", " << IDp[1] << ", " << IDp[2] << std::endl;
 #ifdef STAN_OPENCL
   if(opencl_context.gpu_enabled()) {
     const int d_eta_size = eta_ps.size()+eta_ss.size()+eta_sr.size()+eta_pr.size();
@@ -133,9 +132,6 @@ inline var generalized_logistic_model(
     matrix_cl<double> IDs_cl(opencl_context.IDs(IDs_copy), 1, N);
     matrix_cl<double> is_pbo_cl(opencl_context.is_pbo(is_pbo_copy), 1, N);
     
-    Eigen::MatrixXd a = from_matrix_cl(IDp_cl);
-    std::cout << a(0,0) << ", " << a(0,1) << ", " << a(0,2) << std::endl;
-
     matrix_d t1 = eta_ps.val();  matrix_d t2 = eta_ss.val();
     matrix_d t3 = eta_pr.val();  matrix_d t4 = eta_sr.val();
     matrix_d t5 = theta_r.val();  matrix_d t6 = theta_s.val();
@@ -165,9 +161,6 @@ inline var generalized_logistic_model(
           eta_sr_cl, X_s_cl, theta_s_cl, X_r_cl, theta_r_cl, time_cl, is_pbo_cl, score_cl, d_eta_cl, temp_results_cl, eta_ps.size(), eta_ss.size());
         opencl_kernels::reduce_rows(cl::NDRange(256*num_of_reduced_results),cl::NDRange(256), temp_results_cl, params_cl, N);
       }
-      /*if(d_eta_size > 0 && N>0) {
-        opencl_kernels::reduce_d_eta(cl::NDRange(d_eta_size*256), cl::NDRange(256), d_eta_cl, temp_results_cl, IDp_cl, IDs_cl, N, eta_ps.size(), eta_ss.size());
-      } */   
 
     } catch (cl::Error& e) {
       check_opencl_error("generalized_logistic_model", e);
@@ -220,6 +213,8 @@ inline var generalized_logistic_model(
     }
     double* gradients = ChainableStack::instance_->memalloc_.alloc_array<double>(7 + theta_size + d_eta_size);
     gradients[0] = d_tau;
+    std::cout << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
+    std::cout << d_base_s << ", " << d_base_r << ", ";
     gradients[1] = d_beta;
     gradients[2] = d_beta_pbo;
     gradients[3] = d_k_el;
@@ -229,20 +224,18 @@ inline var generalized_logistic_model(
     k = 7;
     for (int i = 0; i < (theta_r.size()+theta_s.size()); i++) {
       gradients[k] = params(8+i,0);
+      if(i<5){
+        std::cout << gradients[k] << ", ";
+      }
       k++;
     }
     for (int i = 0; i < d_eta_size; i++) {
       gradients[k] = d_eta(i);
+      if(i<5){
+        std::cout << gradients[k] << ", ";
+      }      
       k++;
     }
-    auto tm2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>( tm2 - tm1 ).count();
-    std::cout <<"GPU time\t"<< duration << std::endl;
-    /*for (int i =0; i <  7 + theta_size + d_eta_size;i++){
-        if (i%1000==0){
-            std::cout <<"GPU\t"<< i << " " <<gradients[i]<< std::endl;
-        }
-      }*/
     return var(new precomputed_gradients_vari(tgt, 7 + theta_size + d_eta_size, varis, gradients));
   } else  {
 #endif
@@ -419,10 +412,14 @@ inline var generalized_logistic_model(
     gradients[4] = d_k_eq;
     gradients[5] = d_base_s;
     gradients[6] = d_base_r;
-
+    std::cout << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
+    std::cout << d_base_s << ", " << d_base_r << ", ";
     k = 7;
     for (int i = 0; i < d_theta_r.size(); i++) {
       gradients[k] = d_theta_r[i];
+      if(i<5){
+        std::cout << gradients[k] << ", ";
+      }
       k++;
     }
     for (int i = 0; i < d_theta_s.size(); i++) {
@@ -430,6 +427,9 @@ inline var generalized_logistic_model(
       k++;
     }
     for (int i = 0; i < d_eta_pr.size(); i++) {
+      if(i<5){
+        std::cout << gradients[k] << ", ";
+      }
       gradients[k] = d_eta_pr[i];
       k++;
     }

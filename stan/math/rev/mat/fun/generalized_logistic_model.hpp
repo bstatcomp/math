@@ -213,27 +213,21 @@ inline var generalized_logistic_model(
     }
     double* gradients = ChainableStack::instance_->memalloc_.alloc_array<double>(7 + theta_size + d_eta_size);
     gradients[0] = d_tau;
-    std::cout << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
-    std::cout << d_base_s << ", " << d_base_r << ", ";
     gradients[1] = d_beta;
     gradients[2] = d_beta_pbo;
     gradients[3] = d_k_el;
     gradients[4] = d_k_eq;
     gradients[5] = d_base_s;
     gradients[6] = d_base_r;
+    std::cout << tgt << ", " << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
+    std::cout << d_base_s << ", " << d_base_r << ", ";
     k = 7;
     for (int i = 0; i < (theta_r.size()+theta_s.size()); i++) {
       gradients[k] = params(8+i,0);
-      if(i<5){
-        std::cout << gradients[k] << ", ";
-      }
       k++;
     }
     for (int i = 0; i < d_eta_size; i++) {
       gradients[k] = d_eta(i);
-      if(i<5){
-        std::cout << gradients[k] << ", ";
-      }      
       k++;
     }
     std::cout << std::endl;
@@ -413,14 +407,11 @@ inline var generalized_logistic_model(
     gradients[4] = d_k_eq;
     gradients[5] = d_base_s;
     gradients[6] = d_base_r;
-    std::cout << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
+    std::cout << tgt << ", " << d_tau << ", " << d_beta << ", " << d_beta_pbo << ", " << d_k_el << ", " << d_k_eq << ", ";
     std::cout << d_base_s << ", " << d_base_r << ", ";
     k = 7;
     for (int i = 0; i < d_theta_r.size(); i++) {
       gradients[k] = d_theta_r[i];
-      if(i<5){
-        std::cout << gradients[k] << ", ";
-      }
       k++;
     }
     for (int i = 0; i < d_theta_s.size(); i++) {
@@ -428,9 +419,6 @@ inline var generalized_logistic_model(
       k++;
     }
     for (int i = 0; i < d_eta_pr.size(); i++) {
-      if(i<5){
-        std::cout << gradients[k] << ", ";
-      }
       gradients[k] = d_eta_pr[i];
       k++;
     }

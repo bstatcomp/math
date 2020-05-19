@@ -16,5 +16,7 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
+    - name: version
+      run: g++ --version
     - name: build
       run: python runTests.py test/unit/math/prim/fun/add_test.cpp 

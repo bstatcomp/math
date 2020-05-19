@@ -16,6 +16,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: '3.x'
+    - name: rtools setup
+      run: curl -s -o ../R-tools-win.exe -L https://cran.rstudio.com/bin/windows/Rtools/Rtools35.exe
     - name: version
       run: g++ --version
     - name: build

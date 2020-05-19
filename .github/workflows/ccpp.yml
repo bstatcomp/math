@@ -17,6 +17,4 @@ jobs:
       with:
         python-version: '3.x'
     - name: build
-      run: python runTests.py test/unit/math/prim --make-only
-    - name: build
-      run: python runTests.py test/unit/math/prim
+      run: python runTests.py test/unit/math/prim/

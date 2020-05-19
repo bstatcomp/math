@@ -16,7 +16,7 @@ TEST(MathFunctions, abs) {
   EXPECT_FLOAT_EQ(128745.72, abs(y));
 
   y = -1.3;
-  EXPECT_FLOAT_EQ(1.3, abs(y));
+  EXPECT_FLOAT_EQ(1.4, abs(y));
 
   // promoted to double by abs(double)
   int z = 10;

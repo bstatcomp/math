@@ -35,9 +35,12 @@
 #include <stan/math/rev/fun/cov_exp_quad.hpp>
 #include <stan/math/rev/fun/determinant.hpp>
 #include <stan/math/rev/fun/digamma.hpp>
+#include <stan/math/rev/fun/dims.hpp>
 #include <stan/math/rev/fun/divide.hpp>
 #include <stan/math/rev/fun/dot_product.hpp>
 #include <stan/math/rev/fun/dot_self.hpp>
+#include <stan/math/rev/fun/eigenvalues_sym.hpp>
+#include <stan/math/rev/fun/eigenvectors_sym.hpp>
 #include <stan/math/rev/fun/erf.hpp>
 #include <stan/math/rev/fun/erfc.hpp>
 #include <stan/math/rev/fun/exp.hpp>
@@ -51,6 +54,7 @@
 #include <stan/math/rev/fun/fmax.hpp>
 #include <stan/math/rev/fun/fmin.hpp>
 #include <stan/math/rev/fun/fmod.hpp>
+#include <stan/math/rev/fun/from_var_value.hpp>
 #include <stan/math/rev/fun/gamma_p.hpp>
 #include <stan/math/rev/fun/gamma_q.hpp>
 #include <stan/math/rev/fun/gp_periodic_cov.hpp>
@@ -70,6 +74,7 @@
 #include <stan/math/rev/fun/is_inf.hpp>
 #include <stan/math/rev/fun/is_nan.hpp>
 #include <stan/math/rev/fun/is_uninitialized.hpp>
+#include <stan/math/rev/fun/lambert_w.hpp>
 #include <stan/math/rev/fun/lbeta.hpp>
 #include <stan/math/rev/fun/ldexp.hpp>
 #include <stan/math/rev/fun/lgamma.hpp>
@@ -135,6 +140,8 @@
 #include <stan/math/rev/fun/tcrossprod.hpp>
 #include <stan/math/rev/fun/tgamma.hpp>
 #include <stan/math/rev/fun/to_var.hpp>
+#include <stan/math/rev/fun/to_arena.hpp>
+#include <stan/math/rev/fun/to_var_value.hpp>
 #include <stan/math/rev/fun/trace_gen_inv_quad_form_ldlt.hpp>
 #include <stan/math/rev/fun/trace_gen_quad_form.hpp>
 #include <stan/math/rev/fun/trace_inv_quad_form_ldlt.hpp>

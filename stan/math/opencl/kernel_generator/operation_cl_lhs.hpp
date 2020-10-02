@@ -24,7 +24,8 @@ namespace math {
  * @tparam Args types of arguments to this operation
  */
 template <typename Derived, typename Scalar, typename... Args>
-class operation_cl_lhs : public operation_cl<Derived, Scalar, Args...> {
+class operation_cl_lhs : public operation_cl<Derived, Scalar, Args...>,
+                         public operation_cl_lhs_base {
  protected:
   using base = operation_cl<Derived, Scalar, Args...>;
   static constexpr int N = sizeof...(Args);
@@ -38,40 +39,37 @@ class operation_cl_lhs : public operation_cl<Derived, Scalar, Args...> {
    * side of an assignment.
    * @param[in,out] generated set of (pointer to) already generated operations
    * @param name_gen name generator for this kernel
-   * @param i row index variable name
-   * @param j column index variable name
+   * @param row_index_name row index variable name
+   * @param col_index_name column index variable name
    * @return part of kernel with code for this expressions
    */
   inline kernel_parts get_kernel_parts_lhs(
       std::set<const operation_cl_base*>& generated, name_generator& name_gen,
-      const std::string& i, const std::string& j) const {
+      const std::string& row_index_name,
+      const std::string& col_index_name) const {
     if (generated.count(this) == 0) {
-      this->var_name = name_gen.generate();
+      this->var_name_ = name_gen.generate();
     }
-    std::string i_arg = i;
-    std::string j_arg = j;
-    derived().modify_argument_indices(i_arg, j_arg);
+    std::string row_index_name_arg = row_index_name;
+    std::string col_index_name_arg = col_index_name;
+    derived().modify_argument_indices(row_index_name_arg, col_index_name_arg);
     std::array<kernel_parts, N> args_parts = index_apply<N>([&](auto... Is) {
       return std::array<kernel_parts, N>{
-          this->template get_arg<Is>().get_kernel_parts_lhs(generated, name_gen,
-                                                            i_arg, j_arg)...};
+          this->template get_arg<Is>().get_kernel_parts_lhs(
+              generated, name_gen, row_index_name_arg, col_index_name_arg)...};
     });
-    kernel_parts res{};
-    res.body = std::accumulate(
-        args_parts.begin(), args_parts.end(), std::string(),
-        [](const std::string& a, const kernel_parts& b) { return a + b.body; });
+    kernel_parts res
+        = std::accumulate(args_parts.begin(), args_parts.end(), kernel_parts{});
+    kernel_parts my_part = index_apply<N>([&](auto... Is) {
+      return this->derived().generate_lhs(
+          row_index_name, col_index_name,
+          this->template get_arg<Is>().var_name_...);
+    });
+    res += my_part;
     if (generated.count(this) == 0) {
       generated.insert(this);
-      res.args
-          = std::accumulate(args_parts.begin(), args_parts.end(), std::string(),
-                            [](const std::string& a, const kernel_parts& b) {
-                              return a + b.args;
-                            });
-      kernel_parts my_part = index_apply<N>([&](auto... Is) {
-        return this->derived().generate_lhs(
-            i, j, this->template get_arg<Is>().var_name...);
-      });
-      res += my_part;
+    } else {
+      res.args = "";
     }
     return res;
   }
@@ -84,8 +82,7 @@ class operation_cl_lhs : public operation_cl<Derived, Scalar, Args...> {
   template <typename T_expression,
             typename
             = require_all_kernel_expressions_and_none_scalar_t<T_expression>>
-  const operation_cl_lhs<Derived, Scalar, Args...>& operator=(
-      T_expression&& rhs) const {
+  operation_cl_lhs<Derived, Scalar, Args...>& operator=(T_expression&& rhs) {
     auto expression
         = as_operation_cl(std::forward<T_expression>(rhs)).derived();
     int this_rows = derived().rows();

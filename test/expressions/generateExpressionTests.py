@@ -27,7 +27,7 @@ arg_types = {
     "row_vector[]": "std::vector<Eigen::Matrix<SCALAR, 1, Eigen::Dynamic>>",
     "matrix": "Eigen::Matrix<SCALAR, Eigen::Dynamic, Eigen::Dynamic>",
     "rng": "std::minstd_rand",
-	"ostream_ptr": "std::ostream*",
+    "ostream_ptr": "std::ostream*",
 }
 
 test_code_template = """
@@ -131,7 +131,7 @@ def add_extra_signatures(res):
         "real[,] ode_rk45((real, vector, ostream_ptr, vector) => vector, vector, real, real[], ostream_ptr, vector)",
         "real[,] ode_rk45_tol((real, vector, ostream_ptr, vector) => vector, vector, real, real[], real, real, real, ostream_ptr, vector)",
         "real reduce_sum(real[], int, vector)",
-		])
+        ])
     return res
 
 def get_signatures():
@@ -260,7 +260,7 @@ def make_arg_code(arg, scalar, var_name, var_number, function_name):
     :return: code for declaration and initialization of an argument
     """
     if function_name in non_differentiable_args and \
-	        var_number in non_differentiable_args[function_name]:
+            var_number in non_differentiable_args[function_name]:
         scalar = "double"
     if arg == "(vector, vector, data real[], data int[]) => vector":
         return "  stan::test::simple_eq_functor " + var_name
@@ -279,7 +279,7 @@ def make_arg_code(arg, scalar, var_name, var_number, function_name):
             special_arg_values[function_name][var_number],
         )
     elif function_name in ("csr_to_dense_matrix", "csr_matrix_times_vector") and var_number == 4:
-	    return "  {} {}{{1, 2}}".format(arg_type, var_name,)
+        return "  {} {}{{1, 2}}".format(arg_type, var_name,)
     else:
         return "  %s %s = stan::test::make_arg<%s>()" % (arg_type, var_name, arg_type,)
 
@@ -320,6 +320,25 @@ def handle_function_list(functions_input, signatures):
             function_names.append(f)
     return function_names, function_signatures
 
+    
+def skip_similar_signatures(signatures):
+    """
+    Filters signatures keeping only one among similar signatures. Signatures are 
+    similar if thy have same function name, return type and only different arguments are 
+    of types (vector, row_vector and real[])
+    :param signatures: signatures to filter
+    """
+    parsed = [(parse_signature(signature), signature) for signature in signatures]
+    parsed_set = {(i[0][0],i[0][1],tuple(i[0][2])) for i in parsed}
+    result_signatures = []
+    for (return_type, function_name, function_args), signature in parsed:
+        similar_args = tuple("vector" if i in ("real[]", "row_vector") else i 
+							 for i in function_args)
+        if (similar_args == tuple(function_args) or 
+				(return_type, function_name, similar_args) not in parsed_set):
+            result_signatures.append(signature)
+    return result_signatures
+            
 
 # lists of functions that do not support fwd or rev autodiff
 no_rev_overload = ["hmm_hidden_state_prob"]
@@ -337,7 +356,7 @@ no_fwd_overload = [
 ]
 
 
-def main(functions=(), j=1):
+def main(functions=(), j=1, skip_similar=True):
     """
     Generates expression tests. Functions that do not support expressions yet are listed
     in stan_math/tests/expressions/stan_math_sigs_exceptions.expected
@@ -353,12 +372,17 @@ def main(functions=(), j=1):
     already supported by stanc3, full function signatures or file names of files containing
     any of the previous two. Default: all signatures supported by stanc3
     :param j: number of files to split tests in
+    :param skip_similar: whether to test only one among similar signatures. Signatures are 
+    similar if thy have same function name, return type and only different arguments are 
+    of types (vector, row_vector and real[])
     """
     ignored = get_ignored_signatures()
 
     test_n = {}
     tests = []
     signatures = get_signatures()
+    if skip_similar:
+        signatures = skip_similar_signatures(signatures)
     functions, extra_signatures = handle_function_list(functions, signatures)
     remaining_functions = set(functions)
     for signature in signatures:

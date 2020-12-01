@@ -28,7 +28,7 @@ inline auto positive_ordered_constrain(const T& x) {
   size_t N = x.size();
 
   if (unlikely(N == 0)) {
-    return ret_type(x);
+    return x;
   }
 
   arena_t<T> arena_x = x;
@@ -54,7 +54,7 @@ inline auto positive_ordered_constrain(const T& x) {
     }
   });
 
-  return ret_type(y);
+  return y;
 }
 
 }  // namespace math

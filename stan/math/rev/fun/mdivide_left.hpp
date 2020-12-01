@@ -35,8 +35,7 @@ inline auto mdivide_left(const T1& A, const T2& B) {
       arena_A.adj() -= adjB * res.val_op().transpose();
       arena_B.adj() += adjB;
     });
-
-    return ret_type(res);
+    return res;
   } else if (!is_constant<T2>::value) {
     arena_t<promote_scalar_t<var, T2>> arena_B = B;
     arena_t<promote_scalar_t<double, T1>> arena_A_val = value_of(A);
@@ -44,7 +43,7 @@ inline auto mdivide_left(const T1& A, const T2& B) {
     reverse_pass_callback([arena_B, arena_A_val, res]() mutable {
       arena_B.adj() += arena_A_val.transpose().householderQr().solve(res.adj());
     });
-    return ret_type(res);
+    return res;
   } else {
     arena_t<promote_scalar_t<var, T1>> arena_A = A;
     arena_t<ret_type> res = arena_A.val().householderQr().solve(value_of(B));
@@ -53,7 +52,7 @@ inline auto mdivide_left(const T1& A, const T2& B) {
           -= arena_A.val().transpose().householderQr().solve(res.adj())
              * res.val_op().transpose();
     });
-    return ret_type(res);
+    return res;
   }
 }
 

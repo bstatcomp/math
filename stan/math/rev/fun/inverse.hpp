@@ -20,7 +20,7 @@ namespace math {
  * @throw std::invalid_argument if the matrix is not square.
  */
 template <typename T, require_rev_matrix_t<T>* = nullptr>
-inline plain_type_t<T> inverse(const T& m) {
+inline auto inverse(const T& m) {
   check_square("inverse", "m", m);
 
   if (m.size() == 0) {

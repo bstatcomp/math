@@ -26,7 +26,7 @@ namespace math {
  * square.
  */
 template <typename T, require_rev_matrix_t<T>* = nullptr>
-inline plain_type_t<T> matrix_power(const T& M, const int n) {
+inline auto matrix_power(const T& M, const int n) {
   check_square("matrix_power", "M", M);
   check_nonnegative("matrix_power", "n", n);
 

@@ -29,7 +29,7 @@ inline auto ordered_constrain(const T& x) {
 
   size_t N = x.size();
   if (unlikely(N == 0)) {
-    return ret_type(x);
+    return x;
   }
 
   Eigen::VectorXd y_val(N);
@@ -54,7 +54,7 @@ inline auto ordered_constrain(const T& x) {
     arena_x.adj().coeffRef(0) += rolling_adjoint_sum + y.adj().coeff(0);
   });
 
-  return ret_type(y);
+  return y;
 }
 
 /**

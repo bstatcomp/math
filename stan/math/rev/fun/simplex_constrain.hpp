@@ -52,7 +52,7 @@ inline auto simplex_constrain(const T& y) {
 
   arena_t<ret_type> arena_x = x_val;
   if (unlikely(N == 0)) {
-    return ret_type(arena_x);
+    return arena_x;
   }
 
   reverse_pass_callback([arena_y, arena_x, arena_diag, arena_z]() mutable {
@@ -69,7 +69,7 @@ inline auto simplex_constrain(const T& y) {
     }
   });
 
-  return ret_type(arena_x);
+  return arena_x;
 }
 
 }  // namespace math

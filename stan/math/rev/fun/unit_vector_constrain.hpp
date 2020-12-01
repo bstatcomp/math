@@ -45,7 +45,7 @@ inline auto unit_vector_constrain(const T& y) {
                               / (r * r * r));
   });
 
-  return ret_type(res);
+  return res;
 }
 
 /**

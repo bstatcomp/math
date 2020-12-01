@@ -39,7 +39,7 @@ auto elt_multiply(const Mat1& m1, const Mat2& m2) {
         arena_m2.adj().coeffRef(i) += arena_m1.val().coeff(i) * ret_adj;
       }
     });
-    return ret_type(ret);
+    return ret;
   } else if (!is_constant<Mat1>::value) {
     arena_t<promote_scalar_t<var, Mat1>> arena_m1 = m1;
     arena_t<promote_scalar_t<double, Mat2>> arena_m2 = value_of(m2);
@@ -47,7 +47,7 @@ auto elt_multiply(const Mat1& m1, const Mat2& m2) {
     reverse_pass_callback([ret, arena_m1, arena_m2]() mutable {
       arena_m1.adj().array() += arena_m2.array() * ret.adj().array();
     });
-    return ret_type(ret);
+    return ret;
   } else if (!is_constant<Mat2>::value) {
     arena_t<promote_scalar_t<double, Mat1>> arena_m1 = value_of(m1);
     arena_t<promote_scalar_t<var, Mat2>> arena_m2 = m2;
@@ -55,7 +55,7 @@ auto elt_multiply(const Mat1& m1, const Mat2& m2) {
     reverse_pass_callback([ret, arena_m2, arena_m1]() mutable {
       arena_m2.adj().array() += arena_m1.array() * ret.adj().array();
     });
-    return ret_type(ret);
+    return ret;
   }
 }
 }  // namespace math

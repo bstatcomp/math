@@ -25,7 +25,7 @@ namespace math {
  * @throw std::domain_error If the input vector is size 0.
  */
 template <typename Mat, require_rev_matrix_t<Mat>* = nullptr>
-inline plain_type_t<Mat> softmax(const Mat& alpha) {
+inline auto softmax(const Mat& alpha) {
   using mat_plain = plain_type_t<Mat>;
   if (alpha.size() == 0) {
     return alpha;

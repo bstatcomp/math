@@ -43,7 +43,7 @@ inline auto multiply(const T1& A, const T2& B) {
           arena_A.adj() += res_adj * arena_B_val.transpose();
           arena_B.adj() += arena_A_val.transpose() * res_adj;
         });
-    return return_t(res);
+    return res;
   } else if (!is_constant<T2>::value) {
     arena_t<promote_scalar_t<double, T1>> arena_A_val = value_of(to_ref(A));
     arena_t<promote_scalar_t<var, T2>> arena_B = to_ref(B);
@@ -54,7 +54,7 @@ inline auto multiply(const T1& A, const T2& B) {
     reverse_pass_callback([arena_B, arena_A_val, res]() mutable {
       arena_B.adj() += arena_A_val.transpose() * res.adj_op();
     });
-    return return_t(res);
+    return res;
   } else {
     arena_t<promote_scalar_t<var, T1>> arena_A = to_ref(A);
     arena_t<promote_scalar_t<double, T2>> arena_B_val = value_of(to_ref(B));
@@ -66,7 +66,7 @@ inline auto multiply(const T1& A, const T2& B) {
       arena_A.adj() += res.adj_op() * arena_B_val.transpose();
     });
 
-    return return_t(res);
+    return res;
   }
 }
 
@@ -144,7 +144,7 @@ inline auto multiply(const T1& A, const T2& B) {
       forward_as<var>(A).adj() += (res_adj.array() * arena_B_val.array()).sum();
       arena_B.adj().array() += value_of(A) * res_adj.array();
     });
-    return return_t(res);
+    return res;
   } else if (!is_constant<T2>::value) {
     arena_t<promote_scalar_t<var, T2>> arena_B = to_ref(B);
     using return_t = promote_var_matrix_t<T2, T1, T2>;
@@ -152,7 +152,7 @@ inline auto multiply(const T1& A, const T2& B) {
     reverse_pass_callback([A, arena_B, res]() mutable {
       arena_B.adj().array() += value_of(A) * res.adj().array();
     });
-    return return_t(res);
+    return res;
   } else {
     arena_t<promote_scalar_t<double, T2>> arena_B_val = value_of(B);
     using return_t = promote_var_matrix_t<T2, T1, T2>;
@@ -161,7 +161,7 @@ inline auto multiply(const T1& A, const T2& B) {
       forward_as<var>(A).adj()
           += (res.adj().array() * arena_B_val.array()).sum();
     });
-    return return_t(res);
+    return res;
   }
 }
 

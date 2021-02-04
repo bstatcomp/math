@@ -1,5 +1,5 @@
-#ifndef STAN_MATH_OPENCL_KERNEL_GENERATOR_CONSTANT_HPP
-#define STAN_MATH_OPENCL_KERNEL_GENERATOR_CONSTANT_HPP
+#ifndef STAN_MATH_OPENCL_KERNEL_GENERATOR_RESHAPE_HPP
+#define STAN_MATH_OPENCL_KERNEL_GENERATOR_RESHAPE_HPP
 #ifdef STAN_OPENCL
 
 #include <stan/math/opencl/matrix_cl.hpp>
@@ -26,16 +26,13 @@ namespace math {
  * @tparam T type of the scalar
  */
 template <typename T>
-class constant_ : public operation_cl<constant_<T>, T> {
-  T a_;
+class reshape_ : public operation_cl<reshape_<T>, scalar_type_t<T>, T> {
   int rows_;
   int cols_;
 
  public:
-  static_assert(std::is_arithmetic<T>::value,
-                "class constant_<T>: std::is_arithmetic<T> must be true!");
-  using Scalar = T;
-  using base = operation_cl<constant_<T>, T>;
+  using Scalar = scalar_type_t<T>;
+  using base = operation_cl<reshape_<T>, Scalar, T>;
   using base::var_name_;
 
   /**
@@ -44,15 +41,20 @@ class constant_ : public operation_cl<constant_<T>, T> {
    * @param rows number of rows of the matrix
    * @param cols number of columns of the matrix
    */
-  explicit constant_(const T a, int rows, int cols)
-      : a_(a), rows_(rows), cols_(cols) {}
+  explicit reshape_(T&& a, int rows, int cols)
+      : base(std::forward<T>(a)), rows_(rows), cols_(cols) {
+    check_size_match("reshape", "argument size", a.size(), "new size",
+                     rows * cols);
+  }
 
   /**
    * Creates a deep copy of this expression.
    * @return copy of \c *this
    */
-  inline constant_<T> deep_copy() const {
-    return constant_<T>(a_, rows_, cols_);
+  inline reshape_<T> deep_copy() const {
+    auto&& arg_copy = this->template get_arg<0>().deep_copy();
+    return reshape_<std::remove_reference_t<decltype(arg_copy)>>{
+        std::move(arg_copy), rows_, cols_};
   }
 
   /**
@@ -64,10 +66,31 @@ class constant_ : public operation_cl<constant_<T>, T> {
    */
   inline kernel_parts generate(const std::string& row_index_name,
                                const std::string& col_index_name,
-                               const bool view_handled) const {
+                               const bool view_handled,
+                               const std::string& var_name_arg) const {
     kernel_parts res{};
-    res.args = type_str<Scalar>() + " " + var_name_ + ", ";
+    res.args = "int " + var_name_ + "_inner_rows, int " + var_name_
+               + "_outer_rows, ";
+    res.body_prefix
+        = "int " + var_name_ + "_lin = " + var_name_ + "_outer_rows * "
+          + col_index_name + " + " + row_index_name + ";\n"
+          "int " + var_name_ + "_col_idx = " + var_name_ + "_lin / "
+          + var_name_ + "_inner_rows;\n"
+          "int " + var_name_ + "_row_idx = " + var_name_ + "_lin % "
+          + var_name_ + "_inner_rows;\n";
+    res.body
+        = type_str<Scalar>() + " " + var_name_ + " = " + var_name_arg + ";\n";
     return res;
+  }
+  /**
+   * Sets indices for the argument expression.
+   * @param[in, out] row_index_name row index
+   * @param[in, out] col_index_name column index
+   */
+  inline void modify_argument_indices(std::string& row_index_name,
+                                      std::string& col_index_name) const {
+    row_index_name = var_name_ + "_row_idx";
+    col_index_name = var_name_ + "_col_idx";
   }
 
   /**
@@ -85,7 +108,14 @@ class constant_ : public operation_cl<constant_<T>, T> {
                        cl::Kernel& kernel, int& arg_num) const {
     if (generated.count(this) == 0) {
       generated[this] = "";
-      kernel.setArg(arg_num++, a_);
+      std::map<const void*, const char*> generated2;
+      this->template get_arg<0>().set_args(generated2, generated_all, kernel,
+                                           arg_num);
+      if (generated_all.count(this) == 0) {
+        generated_all[this] = "";
+        kernel.setArg(arg_num++, this->template get_arg<0>().rows());
+        kernel.setArg(arg_num++, rows_);
+      }
     }
   }
 
@@ -125,9 +155,12 @@ class constant_ : public operation_cl<constant_<T>, T> {
  * @param cols number of columns
  * @return Block of given expression
  */
-template <typename T, typename = require_arithmetic_t<T>>
-inline auto constant(const T a, int rows, int cols) {
-  return constant_<T>(a, rows, cols);
+template <typename T,
+          require_all_kernel_expressions_and_none_scalar_t<T>* = nullptr>
+inline auto reshape(T&& a, int rows, int cols) {
+  auto&& a_operation = as_operation_cl(std::forward<T>(a)).deep_copy();
+  return reshape_<std::remove_reference_t<decltype(a_operation)>>(
+      std::move(a_operation), rows, cols);
 }
 
 /** @}*/

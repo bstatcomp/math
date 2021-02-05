@@ -249,7 +249,7 @@ class expressions_cl {
    */
   explicit expressions_cl(T_expressions&&... expressions)
       : expressions_(
-            T_expressions(std::forward<T_expressions>(expressions))...) {}
+          T_expressions(std::forward<T_expressions>(expressions))...) {}
 
  private:
   std::tuple<T_expressions...> expressions_;
@@ -482,8 +482,14 @@ class results_cl {
         kernel.setArg(arg_num++, n_rows);
         kernel.setArg(arg_num++, n_cols);
         int local = opencl_context.base_opts().at("LOCAL_SIZE_");
-        int wgs_rows = (n_rows + local - 1) / local;
-        int wgs_cols = (n_cols + local - 1) / local;
+        int preferred_work_groups
+            = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()
+              * 4;
+        int steps_rows = (n_rows + local - 1) / local;
+        //        int wgs_cols = (n_cols + local - 1) / local;
+        int wgs_cols = n_cols;
+
+        int wgs_rows = (preferred_work_groups + wgs_cols - 1)/wgs_cols;
 
         opencl_context.queue().enqueueNDRangeKernel(
             kernel, cl::NullRange, cl::NDRange(local * wgs_rows, wgs_cols),

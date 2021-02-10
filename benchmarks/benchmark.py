@@ -32,7 +32,7 @@ static void {benchmark_name}(benchmark::State& state) {{
     benchmark::ClobberMemory();
   }}
 }}
-BENCHMARK({benchmark_name})->RangeMultiplier({multi})->Range(1, {max_size})->UseManualTime();
+BENCHMARK({benchmark_name})->RangeMultiplier({multi})->Range(1, {max_size})/*->UseManualTime()*/;
 
 """
 
@@ -480,11 +480,13 @@ def benchmark(
                     code += "stan::math::to_var_value({}), ".format(var_name)
                 else:
                     code += var_name + ", "
-            if opencl == "base":
-                var_conversions += "  stan::math::opencl_context.queue().finish();\n"
             code = code[:-2] + "));\n"
             if "Rev" in arg_overloads:
                 code += "    stan::math::grad();\n"
+            if opencl == "base":
+                finish = "  stan::math::opencl_context.queue().finish();\n"
+                var_conversions += finish
+                code += finish
             result += BENCHMARK_TEMPLATE.format(
                 benchmark_name=benchmark_name,
                 setup=setup,

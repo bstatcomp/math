@@ -83,8 +83,9 @@ class colwise_reduction
 
     parts.args += out_parts.args;
     parts.reduction += "if (lid_i == 0) {\n"
+                       "int reduction_rows = min(n_groups_i, steps_rows);\n"
                      + result.var_name_
-                     + "_global[j * blocks_rows + wg_id_i] = "
+                     + "_global[j_last * reduction_rows + wg_id_i % reduction_rows] = "
                      + derived().var_name_ + "_local[0];\n"
                      "}\n";
     return parts;
@@ -105,10 +106,11 @@ class colwise_reduction
                                const std::string& var_name_arg) const {
     kernel_parts res;
     res.declarations = "__local " + type_str<Scalar>() + " " + var_name_
-                       + "_local[LOCAL_SIZE_];\n";
-    res.initialization
-        = type_str<Scalar>() + " " + var_name_ + " = " + init_ + ";\n";
-    res.body = var_name_ + " = " + var_name_arg + ";\n";
+                       + "_local[LOCAL_SIZE_];\n" + type_str<Scalar>() + " "
+                       + var_name_ + ";\n";
+    res.initialization = var_name_ + " = " + init_ + ";\n";
+    res.body = var_name_ + " = " + Operation::generate(var_name_, var_name_arg)
+               + ";\n";
     res.reduction =
           var_name_ + "_local[lid_i] = " + var_name_ + ";\n"
           "barrier(CLK_LOCAL_MEM_FENCE);\n"
@@ -132,10 +134,15 @@ class colwise_reduction
    * @return number of rows
    */
   inline int rows() const {
-    int local_rows = opencl_context.base_opts().at("LOCAL_SIZE_");
-    int wgs_rows
-        = (this->template get_arg<0>().rows() + local_rows - 1) / local_rows;
-    return wgs_rows;
+    int arg_rows = this->template get_arg<0>().rows();
+    int arg_cols = this->template get_arg<0>().rows();
+    int local = opencl_context.base_opts().at("LOCAL_SIZE_");
+    int preferred_work_groups
+        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 4;
+
+    int steps_rows = (arg_rows + local - 1) / local;
+    int wgs = std::min(steps_rows * arg_cols, preferred_work_groups);
+    return std::min(wgs, steps_rows);
   }
 
   /**

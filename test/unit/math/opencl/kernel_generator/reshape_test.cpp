@@ -69,4 +69,20 @@ TEST(KernelGenerator, reshape_multiple_operations_lvalue_test) {
   EXPECT_MATRIX_NEAR(res, correct, 1e-9);
 }
 
+TEST(KernelGenerator, colwise_sum_reshape_test) {
+  using stan::math::reshape;
+  int N = 4096;
+  int M = 4096;
+  MatrixXd m = MatrixXd::Random(N,M);
+
+  matrix_cl<double> m_cl(m);
+
+  matrix_cl<double> res_cl = colwise_sum(reshape(m_cl, N*M, 1));
+  MatrixXd raw_res = stan::math::from_matrix_cl(res_cl);
+  MatrixXd res = raw_res.colwise().sum();
+
+  MatrixXd correct = Eigen::Map<Eigen::MatrixXd>(m.data(), N*M, 1).colwise().sum();
+  EXPECT_MATRIX_NEAR(res, correct, 1e-9);
+}
+
 #endif

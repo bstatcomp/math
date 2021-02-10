@@ -135,7 +135,7 @@ class colwise_reduction
    */
   inline int rows() const {
     int arg_rows = this->template get_arg<0>().rows();
-    int arg_cols = this->template get_arg<0>().rows();
+    int arg_cols = this->template get_arg<0>().cols();
     int local = opencl_context.base_opts().at("LOCAL_SIZE_");
     int preferred_work_groups
         = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 4;

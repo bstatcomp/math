@@ -377,7 +377,7 @@ class results_cl {
           "const int lsize_i = get_local_size(0);\n"
           "const int gsize_i = get_global_size(0);\n"
           "const int wg_id_i = get_group_id(0);\n"
-          "const int wg_id_j = get_group_id(1);\n"
+          //"const int wg_id_j = get_group_id(1);\n"
           "const int n_groups_i = get_num_groups(0);\n"
           "const int steps_rows = (rows + lsize_i - 1) / lsize_i;\n"
           "const int work_rows = steps_rows * lsize_i;\n"

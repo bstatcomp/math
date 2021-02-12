@@ -17,10 +17,12 @@ using stan::math::matrix_cl;
 
 TEST(KernelGenerator, colwise_sum_test) {
   std::string kernel_filename = "colwise_sum.cl";
-  MatrixXd m(3, 2);
+  MatrixXd m(5, 2);
   m << 1.1, 1.2,
       1.3, 1.4,
-      1.5, 1.6;
+      1.5, 1.6,
+      1.7, 1.8,
+      1.9, 15;
 
   matrix_cl<double> m_cl(m);
 
@@ -125,14 +127,16 @@ TEST(KernelGenerator, nested_rowwise_colwise_sum) {
 }
 
 TEST(KernelGenerator, colwise_sum_test_large) {
-  for(int N : {1,2,63,64,65,4095,4096,4967, 4096*4}){
-    for(int M : {1,2,63,64,65,4095,4096,4967, 4096*4}){
+  for (int M : {1, 2, 5, 9, 63, 64, 65, 4095, 4096, 4967, 4096 * 4}) {
+    for (int N : {1, 2, 5, 9, 63, 64, 65, 4095, 4096, 4967, 4096 * 4}) {
+      if (N*M>1e6){
+        continue;
+      }
       MatrixXd m = MatrixXd::Random(N, M);
 
       matrix_cl<double> m_cl(m);
       matrix_cl<double> res_cl = stan::math::colwise_sum(m_cl);
       MatrixXd raw_res = stan::math::from_matrix_cl(res_cl);
-      std::cout << raw_res.rows() << " " << raw_res.cols() << std::endl;
       EXPECT_GE(m.rows(), raw_res.rows());
       MatrixXd res = raw_res.colwise().sum();
       MatrixXd correct = m.colwise().sum();
@@ -142,7 +146,6 @@ TEST(KernelGenerator, colwise_sum_test_large) {
     }
   }
 }
-
 
 TEST(KernelGenerator, colwise_sum_and_id_test) {
   MatrixXd m(3, 2);

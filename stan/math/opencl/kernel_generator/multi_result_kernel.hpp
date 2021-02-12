@@ -373,31 +373,27 @@ class results_cl {
           "kernel void calculate(" + parts.args +
           "const int rows, const int cols){\n"
           "const int gid_i = get_global_id(0);\n"
+          "const int gid_j = get_global_id(1);\n"
           "const int lid_i = get_local_id(0);\n"
           "const int lsize_i = get_local_size(0);\n"
           "const int gsize_i = get_global_size(0);\n"
+          "const int gsize_j = get_global_size(1);\n"
           "const int wg_id_i = get_group_id(0);\n"
-          //"const int wg_id_j = get_group_id(1);\n"
           "const int n_groups_i = get_num_groups(0);\n"
           "const int steps_rows = (rows + lsize_i - 1) / lsize_i;\n"
           "const int work_rows = steps_rows * lsize_i;\n"
           + parts.declarations
           + parts.initialization +
-          "int j_last = gid_i / work_rows;\n"
-          "for(int ij = gid_i; ij < work_rows*cols; ij+=gsize_i){\n"
-          "const int i = ij % work_rows;\n"
-          "const int j = ij / work_rows;\n"
-          "if(j>j_last){\n"
-          + parts.reduction
+          "for(int j = gid_j; j < cols; j+=gsize_j){\n"
           + parts.initialization +
-          "j_last = j;\n"
-          "}\n"
+          "for(int i = gid_i; i < work_rows; i+=gsize_i){\n"
           "if(i < rows){\n"
           + parts.body
           + parts.body_suffix +
           "}\n"
           "}\n"
           + parts.reduction +
+          "}\n"
           "}\n";
     } else {
       src =
@@ -490,14 +486,13 @@ class results_cl {
         int local = opencl_context.base_opts().at("LOCAL_SIZE_");
         int preferred_work_groups
             = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()
-              * 32;
-        int steps_rows = (n_rows + local - 1) / local;
-        int wgs = std::min(steps_rows * n_cols, preferred_work_groups);
+              * 16;
+        // round up n_rows/local/n_cols
+        int wgs_rows = ((n_rows + local - 1) / local + n_cols - 1) / n_cols;
 
-//        std::cout << "wgs " << wgs << " local " << local << std::endl;
         opencl_context.queue().enqueueNDRangeKernel(
-            kernel, cl::NullRange, cl::NDRange(local * wgs), cl::NDRange(local),
-            &events, &e);
+            kernel, cl::NullRange, cl::NDRange(local * wgs_rows, n_cols),
+            cl::NDRange(local, 1), &events, &e);
       } else {
         opencl_context.queue().enqueueNDRangeKernel(kernel, cl::NullRange,
                                                     cl::NDRange(n_rows, n_cols),

@@ -83,9 +83,8 @@ class colwise_reduction
 
     parts.args += out_parts.args;
     parts.reduction += "if (lid_i == 0) {\n"
-                       "int reduction_rows = min(n_groups_i, steps_rows);\n"
                      + result.var_name_
-                     + "_global[j_last * reduction_rows + wg_id_i % reduction_rows] = "
+                     + "_global[j * n_groups_i + wg_id_i] = "
                      + derived().var_name_ + "_local[0];\n"
                      "}\n";
     return parts;
@@ -138,11 +137,10 @@ class colwise_reduction
     int arg_cols = this->template get_arg<0>().cols();
     int local = opencl_context.base_opts().at("LOCAL_SIZE_");
     int preferred_work_groups
-        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 32;
+        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 16;
 
-    int steps_rows = (arg_rows + local - 1) / local;
-    int wgs = std::min(steps_rows * arg_cols, preferred_work_groups);
-    return std::min(wgs, steps_rows);
+    //round up arg_rows/local/arg_cols
+    return ((arg_rows + local - 1) / local + arg_cols - 1) / arg_cols;
   }
 
   /**

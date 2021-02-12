@@ -490,7 +490,7 @@ class results_cl {
         int local = opencl_context.base_opts().at("LOCAL_SIZE_");
         int preferred_work_groups
             = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()
-              * 4;
+              * 32;
         int steps_rows = (n_rows + local - 1) / local;
         int wgs = std::min(steps_rows * n_cols, preferred_work_groups);
 

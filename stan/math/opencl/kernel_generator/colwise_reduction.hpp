@@ -138,7 +138,7 @@ class colwise_reduction
     int arg_cols = this->template get_arg<0>().cols();
     int local = opencl_context.base_opts().at("LOCAL_SIZE_");
     int preferred_work_groups
-        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 4;
+        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 32;
 
     int steps_rows = (arg_rows + local - 1) / local;
     int wgs = std::min(steps_rows * arg_cols, preferred_work_groups);

@@ -7,18 +7,13 @@ const int gsize_i = get_global_size(0);
 const int gsize_j = get_global_size(1);
 const int wg_id_i = get_group_id(0);
 const int n_groups_i = get_num_groups(0);
-const int steps_rows = (rows + lsize_i - 1) / lsize_i;
-const int work_rows = steps_rows * lsize_i;
 __local double var1_local[LOCAL_SIZE_];
 double var1;
-var1 = 0;
 for(int j = gid_j; j < cols; j+=gsize_j){
 var1 = 0;
-for(int i = gid_i; i < work_rows; i+=gsize_i){
-if(i < rows){
+for(int i = gid_i; i < rows; i+=gsize_i){
 double var2 = 0; if (!((!contains_nonzero(var2_view, LOWER) && j < i) || (!contains_nonzero(var2_view, UPPER) && j > i))) {var2 = var2_global[i + var2_rows * j];}
 var1 = var1 + var2;
-}
 }
 var1_local[lid_i] = var1;
 barrier(CLK_LOCAL_MEM_FENCE);

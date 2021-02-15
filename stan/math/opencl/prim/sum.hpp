@@ -19,7 +19,17 @@ namespace math {
 template <typename T,
           require_all_kernel_expressions_and_none_scalar_t<T>* = nullptr>
 value_type_t<T> sum(const T& m) {
-  return sum(from_matrix_cl(colwise_sum(reshape(m,m.size(),1))));
+  matrix_cl<value_type_t<T>> res;
+  if (m.rows() == 1) {
+    // using rowwise_sum would run just 1 thread
+    res = colwise_sum(transpose(m));
+  } else if (m.cols() == 1) {
+    res = colwise_sum(m);
+  } else {
+    res = colwise_sum(rowwise_sum(m));
+  }
+//  std::cout << res.size() << " ";
+  return sum(from_matrix_cl(res));
 }
 
 }  // namespace math

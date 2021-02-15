@@ -137,10 +137,12 @@ class colwise_reduction
     int arg_cols = this->template get_arg<0>().cols();
     int local = opencl_context.base_opts().at("LOCAL_SIZE_");
     int preferred_work_groups
-        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() * 64;
+        = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()
+          * 16;
 
-    //round up arg_rows/local/arg_cols
-    return ((arg_rows + local - 1) / local + arg_cols - 1) / arg_cols;
+    return (std::min(preferred_work_groups, (arg_rows + local - 1) / local)
+            + arg_cols - 1)
+           / arg_cols;
   }
 
   /**

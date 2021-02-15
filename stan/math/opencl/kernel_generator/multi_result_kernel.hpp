@@ -380,21 +380,14 @@ class results_cl {
           "const int gsize_j = get_global_size(1);\n"
           "const int wg_id_i = get_group_id(0);\n"
           "const int n_groups_i = get_num_groups(0);\n"
-//          "const int steps_rows = (rows + lsize_i - 1) / lsize_i;\n"
-//          "const int work_rows = steps_rows * lsize_i;\n"
-          + parts.declarations +
-//          + parts.initialization +
-//          "for(int j = gid_j; j < cols; j+=gsize_j){\n"
           "int j = gid_j;\n"
+          + parts.declarations
           + parts.initialization +
           "for(int i = gid_i; i < rows; i+=gsize_i){\n"
-//          "if(i < rows){\n"
           + parts.body
-          + parts.body_suffix
-//          "}\n"
-//          "}\n"
-          + parts.reduction +
+          + parts.body_suffix +
           "}\n"
+          + parts.reduction +
           "}\n";
     } else {
       src =
@@ -411,6 +404,7 @@ class results_cl {
           + parts.reduction +
           "}\n";
     }
+//    std::cout << src<< std::endl;
     return src;
   }
 
@@ -487,10 +481,14 @@ class results_cl {
         int local = opencl_context.base_opts().at("LOCAL_SIZE_");
         int preferred_work_groups
             = opencl_context.device()[0].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>()
-              * 64;
+              * 16;
         // round up n_rows/local/n_cols
-        int wgs_rows = ((n_rows + local - 1) / local + n_cols - 1) / n_cols;
-//        int wgs_cols = (n_cols + wgs_rows - 1) / wgs_rows;
+        int wgs_rows
+            = (std::min(preferred_work_groups, (n_rows + local - 1) / local)
+               + n_cols - 1)
+              / n_cols;
+//        std::cout << wgs_rows;
+        //        int wgs_cols = (n_cols + wgs_rows - 1) / wgs_rows;
 
         opencl_context.queue().enqueueNDRangeKernel(
             kernel, cl::NullRange, cl::NDRange(local * wgs_rows, n_cols),

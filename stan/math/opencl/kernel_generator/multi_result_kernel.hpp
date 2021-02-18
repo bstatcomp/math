@@ -380,7 +380,8 @@ class results_cl {
           "const int gsize_j = get_global_size(1);\n"
           "const int wg_id_i = get_group_id(0);\n"
           "const int n_groups_i = get_num_groups(0);\n"
-          "int j = gid_j;\n"
+//          "int j = gid_j;\n"
+          "for(int j = gid_j; j < cols; j+=gsize_j){\n"
           + parts.declarations
           + parts.initialization +
           "for(int i = gid_i; i < rows; i+=gsize_i){\n"
@@ -388,6 +389,7 @@ class results_cl {
           + parts.body_suffix +
           "}\n"
           + parts.reduction +
+          "}\n"
           "}\n";
     } else {
       src =
@@ -488,10 +490,10 @@ class results_cl {
                + n_cols - 1)
               / n_cols;
 //        std::cout << wgs_rows;
-        //        int wgs_cols = (n_cols + wgs_rows - 1) / wgs_rows;
+                int wgs_cols = (n_cols + wgs_rows - 1) / wgs_rows;
 
         opencl_context.queue().enqueueNDRangeKernel(
-            kernel, cl::NullRange, cl::NDRange(local * wgs_rows, n_cols),
+            kernel, cl::NullRange, cl::NDRange(local * wgs_rows, wgs_cols),
             cl::NDRange(local, 1), &events, &e);
       } else {
         opencl_context.queue().enqueueNDRangeKernel(kernel, cl::NullRange,

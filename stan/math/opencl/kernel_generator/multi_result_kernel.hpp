@@ -380,9 +380,8 @@ class results_cl {
           "const int gsize_j = get_global_size(1);\n"
           "const int wg_id_i = get_group_id(0);\n"
           "const int n_groups_i = get_num_groups(0);\n"
-//          "int j = gid_j;\n"
+          + parts.declarations +
           "for(int j = gid_j; j < cols; j+=gsize_j){\n"
-          + parts.declarations
           + parts.initialization +
           "for(int i = gid_i; i < rows; i+=gsize_i){\n"
           + parts.body

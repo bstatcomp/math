@@ -2,6 +2,7 @@
 #define STAN_MATH_PRIM_FUN_ONES_VECTOR_HPP
 
 #include <stan/math/prim/err.hpp>
+#include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/fun/Eigen.hpp>
 
 namespace stan {
@@ -14,6 +15,7 @@ namespace math {
  * @return A vector of size K with all elements initialised to 1.
  * @throw std::domain_error if K is negative.
  */
+template<typename T = Eigen::VectorXd, require_eigen_col_vector_t<T>* = nullptr>
 inline auto ones_vector(int K) {
   check_nonnegative("ones_vector", "size", K);
   return Eigen::VectorXd::Constant(K, 1);

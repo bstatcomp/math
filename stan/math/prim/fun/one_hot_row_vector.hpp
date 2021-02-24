@@ -17,6 +17,7 @@ namespace math {
  * @throw std::domain_error if K is not positive, or if k is less than 1 or
  * greater than K.
  */
+template<typename T = Eigen::RowVectorXd, require_eigen_row_vector_t<T>* = nullptr>
 inline Eigen::RowVectorXd one_hot_row_vector(int K, int k) {
   static const char* function = "one_hot_row_vector";
   check_positive(function, "size", K);

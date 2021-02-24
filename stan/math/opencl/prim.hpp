@@ -155,6 +155,14 @@
 #include <stan/math/opencl/prim/normal_id_glm_lpdf.hpp>
 #include <stan/math/opencl/prim/normal_lpdf.hpp>
 #include <stan/math/opencl/prim/num_elements.hpp>
+#include <stan/math/opencl/prim/one_hot_array.hpp>
+#include <stan/math/opencl/prim/one_hot_int_array.hpp>
+#include <stan/math/opencl/prim/one_hot_row_vector.hpp>
+#include <stan/math/opencl/prim/one_hot_vector.hpp>
+#include <stan/math/opencl/prim/ones_array.hpp>
+#include <stan/math/opencl/prim/ones_int_array.hpp>
+#include <stan/math/opencl/prim/ones_row_vector.hpp>
+#include <stan/math/opencl/prim/ones_vector.hpp>
 #include <stan/math/opencl/prim/ordered_logistic_glm_lpmf.hpp>
 #include <stan/math/opencl/prim/ordered_logistic_lpmf.hpp>
 #include <stan/math/opencl/prim/pareto_lpdf.hpp>
@@ -191,6 +199,10 @@
 #include <stan/math/opencl/prim/to_vector.hpp>
 #include <stan/math/opencl/prim/uniform_lpdf.hpp>
 #include <stan/math/opencl/prim/weibull_lpdf.hpp>
+#include <stan/math/opencl/prim/zeros_array.hpp>
+#include <stan/math/opencl/prim/zeros_int_array.hpp>
+#include <stan/math/opencl/prim/zeros_row_vector.hpp>
+#include <stan/math/opencl/prim/zeros_vector.hpp>
 
 #include <stan/math/opencl/err.hpp>
 

@@ -14,6 +14,7 @@ namespace math {
  * @return an integer array of size K with all elements initialised to 0.
  * @throw std::domain_error if K is negative.
  */
+template<typename T = std::vector<int>, require_std_vector_t<T>* = nullptr>
 inline std::vector<int> zeros_int_array(int K) {
   check_nonnegative("zeros_int_array", "size", K);
   return std::vector<int>(K, 0);

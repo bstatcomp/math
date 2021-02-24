@@ -17,6 +17,7 @@ namespace math {
  * @throw std::domain_error if K is not positive, or if k is less than 1 or
  * greater than K.
  */
+template<typename T = std::vector<double>, require_std_vector_t<T>* = nullptr>
 inline std::vector<double> one_hot_array(int K, int k) {
   static const char* function = "one_hot_array";
   check_positive(function, "size", K);

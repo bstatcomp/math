@@ -1,9 +1,9 @@
-#ifndef STAN_MATH_PRIM_FUN_UNIFORM_SIMPLEX_HPP
-#define STAN_MATH_PRIM_FUN_UNIFORM_SIMPLEX_HPP
+#ifndef STAN_MATH_OPENCL_PRIM_UNIFORM_SIMPLEX_HPP
+#define STAN_MATH_OPENCL_PRIM_UNIFORM_SIMPLEX_HPP
+#ifdef STAN_OPENCL
 
-#include <stan/math/prim/err.hpp>
-#include <stan/math/prim/meta.hpp>
-#include <stan/math/prim/fun/Eigen.hpp>
+#include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/kernel_generator.hpp>
 
 namespace stan {
 namespace math {
@@ -16,14 +16,12 @@ namespace math {
  * so that their sum is equal to 1.
  * @throw std::domain_error if K is not positive.
  */
-template <typename T = Eigen::VectorXd,
-          require_eigen_col_vector_t<T>* = nullptr>
+template <typename T_x, require_matrix_cl_t<T_x>* = nullptr>
 inline auto uniform_simplex(int K) {
   check_positive("uniform_simplex", "size", K);
-  return Eigen::VectorXd::Constant(K, 1.0 / K);
+  return constant(1. / K, K, 1);
 }
-
 }  // namespace math
 }  // namespace stan
-
+#endif
 #endif

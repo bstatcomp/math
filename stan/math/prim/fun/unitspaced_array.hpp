@@ -20,6 +20,7 @@ namespace math {
  * between low and high.
  * @throw std::domain_error if high is less than low.
  */
+template<typename T =std::vector<int>, require_std_vector_t<T>* = nullptr>
 inline std::vector<int> unitspaced_array(int low, int high) {
   static const char* function = "unitspaced_array";
   check_greater_or_equal(function, "high", high, low);

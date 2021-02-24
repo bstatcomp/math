@@ -2,6 +2,7 @@
 #define STAN_MATH_PRIM_FUN_LINSPACED_ARRAY_HPP
 
 #include <stan/math/prim/err.hpp>
+#include <stan/math/prim/meta.hpp>
 #include <stan/math/prim/fun/Eigen.hpp>
 #include <vector>
 
@@ -23,7 +24,8 @@ namespace math {
  * @throw std::domain_error if K is negative, if low is nan or infinite,
  * if high is nan or infinite, or if high is less than low.
  */
-inline std::vector<int> linspaced_array(int K, double low, double high) {
+template<typename T = std::vector<double>, require_std_vector_t<T>* = nullptr>
+inline std::vector<double> linspaced_array(int K, double low, double high) {
   static const char* function = "linspaced_array";
   check_nonnegative(function, "size", K);
   check_finite(function, "low", low);

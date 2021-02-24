@@ -1,15 +1,16 @@
-#ifndef STAN_MATH_PRIM_FUN_LINSPACED_INT_ARRAY_HPP
-#define STAN_MATH_PRIM_FUN_LINSPACED_INT_ARRAY_HPP
+#ifndef STAN_MATH_OPENCL_PRIM_LINSPACED_INT_ARRAY_HPP
+#define STAN_MATH_OPENCL_PRIM_LINSPACED_INT_ARRAY_HPP
+#ifdef STAN_OPENCL
 
 #include <stan/math/prim/err.hpp>
-#include <stan/math/prim/fun/Eigen.hpp>
-#include <vector>
+#include <stan/math/opencl/matrix_cl.hpp>
+#include <stan/math/opencl/kernel_generator.hpp>
 
 namespace stan {
 namespace math {
 
 /**
- * Return an array of linearly spaced integers.
+ * Return a vector of linearly spaced integers.
  *
  * This produces an array from `low` to `high` (inclusive). If `high - low` is
  * greater or equal to `K - 1`, then the integers are evenly spaced. If it is
@@ -28,22 +29,24 @@ namespace math {
  * @param high largest value
  * @return An array of size K with elements linearly spaced between
  * low and high.
- * @throw std::domain_error if K is negative or high is less than low.
+ * @throw std::domain_error if K is negative, if low is nan or infinite,
+ * if high is nan or infinite, or if high is less than low.
  */
-template<typename T = std::vector<int>, require_std_vector_t<T>* = nullptr>
-inline std::vector<int> linspaced_int_array(int K, int low, int high) {
-  static const char* function = "linspaced_int_array";
+template <typename T_x,
+          require_matrix_cl_t<T_x>* = nullptr>
+inline auto linspaced_int_array(int K, int low, int high) {
+  static const char* function = "linspaced_int_array (OpenCL)";
   check_nonnegative(function, "size", K);
-  check_greater_or_equal(function, "high", high, low);
-  if (K == 0) {
-    return {};
+  check_finite(function, "low", low);
+  check_finite(function, "high", high);
+  bool size_is_1 = K<=1;
+  int step = 0;
+  if(!size_is_1){
+    step = (high-low)/(K-1);
   }
-
-  Eigen::VectorXi v = Eigen::VectorXi::LinSpaced(K, low, high);
-  return {v.data(), v.data() + K};
+  return select(size_is_1, high, row_index(K,1) * step + low);
 }
-
 }  // namespace math
 }  // namespace stan
-
+#endif
 #endif

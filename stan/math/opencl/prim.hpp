@@ -140,6 +140,10 @@
 #include <stan/math/opencl/prim/inv_cloglog.hpp>
 #include <stan/math/opencl/prim/inv_gamma_lpdf.hpp>
 #include <stan/math/opencl/prim/inv_sqrt.hpp>
+#include <stan/math/opencl/prim/linspaced_array.hpp>
+#include <stan/math/opencl/prim/linspaced_int_array.hpp>
+#include <stan/math/opencl/prim/linspaced_row_vector.hpp>
+#include <stan/math/opencl/prim/linspaced_vector.hpp>
 #include <stan/math/opencl/prim/logistic_lpdf.hpp>
 #include <stan/math/opencl/prim/lognormal_lpdf.hpp>
 #include <stan/math/opencl/prim/matrix_power.hpp>
@@ -198,6 +202,8 @@
 #include <stan/math/opencl/prim/to_row_vector.hpp>
 #include <stan/math/opencl/prim/to_vector.hpp>
 #include <stan/math/opencl/prim/uniform_lpdf.hpp>
+#include <stan/math/opencl/prim/uniform_simplex.hpp>
+#include <stan/math/opencl/prim/unitspaced_array.hpp>
 #include <stan/math/opencl/prim/weibull_lpdf.hpp>
 #include <stan/math/opencl/prim/zeros_array.hpp>
 #include <stan/math/opencl/prim/zeros_int_array.hpp>

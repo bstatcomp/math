@@ -45,7 +45,7 @@ namespace math {
  * @param a The variable.
  * @return Error function applied to the variable.
  */
-inline var erf(const var& a) {
+inline var erf(const var a) {
   auto precomp_erf = TWO_OVER_SQRT_PI * std::exp(-a.val() * a.val());
   return make_callback_var(erf(a.val()), [a, precomp_erf](auto& vi) mutable {
     a.adj() += vi.adj() * precomp_erf;

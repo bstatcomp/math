@@ -13,7 +13,7 @@ namespace stan {
 namespace math {
 
 template <typename... Pargs>
-inline vari** save_varis(vari** dest, const var& x, Pargs&&... args);
+inline vari** save_varis(vari** dest, const var x, Pargs&&... args);
 
 template <typename VarVec, require_std_vector_vt<is_var, VarVec>* = nullptr,
           typename... Pargs>
@@ -48,7 +48,7 @@ inline vari** save_varis(vari** dest);
  * @return Final position of dest pointer
  */
 template <typename... Pargs>
-inline vari** save_varis(vari** dest, const var& x, Pargs&&... args) {
+inline vari** save_varis(vari** dest, const var x, Pargs&&... args) {
   *dest = x.vi_;
   return save_varis(dest + 1, std::forward<Pargs>(args)...);
 }

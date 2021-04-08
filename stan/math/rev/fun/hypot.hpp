@@ -24,7 +24,7 @@ namespace math {
  * @param[in] b Length of second side.
  * @return Length of hypotenuse.
  */
-inline var hypot(const var& a, const var& b) {
+inline var hypot(const var a, const var b) {
   return make_callback_var(hypot(a.val(), b.val()), [a, b](auto& vi) mutable {
     a.adj() += vi.adj() * a.val() / vi.val();
     b.adj() += vi.adj() * b.val() / vi.val();
@@ -43,7 +43,7 @@ inline var hypot(const var& a, const var& b) {
  * @param[in] b Length of second side.
  * @return Length of hypotenuse.
  */
-inline var hypot(const var& a, double b) {
+inline var hypot(const var a, double b) {
   return make_callback_var(hypot(a.val(), b), [a](auto& vi) mutable {
     a.adj() += vi.adj() * a.val() / vi.val();
   });
@@ -88,7 +88,7 @@ inline var hypot(const var& a, double b) {
  * @param[in] b Length of second side.
  * @return Length of hypotenuse.
  */
-inline var hypot(double a, const var& b) {
+inline var hypot(double a, const var b) {
   return make_callback_var(hypot(b.val(), a), [b](auto& vi) mutable {
     b.adj() += vi.adj() * b.val() / vi.val();
   });

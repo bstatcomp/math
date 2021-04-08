@@ -45,7 +45,7 @@ namespace math {
  * @param a The variable.
  * @return Complementary error function applied to the variable.
  */
-inline var erfc(const var& a) {
+inline var erfc(const var a) {
   auto precomp_erfc = TWO_OVER_SQRT_PI * std::exp(-a.val() * a.val());
   return make_callback_var(erfc(a.val()), [a, precomp_erfc](auto& vi) mutable {
     a.adj() -= vi.adj() * precomp_erfc;

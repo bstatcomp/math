@@ -188,7 +188,7 @@ class var_value<T, require_floating_point_t<T>> {
    * @param b The variable to add to this variable.
    * @return The result of adding the specified variable to this variable.
    */
-  inline var_value<T>& operator+=(const var_value<T>& b);
+  inline var_value<T>& operator+=(const var_value<T> b);
 
   /**
    * The compound add/assignment operator for scalars (C++).
@@ -213,7 +213,7 @@ class var_value<T, require_floating_point_t<T>> {
    * @return The result of subtracting the specified variable from
    * this variable.
    */
-  inline var_value<T>& operator-=(const var_value<T>& b);
+  inline var_value<T>& operator-=(const var_value<T> b);
 
   /**
    * The compound subtract/assignment operator for scalars (C++).
@@ -239,7 +239,7 @@ class var_value<T, require_floating_point_t<T>> {
    * @return The result of multiplying this variable by the
    * specified variable.
    */
-  inline var_value<T>& operator*=(const var_value<T>& b);
+  inline var_value<T>& operator*=(const var_value<T> b);
 
   /**
    * The compound multiply/assignment operator for scalars (C++).
@@ -264,7 +264,7 @@ class var_value<T, require_floating_point_t<T>> {
    * @return The result of dividing this variable by the
    * specified variable.
    */
-  inline var_value<T>& operator/=(const var_value<T>& b);
+  inline var_value<T>& operator/=(const var_value<T> b);
 
   /**
    * The compound divide/assignment operator for scalars (C++).
@@ -287,7 +287,7 @@ class var_value<T, require_floating_point_t<T>> {
    * @param v Variable to write.
    * @return Reference to the specified output stream.
    */
-  friend std::ostream& operator<<(std::ostream& os, const var_value<T>& v) {
+  friend std::ostream& operator<<(std::ostream& os, const var_value<T> v) {
     if (v.vi_ == nullptr) {
       return os << "uninitialized";
     }
@@ -369,7 +369,7 @@ class var_value<
    */
   template <typename S, require_assignable_t<value_type, S>* = nullptr,
             require_all_plain_type_t<T, S>* = nullptr>
-  var_value(const var_value<S>& other) : vi_(other.vi_) {}
+  var_value(const var_value<S> other) : vi_(other.vi_) {}
 
   /**
    * Construct a `var_value` with a plain type
@@ -382,7 +382,7 @@ class var_value<
             require_assignable_t<value_type, S>* = nullptr,
             require_not_plain_type_t<S>* = nullptr,
             require_plain_type_t<T_>* = nullptr>
-  var_value(const var_value<S>& other) : vi_(new vari_type(other.vi_->val_)) {
+  var_value(const var_value<S> other) : vi_(new vari_type(other.vi_->val_)) {
     reverse_pass_callback(
         [this_vi = this->vi_, other_vi = other.vi_]() mutable {
           other_vi->adj_ += this_vi->adj_;
@@ -459,7 +459,7 @@ class var_value<
    * @param b The variable to add to this variable.
    * @return The result of adding the specified variable to this variable.
    */
-  inline var_value<T>& operator+=(const var_value<T>& b);
+  inline var_value<T>& operator+=(const var_value<T> b);
 
   /**
    * The compound add/assignment operator for scalars (C++).
@@ -499,7 +499,7 @@ class var_value<
    * variable.
    */
   template <typename S, require_st_arithmetic<S>* = nullptr>
-  inline var_value<T>& operator-=(const S& b);
+  inline var_value<T>& operator-=(const S b);
 
   /**
    * The compound multiply/assignment operator for variables (C++).
@@ -512,7 +512,7 @@ class var_value<
    * @return The result of multiplying this variable by the
    * specified variable.
    */
-  inline var_value<T>& operator*=(const var_value<T>& b);
+  inline var_value<T>& operator*=(const var_value<T> b);
 
   /**
    * The compound multiply/assignment operator for scalars (C++).
@@ -537,7 +537,7 @@ class var_value<
    * @return The result of dividing this variable by the
    * specified variable.
    */
-  inline var_value<T>& operator/=(const var_value<T>& b);
+  inline var_value<T>& operator/=(const var_value<T> b);
 
   /**
    * The compound divide/assignment operator for scalars (C++).
@@ -936,7 +936,7 @@ class var_value<
    * @param v Variable to write.
    * @return Reference to the specified output stream.
    */
-  friend std::ostream& operator<<(std::ostream& os, const var_value<T>& v) {
+  friend std::ostream& operator<<(std::ostream& os, const var_value<T> v) {
     if (v.vi_ == nullptr) {
       return os << "uninitialized";
     }
@@ -972,7 +972,7 @@ class var_value<
    */
   template <typename S, require_assignable_t<value_type, S>* = nullptr,
             require_all_plain_type_t<T, S>* = nullptr>
-  inline var_value<T>& operator=(const var_value<S>& other) {
+  inline var_value<T>& operator=(const var_value<S> other) {
     vi_ = other.vi_;
     return *this;
   }
@@ -987,7 +987,7 @@ class var_value<
   template <typename S, typename T_ = T,
             require_assignable_t<value_type, S>* = nullptr,
             require_any_not_plain_type_t<T_, S>* = nullptr>
-  inline var_value<T>& operator=(const var_value<S>& other) {
+  inline var_value<T>& operator=(const var_value<S> other) {
     arena_t<plain_type_t<T>> prev_val = vi_->val_;
     vi_->val_ = other.val();
     // no need to change any adjoints - these are just zeros before the reverse
@@ -1037,7 +1037,7 @@ class var_value<
    * @param other the value to assign
    * @return this
    */
-  inline var_value<T>& operator=(const var_value<T>& other) {
+  inline var_value<T>& operator=(const var_value<T> other) {
     return operator=<T>(other);
   }
 };

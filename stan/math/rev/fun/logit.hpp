@@ -14,7 +14,7 @@ namespace math {
  * @param u argument
  * @return log odds of argument
  */
-inline var logit(const var& u) {
+inline var logit(const var u) {
   auto denom = (1.0 / (u.val() - u.val() * u.val()));
   return make_callback_var(logit(u.val()), [u, denom](auto& vi) mutable {
     u.adj() += vi.adj() * denom;

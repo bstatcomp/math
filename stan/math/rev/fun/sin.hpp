@@ -43,7 +43,7 @@ namespace math {
  * @param a Variable for radians of angle.
  * @return Sine of variable.
  */
-inline var sin(const var& a) {
+inline var sin(const var a) {
   return make_callback_var(std::sin(a.val()), [a](const auto& vi) mutable {
     a.adj() += vi.adj() * std::cos(a.val());
   });
@@ -57,7 +57,7 @@ inline var sin(const var& a) {
  * @return Sine of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto sin(const VarMat& a) {
+inline auto sin(const VarMat a) {
   return make_callback_var(
       a.val().array().sin().matrix(), [a](const auto& vi) mutable {
         a.adj() += vi.adj().cwiseProduct(a.val().array().cos().matrix());

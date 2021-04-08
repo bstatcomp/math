@@ -34,7 +34,7 @@ namespace math {
  * @param b var Argument
  * @return Result of beta function
  */
-inline var beta(const var& a, const var& b) {
+inline var beta(const var a, const var b) {
   double digamma_ab = digamma(a.val() + b.val());
   double digamma_a = digamma(a.val()) - digamma_ab;
   double digamma_b = digamma(b.val()) - digamma_ab;
@@ -64,7 +64,7 @@ inline var beta(const var& a, const var& b) {
  * @param b double Argument
  * @return Result of beta function
  */
-inline var beta(const var& a, double b) {
+inline var beta(const var a, double b) {
   auto digamma_ab = digamma(a.val()) - digamma(a.val() + b);
   return make_callback_var(beta(a.val(), b),
                            [a, b, digamma_ab](auto& vi) mutable {
@@ -90,7 +90,7 @@ inline var beta(const var& a, double b) {
  * @param b var Argument
  * @return Result of beta function
  */
-inline var beta(double a, const var& b) {
+inline var beta(double a, const var b) {
   auto beta_val = beta(a, b.val());
   auto digamma_ab = (digamma(b.val()) - digamma(a + b.val())) * beta_val;
   return make_callback_var(beta_val, [a, b, digamma_ab](auto& vi) mutable {

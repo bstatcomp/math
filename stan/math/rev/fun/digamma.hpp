@@ -16,7 +16,7 @@ namespace math {
  * @param[in] a argument
  * @return derivative of log gamma function at argument
  */
-inline var digamma(const var& a) {
+inline var digamma(const var a) {
   return make_callback_var(digamma(a.val()), [a](auto& vi) {
     a.adj() += vi.adj() * trigamma(a.val());
   });
@@ -31,7 +31,7 @@ inline var digamma(const var& a) {
  * @return elementwise derivative of log gamma function
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto digamma(const T& a) {
+inline auto digamma(const T a) {
   return make_callback_var(
       a.val()
           .array()

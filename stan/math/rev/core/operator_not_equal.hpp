@@ -27,7 +27,7 @@ namespace math {
  * @return True if the first variable's value is not the same as the
  * second's.
  */
-inline bool operator!=(const var& a, const var& b) {
+inline bool operator!=(const var a, const var b) {
   return a.val() != b.val();
 }
 
@@ -42,7 +42,7 @@ inline bool operator!=(const var& a, const var& b) {
  * second value.
  */
 template <typename Arith, require_arithmetic_t<Arith>* = nullptr>
-inline bool operator!=(const var& a, Arith b) {
+inline bool operator!=(const var a, Arith b) {
   return a.val() != b;
 }
 
@@ -57,7 +57,7 @@ inline bool operator!=(const var& a, Arith b) {
  * second variable's value.
  */
 template <typename Arith, require_arithmetic_t<Arith>* = nullptr>
-inline bool operator!=(Arith a, const var& b) {
+inline bool operator!=(Arith a, const var b) {
   return a != b.val();
 }
 
@@ -70,7 +70,7 @@ inline bool operator!=(Arith a, const var& b) {
  * @return `false` if the real number is equal to the real part of the
  * complex number, and the imaginary part of the complex number is zero
  */
-inline bool operator!=(const var& x, const std::complex<var>& z) {
+inline bool operator!=(const var x, const std::complex<var>& z) {
   return !(x == z.real() && 0 == z.imag());
 }
 
@@ -83,7 +83,7 @@ inline bool operator!=(const var& x, const std::complex<var>& z) {
  * @return `false` if the real number is equal to the real part of the
  * complex number, and the imaginary part of the complex number is zero
  */
-inline bool operator!=(const std::complex<var>& z, const var& y) {
+inline bool operator!=(const std::complex<var>& z, const var y) {
   return !(z.real() == y && z.imag() == 0);
 }
 

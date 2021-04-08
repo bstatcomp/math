@@ -8,7 +8,7 @@
 namespace stan {
 namespace math {
 
-inline var bessel_second_kind(int v, const var& a) {
+inline var bessel_second_kind(int v, const var a) {
   double ret_val = bessel_second_kind(v, a.val());
   auto precomp_bessel
       = v * ret_val / a.val() - bessel_second_kind(v + 1, a.val());

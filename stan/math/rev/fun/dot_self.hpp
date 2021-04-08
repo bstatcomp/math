@@ -45,7 +45,7 @@ inline var dot_self(const T& v) {
  * @return Dot product of the vector with itself.
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline var dot_self(const T& v) {
+inline var dot_self(const T v) {
   var res = v.val().dot(v.val());
   reverse_pass_callback(
       [res, v]() mutable { v.adj() += (2.0 * res.adj()) * v.val(); });

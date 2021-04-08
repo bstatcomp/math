@@ -71,7 +71,7 @@ inline var log_determinant_spd(const EigMat& m) {
  * @return The log determinant of the specified matrix
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline var log_determinant_spd(const T& m) {
+inline var log_determinant_spd(const T m) {
   check_square("log_determinant_spd", "m", m);
 
   if (m.size() == 0) {

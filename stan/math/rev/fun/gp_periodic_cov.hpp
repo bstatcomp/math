@@ -304,8 +304,8 @@ template <typename T_x>
 inline typename std::enable_if<
     std::is_same<typename scalar_type<T_x>::type, double>::value,
     Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>>::type
-gp_periodic_cov(const std::vector<T_x> &x, const var &sigma, const var &l,
-                const var &p) {
+gp_periodic_cov(const std::vector<T_x> &x, const var sigma, const var l,
+                const var p) {
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
   check_positive(fun, "length-scale", l);
@@ -359,8 +359,8 @@ template <typename T_x>
 inline typename std::enable_if<
     std::is_same<typename scalar_type<T_x>::type, double>::value,
     Eigen::Matrix<var, Eigen::Dynamic, Eigen::Dynamic>>::type
-gp_periodic_cov(const std::vector<T_x> &x, double sigma, const var &l,
-                const var &p) {
+gp_periodic_cov(const std::vector<T_x> &x, double sigma, const var l,
+                const var p) {
   const char *fun = "gp_periodic_cov";
   check_positive(fun, "signal standard deviation", sigma);
   check_positive(fun, "length-scale", l);

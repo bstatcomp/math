@@ -12,7 +12,7 @@ namespace stan {
 namespace math {
 
 template <typename... Pargs>
-inline double* accumulate_adjoints(double* dest, const var& x, Pargs&&... args);
+inline double* accumulate_adjoints(double* dest, const var x, Pargs&&... args);
 
 template <typename VarVec, require_std_vector_vt<is_var, VarVec>* = nullptr,
           typename... Pargs>
@@ -48,7 +48,7 @@ inline double* accumulate_adjoints(double* dest);
  * @return Final position of adjoint storage pointer
  */
 template <typename... Pargs>
-inline double* accumulate_adjoints(double* dest, const var& x,
+inline double* accumulate_adjoints(double* dest, const var x,
                                    Pargs&&... args) {
   *dest += x.adj();
   return accumulate_adjoints(dest + 1, std::forward<Pargs>(args)...);

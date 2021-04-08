@@ -34,7 +34,7 @@ struct nonexisting_adjoint {
  * @return reference to `x`'s adjoint
  */
 template <typename T, require_var_t<T>* = nullptr>
-auto& adjoint_of(const T& x) {
+auto& adjoint_of(const T x) {
   return x.adj();
 }
 

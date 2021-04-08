@@ -30,7 +30,7 @@ class ops_partials_edge<double, var> {
  public:
   double partial_;
   broadcast_array<double> partials_;
-  explicit ops_partials_edge(const var& op) noexcept
+  explicit ops_partials_edge(const var op) noexcept
       : partial_(0), partials_(partial_), operand_(op) {}
 
  private:
@@ -44,7 +44,7 @@ class ops_partials_edge<double, var> {
 
 template <typename T1, typename T2,
           require_all_kernel_expressions_and_none_scalar_t<T1, T2>* = nullptr>
-inline void update_adjoints(var_value<T1>& x, const T2& y, const vari& z) {
+inline void update_adjoints(var_value<T1> x, const T2& y, const vari& z) {
   x.adj() += z.adj() * y;
 }
 
@@ -221,7 +221,7 @@ class ops_partials_edge<double, var_value<Op>, require_eigen_t<Op>> {
   using partials_t = arena_t<Op>;
   partials_t partials_;                       // For univariate use-cases
   broadcast_array<partials_t> partials_vec_;  // For multivariate
-  explicit ops_partials_edge(const var_value<Op>& ops)
+  explicit ops_partials_edge(const var_value<Op> ops)
       : partials_(
             plain_type_t<partials_t>::Zero(ops.vi_->rows(), ops.vi_->cols())),
         partials_vec_(partials_),

@@ -41,7 +41,7 @@ namespace math {
  * @param a Variable.
  * @return Hyperbolic sine of variable.
  */
-inline var sinh(const var& a) {
+inline var sinh(const var a) {
   return make_callback_var(std::sinh(a.val()), [a](const auto& vi) mutable {
     a.adj() += vi.adj() * std::cosh(a.val());
   });
@@ -56,7 +56,7 @@ inline var sinh(const var& a) {
  * @return Hyperbolid Sine of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto sinh(const VarMat& a) {
+inline auto sinh(const VarMat a) {
   return make_callback_var(
       a.val().array().sinh().matrix(), [a](const auto& vi) mutable {
         a.adj() += vi.adj().cwiseProduct(a.val().array().cosh().matrix());

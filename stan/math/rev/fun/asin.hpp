@@ -50,7 +50,7 @@ namespace math {
  * @param x Variable in range [-1, 1].
  * @return Arc sine of variable, in radians.
  */
-inline var asin(const var& x) {
+inline var asin(const var x) {
   return make_callback_var(std::asin(x.val()), [x](const auto& vi) mutable {
     x.adj() += vi.adj() / std::sqrt(1.0 - (x.val() * x.val()));
   });
@@ -65,7 +65,7 @@ inline var asin(const var& x) {
  * @return Arc sine of variable, in radians.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto asin(const VarMat& x) {
+inline auto asin(const VarMat x) {
   return make_callback_var(
       x.val().array().asin().matrix(), [x](const auto& vi) mutable {
         x.adj().array()

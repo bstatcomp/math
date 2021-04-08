@@ -41,7 +41,7 @@ namespace math {
  * @param a Variable.
  * @return Hyperbolic cosine of variable.
  */
-inline var cosh(const var& a) {
+inline var cosh(const var a) {
   return make_callback_var(std::cosh(a.val()), [a](const auto& vi) mutable {
     a.adj() += vi.adj() * std::sinh(a.val());
   });
@@ -55,7 +55,7 @@ inline var cosh(const var& a) {
  * @return Hyperbolic cosine of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto cosh(const VarMat& a) {
+inline auto cosh(const VarMat a) {
   return make_callback_var(
       a.val().array().cosh().matrix(), [a](const auto& vi) mutable {
         a.adj() += vi.adj().cwiseProduct(a.val().array().sinh().matrix());

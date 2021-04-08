@@ -28,7 +28,7 @@ namespace math {
  * @param z Summand.
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
-inline var fma(const var& x, const var& y, const var& z) {
+inline var fma(const var x, const var y, const var z) {
   return make_callback_var(fma(x.val(), y.val(), z.val()), [x, y, z](auto& vi) {
     x.adj() += vi.adj() * y.val();
     y.adj() += vi.adj() * x.val();
@@ -54,7 +54,7 @@ inline var fma(const var& x, const var& y, const var& z) {
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
 template <typename Tc, require_arithmetic_t<Tc>* = nullptr>
-inline var fma(const var& x, const var& y, Tc&& z) {
+inline var fma(const var x, const var y, Tc z) {
   return make_callback_var(fma(x.val(), y.val(), z), [x, y](auto& vi) {
     x.adj() += vi.adj() * y.val();
     y.adj() += vi.adj() * x.val();
@@ -84,7 +84,7 @@ inline var fma(const var& x, const var& y, Tc&& z) {
 template <typename Ta, typename Tb, typename Tc,
           require_arithmetic_t<Tb>* = nullptr,
           require_all_var_t<Ta, Tc>* = nullptr>
-inline var fma(Ta&& x, Tb&& y, Tc&& z) {
+inline var fma(Ta x, Tb y, Tc z) {
   return make_callback_var(fma(x.val(), y, z.val()), [x, y, z](auto& vi) {
     x.adj() += vi.adj() * y;
     z.adj() += vi.adj();
@@ -113,7 +113,7 @@ inline var fma(Ta&& x, Tb&& y, Tc&& z) {
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
 template <typename Tb, typename Tc, require_all_arithmetic_t<Tb, Tc>* = nullptr>
-inline var fma(const var& x, Tb&& y, Tc&& z) {
+inline var fma(const var x, Tb y, Tc z) {
   return make_callback_var(fma(x.val(), y, z),
                            [x, y](auto& vi) { x.adj() += vi.adj() * y; });
 }
@@ -136,7 +136,7 @@ inline var fma(const var& x, Tb&& y, Tc&& z) {
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
 template <typename Ta, typename Tc, require_all_arithmetic_t<Ta, Tc>* = nullptr>
-inline var fma(Ta&& x, const var& y, Tc&& z) {
+inline var fma(Ta x, const var y, Tc z) {
   return make_callback_var(fma(x, y.val(), z),
                            [x, y](auto& vi) { y.adj() += vi.adj() * x; });
 }
@@ -159,7 +159,7 @@ inline var fma(Ta&& x, const var& y, Tc&& z) {
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
 template <typename Ta, typename Tb, require_all_arithmetic_t<Ta, Tb>* = nullptr>
-inline var fma(Ta&& x, Tb&& y, const var& z) {
+inline var fma(Ta x, Tb y, const var z) {
   return make_callback_var(fma(x, y, z.val()),
                            [z](auto& vi) { z.adj() += vi.adj(); });
 }
@@ -182,7 +182,7 @@ inline var fma(Ta&& x, Tb&& y, const var& z) {
  * @return Product of the multiplicands plus the summand, ($a * $b) + $c.
  */
 template <typename Ta, require_arithmetic_t<Ta>* = nullptr>
-inline var fma(Ta&& x, const var& y, const var& z) {
+inline var fma(Ta x, const var y, const var z) {
   return make_callback_var(fma(x, y.val(), z.val()), [x, y, z](auto& vi) {
     y.adj() += vi.adj() * x;
     z.adj() += vi.adj();
@@ -220,7 +220,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_all_matrix_t<T2, T3>* = nullptr,
           require_stan_scalar_t<T1>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1 arena_x, T2& arena_y, T3& arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;
@@ -245,7 +245,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_all_matrix_t<T1, T3>* = nullptr,
           require_stan_scalar_t<T2>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1& arena_x, T2 arena_y, T3& arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;
@@ -270,7 +270,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_matrix_t<T3>* = nullptr,
           require_all_stan_scalar_t<T1, T2>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1 arena_x, T2 arena_y, T3& arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;
@@ -295,7 +295,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_all_matrix_t<T1, T2>* = nullptr,
           require_stan_scalar_t<T3>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3 arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;
@@ -320,7 +320,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_matrix_t<T2>* = nullptr,
           require_all_stan_scalar_t<T1, T3>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1 arena_x, T2& arena_y, T3 arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;
@@ -345,7 +345,7 @@ inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
 template <typename T1, typename T2, typename T3, typename T4,
           require_matrix_t<T1>* = nullptr,
           require_all_stan_scalar_t<T2, T3>* = nullptr>
-inline auto fma_reverse_pass(T1& arena_x, T2& arena_y, T3& arena_z, T4& ret) {
+inline auto fma_reverse_pass(T1& arena_x, T2 arena_y, T3 arena_z, T4& ret) {
   return [arena_x, arena_y, arena_z, ret]() mutable {
     using T1_var = arena_t<promote_scalar_t<var, T1>>;
     using T2_var = arena_t<promote_scalar_t<var, T2>>;

@@ -19,7 +19,7 @@ namespace math {
  * @param a The variable.
  * @return Log gamma of the variable.
  */
-inline var lgamma(const var& a) {
+inline var lgamma(const var a) {
   return make_callback_var(lgamma(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() * digamma(a.val());
   });

@@ -24,7 +24,7 @@ namespace math {
  * @param b Denominator variable.
  * @return The arc tangent of the fraction, in radians.
  */
-inline var atan2(const var& a, const var& b) {
+inline var atan2(const var a, const var b) {
   return make_callback_var(
       std::atan2(a.val(), b.val()), [a, b](const auto& vi) mutable {
         double a_sq_plus_b_sq = (a.val() * a.val()) + (b.val() * b.val());
@@ -45,7 +45,7 @@ inline var atan2(const var& a, const var& b) {
  * @param b Denominator scalar.
  * @return The arc tangent of the fraction, in radians.
  */
-inline var atan2(const var& a, double b) {
+inline var atan2(const var a, double b) {
   return make_callback_var(
       std::atan2(a.val(), b), [a, b](const auto& vi) mutable {
         double a_sq_plus_b_sq = (a.val() * a.val()) + (b * b);
@@ -89,7 +89,7 @@ inline var atan2(const var& a, double b) {
  * @param b Denominator variable.
  * @return The arc tangent of the fraction, in radians.
  */
-inline var atan2(double a, const var& b) {
+inline var atan2(double a, const var b) {
   return make_callback_var(
       std::atan2(a, b.val()), [a, b](const auto& vi) mutable {
         double a_sq_plus_b_sq = (a * a) + (b.val() * b.val());

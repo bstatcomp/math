@@ -20,7 +20,7 @@ namespace math {
  * @return Natural logarithm of one minus the exponential of the
  * argument.
  */
-inline var log1m_exp(const var& x) {
+inline var log1m_exp(const var x) {
   return make_callback_var(log1m_exp(x.val()), [x](auto& vi) mutable {
     x.adj() -= vi.adj() / expm1(-x.val());
   });

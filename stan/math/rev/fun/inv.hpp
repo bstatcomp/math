@@ -27,7 +27,7 @@ namespace math {
    \f]
  *
  */
-inline var inv(const var& a) {
+inline var inv(const var a) {
   return make_callback_var(inv(a.val()), [a](auto& vi) mutable {
     a.adj() -= vi.adj() / (a.val() * a.val());
   });

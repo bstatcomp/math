@@ -41,7 +41,7 @@ namespace math {
  * @param a Variable for radians of angle.
  * @return Tangent of variable.
  */
-inline var tan(const var& a) {
+inline var tan(const var a) {
   return make_callback_var(std::tan(a.val()), [a](const auto& vi) mutable {
     a.adj() += vi.adj() * (1.0 + vi.val() * vi.val());
   });
@@ -56,7 +56,7 @@ inline var tan(const var& a) {
  * @return Tangent of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto tan(const VarMat& a) {
+inline auto tan(const VarMat a) {
   return make_callback_var(a.val().array().tan().matrix(),
                            [a](const auto& vi) mutable {
                              a.adj() += vi.adj().cwiseProduct(

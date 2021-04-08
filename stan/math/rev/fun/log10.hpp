@@ -44,7 +44,7 @@ namespace math {
  * @param a Variable whose log is taken.
  * @return Base 10 log of variable.
  */
-inline var log10(const var& a) {
+inline var log10(const var a) {
   return make_callback_var(std::log10(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / (LOG_TEN * a.val());
   });

@@ -21,7 +21,7 @@ namespace math {
  * @param[in] x Variables being differentiated with respect to
  * @param[out] g Gradient, d/dx v, evaluated at x.
  */
-inline void grad(var& v, Eigen::Matrix<var, Eigen::Dynamic, 1>& x,
+inline void grad(var v, Eigen::Matrix<var, Eigen::Dynamic, 1>& x,
                  Eigen::VectorXd& g) {
   grad(v.vi_);
   g = x.adj();

@@ -18,7 +18,7 @@ namespace math {
  * @param a The variable.
  * @return The variable representing log of 1 minus the variable.
  */
-inline var log1m(const var& a) {
+inline var log1m(const var a) {
   return make_callback_var(log1m(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / (a.val() - 1);
   });
@@ -32,7 +32,7 @@ inline var log1m(const var& a) {
  * @return elementwise log of 1 - x
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto log1m(const T& x) {
+inline auto log1m(const T x) {
   return make_callback_var(
       stan::math::log1m(x.val()), [x](const auto& vi) mutable {
         x.adj() += (vi.adj().array() / (x.val().array() - 1.0)).matrix();

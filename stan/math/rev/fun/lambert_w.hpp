@@ -17,7 +17,7 @@ namespace math {
  * @param a Variable argument.
  * @return the Lambert W function (W0 branch) applied to the specified argument.
  */
-inline var lambert_w0(const var& a) {
+inline var lambert_w0(const var a) {
   return make_callback_var(lambert_w0(a.val()), [a](auto& vi) mutable {
     a.adj() += (vi.adj() / (a.val() + exp(vi.val())));
   });
@@ -31,7 +31,7 @@ inline var lambert_w0(const var& a) {
  * @return the Lambert W function (W-1 branch) applied to the specified
  * argument.
  */
-inline var lambert_wm1(const var& a) {
+inline var lambert_wm1(const var a) {
   return make_callback_var(lambert_wm1(a.val()), [a](auto& vi) mutable {
     a.adj() += (vi.adj() / (a.val() + exp(vi.val())));
   });

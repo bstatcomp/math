@@ -34,8 +34,8 @@ to_var_value(const T& a) {
  * @param a matrix to convert
  */
 template <typename T, require_var_t<T>* = nullptr>
-T to_var_value(T&& a) {
-  return std::forward<T>(a);
+T to_var_value(T a) {
+  return a;
 }
 
 /**

@@ -58,7 +58,7 @@ namespace math {
  * @return If the first variable's value is larger than the
  * second's, the first variable, otherwise the second variable.
  */
-inline var fmax(const var& a, const var& b) {
+inline var fmax(const var a, const var b) {
   if (unlikely(is_nan(a))) {
     if (unlikely(is_nan(b))) {
       return make_callback_var(NOT_A_NUMBER, [a, b](auto& vi) mutable {
@@ -88,7 +88,7 @@ inline var fmax(const var& a, const var& b) {
  * to the second value, the first variable, otherwise the second
  * value promoted to a fresh variable.
  */
-inline var fmax(const var& a, double b) {
+inline var fmax(const var a, double b) {
   if (unlikely(is_nan(a))) {
     if (unlikely(is_nan(b))) {
       return make_callback_var(
@@ -116,7 +116,7 @@ inline var fmax(const var& a, double b) {
  * return the first value promoted to a variable, otherwise return the
  * second variable.
  */
-inline var fmax(double a, const var& b) {
+inline var fmax(double a, const var b) {
   if (unlikely(is_nan(b))) {
     if (unlikely(is_nan(a))) {
       return make_callback_var(

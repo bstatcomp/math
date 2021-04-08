@@ -50,7 +50,7 @@ namespace math {
  * @param a Variable argument.
  * @return The unit normal cdf evaluated at the specified argument.
  */
-inline var Phi(const var& a) {
+inline var Phi(const var a) {
   return make_callback_var(Phi(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() * INV_SQRT_TWO_PI * std::exp(-0.5 * a.val() * a.val());
   });
@@ -64,7 +64,7 @@ inline var Phi(const var& a) {
  * @return The vectorized unit normal cdf
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto Phi(const T& a) {
+inline auto Phi(const T a) {
   return make_callback_var(Phi(a.val()), [a](auto& vi) mutable {
     a.adj().array() += vi.adj().array() * INV_SQRT_TWO_PI
                        * (-0.5 * a.val().array().square()).exp();

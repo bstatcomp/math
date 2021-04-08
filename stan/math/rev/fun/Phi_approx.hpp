@@ -43,7 +43,7 @@ namespace math {
  * @param a Variable argument.
  * @return The corresponding unit normal cdf approximation.
  */
-inline var Phi_approx(const var& a) {
+inline var Phi_approx(const var a) {
   double av_squared = a.val() * a.val();
   double f = inv_logit(0.07056 * a.val() * av_squared + 1.5976 * a.val());
   double da = f * (1 - f) * (3.0 * 0.07056 * av_squared + 1.5976);
@@ -52,7 +52,7 @@ inline var Phi_approx(const var& a) {
 }
 
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto Phi_approx(const T& a) {
+inline auto Phi_approx(const T a) {
   arena_t<value_type_t<T>> f(a.rows(), a.cols());
   arena_t<value_type_t<T>> da(a.rows(), a.cols());
   for (Eigen::Index j = 0; j < a.cols(); ++j) {

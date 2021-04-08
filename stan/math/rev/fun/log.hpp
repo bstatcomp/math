@@ -44,7 +44,7 @@ namespace math {
  * @param a Variable whose log is taken.
  * @return Natural log of variable.
  */
-inline var log(const var& a) {
+inline var log(const var a) {
   return make_callback_var(std::log(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / a.val();
   });
@@ -68,7 +68,7 @@ inline std::complex<var> log(const std::complex<var>& z) {
  * @return elementwise natural log of x
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto log(const T& x) {
+inline auto log(const T x) {
   return make_callback_var(
       x.val().array().log().matrix(), [x](const auto& vi) mutable {
         x.adj() += (vi.adj().array() / x.val().array()).matrix();

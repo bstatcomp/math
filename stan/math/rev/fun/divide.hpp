@@ -122,7 +122,7 @@ class matrix_scalar_divide_vv_vari : public vari {
  * @return matrix divided by the scalar
  */
 template <typename Mat, typename = require_eigen_vt<std::is_arithmetic, Mat>>
-inline auto divide(const Mat& m, const var& c) {
+inline auto divide(const Mat& m, const var c) {
   auto* baseVari
       = new internal::matrix_scalar_divide_dv_vari<Mat::RowsAtCompileTime,
                                                    Mat::ColsAtCompileTime>(m,
@@ -143,7 +143,7 @@ inline auto divide(const Mat& m, const var& c) {
  * @return matrix divided by the scalar
  */
 template <typename Mat, typename = require_eigen_vt<is_var, Mat>>
-inline auto divide(const Mat& m, const double& c) {
+inline auto divide(const Mat& m, const double c) {
   auto* baseVari
       = new internal::matrix_scalar_divide_vd_vari<Mat::RowsAtCompileTime,
                                                    Mat::ColsAtCompileTime>(m,
@@ -165,7 +165,7 @@ inline auto divide(const Mat& m, const double& c) {
  */
 template <typename Mat, typename = require_eigen_vt<is_var, Mat>,
           typename = void>
-inline auto divide(const Mat& m, const var& c) {
+inline auto divide(const Mat& m, const var c) {
   auto* baseVari
       = new internal::matrix_scalar_divide_vv_vari<Mat::RowsAtCompileTime,
                                                    Mat::ColsAtCompileTime>(m,
@@ -188,7 +188,7 @@ inline auto divide(const Mat& m, const var& c) {
  */
 template <typename Mat, typename Scal, require_var_matrix_t<Mat>* = nullptr,
           require_stan_scalar_t<Scal>* = nullptr>
-inline auto divide(const Mat& m, const Scal& c) {
+inline auto divide(const Mat& m, const Scal c) {
   double invc = 1.0 / value_of(c);
 
   plain_type_t<Mat> res = invc * m.val();

@@ -53,7 +53,7 @@ class multiply_log_dv_vari : public op_dv_vari {
  * @param b Second variable.
  * @return Value of a*log(b)
  */
-inline var multiply_log(const var& a, const var& b) {
+inline var multiply_log(const var a, const var b) {
   return var(new internal::multiply_log_vv_vari(a.vi_, b.vi_));
 }
 /**
@@ -66,7 +66,7 @@ inline var multiply_log(const var& a, const var& b) {
  * @param b Second scalar.
  * @return Value of a*log(b)
  */
-inline var multiply_log(const var& a, double b) {
+inline var multiply_log(const var a, double b) {
   return var(new internal::multiply_log_vd_vari(a.vi_, b));
 }
 /**
@@ -79,7 +79,7 @@ inline var multiply_log(const var& a, double b) {
  * @param b Second variable.
  * @return Value of a*log(b)
  */
-inline var multiply_log(double a, const var& b) {
+inline var multiply_log(double a, const var b) {
   if (a == 1.0) {
     return log(b);
   }
@@ -148,7 +148,7 @@ inline auto multiply_log(const T1& a, const T2& b) {
  */
 template <typename T1, typename T2, require_var_matrix_t<T1>* = nullptr,
           require_stan_scalar_t<T2>* = nullptr>
-inline auto multiply_log(const T1& a, const T2& b) {
+inline auto multiply_log(const T1 a, const T2 b) {
   using std::log;
 
   if (!is_constant<T1>::value && !is_constant<T2>::value) {
@@ -194,7 +194,7 @@ inline auto multiply_log(const T1& a, const T2& b) {
  */
 template <typename T1, typename T2, require_stan_scalar_t<T1>* = nullptr,
           require_var_matrix_t<T2>* = nullptr>
-inline auto multiply_log(const T1& a, const T2& b) {
+inline auto multiply_log(const T1 a, const T2 b) {
   if (!is_constant<T1>::value && !is_constant<T2>::value) {
     var arena_a = a;
     arena_t<promote_scalar_t<var, T2>> arena_b = b;

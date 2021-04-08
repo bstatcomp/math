@@ -28,7 +28,7 @@ namespace math {
  */
 template <typename T, typename U, require_all_stan_scalar_t<T, U>* = nullptr,
           require_any_var_t<T, U>* = nullptr>
-inline auto ub_constrain(const T& x, const U& ub) {
+inline auto ub_constrain(const T x, const U ub) {
   const auto ub_val = value_of(ub);
   if (unlikely(ub_val == INFTY)) {
     return identity_constrain(x, ub);
@@ -79,7 +79,7 @@ inline auto ub_constrain(const T& x, const U& ub) {
  */
 template <typename T, typename U, require_all_stan_scalar_t<T, U>* = nullptr,
           require_any_var_t<T, U>* = nullptr>
-inline auto ub_constrain(const T& x, const U& ub, return_type_t<T, U>& lp) {
+inline auto ub_constrain(const T x, const U ub, return_type_t<T, U>& lp) {
   const auto ub_val = value_of(ub);
   const bool is_ub_inf = ub_val == INFTY;
   if (!is_constant<T>::value && !is_constant<U>::value) {
@@ -135,7 +135,7 @@ inline auto ub_constrain(const T& x, const U& ub, return_type_t<T, U>& lp) {
 template <typename T, typename U, require_matrix_t<T>* = nullptr,
           require_stan_scalar_t<U>* = nullptr,
           require_any_st_var<T, U>* = nullptr>
-inline auto ub_constrain(const T& x, const U& ub) {
+inline auto ub_constrain(const T& x, const U ub) {
   using ret_type = return_var_matrix_t<T, T, U>;
   const auto ub_val = value_of(ub);
   if (unlikely(ub_val == INFTY)) {
@@ -184,7 +184,7 @@ inline auto ub_constrain(const T& x, const U& ub) {
 template <typename T, typename U, require_matrix_t<T>* = nullptr,
           require_stan_scalar_t<U>* = nullptr,
           require_any_st_var<T, U>* = nullptr>
-inline auto ub_constrain(const T& x, const U& ub, return_type_t<T, U>& lp) {
+inline auto ub_constrain(const T& x, const U ub, return_type_t<T, U>& lp) {
   using ret_type = return_var_matrix_t<T, T, U>;
   const auto ub_val = value_of(ub);
   if (unlikely(ub_val == INFTY)) {

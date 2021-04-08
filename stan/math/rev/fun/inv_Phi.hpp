@@ -18,7 +18,7 @@ namespace math {
  * @param p Probability
  * @return The unit normal inverse cdf evaluated at p
  */
-inline var inv_Phi(const var& p) {
+inline var inv_Phi(const var p) {
   return make_callback_var(inv_Phi(p.val()), [p](auto& vi) mutable {
     p.adj() += vi.adj() * SQRT_TWO_PI / std::exp(-0.5 * vi.val() * vi.val());
   });
@@ -32,7 +32,7 @@ inline var inv_Phi(const var& p) {
  * @return Elementwise unit normal inverse cdf
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto inv_Phi(const T& p) {
+inline auto inv_Phi(const T p) {
   return make_callback_var(inv_Phi(p.val()), [p](auto& vi) mutable {
     p.adj().array() += vi.adj().array() * SQRT_TWO_PI
                        / (-0.5 * vi.val().array().square()).exp();

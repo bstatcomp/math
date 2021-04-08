@@ -55,7 +55,7 @@ namespace math {
    * @return Inverse hyperbolic tangent of the variable.
    * @throw std::domain_error if a < -1 or a > 1
    */
-inline var atanh(const var& x) {
+inline var atanh(const var x) {
   return make_callback_var(atanh(x.val()), [x](const auto& vi) mutable {
     x.adj() += vi.adj() / (1.0 - x.val() * x.val());
   });
@@ -70,7 +70,7 @@ inline var atanh(const var& x) {
  * @throw std::domain_error if a < -1 or a > 1
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto atanh(const VarMat& x) {
+inline auto atanh(const VarMat x) {
   return make_callback_var(
       x.val().unaryExpr([](const auto x) { return atanh(x); }),
       [x](const auto& vi) mutable {

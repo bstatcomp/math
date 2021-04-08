@@ -43,7 +43,7 @@ namespace math {
  * @param a Variable for radians of angle.
  * @return Cosine of variable.
  */
-inline var cos(const var& a) {
+inline var cos(const var a) {
   return make_callback_var(std::cos(a.val()), [a](const auto& vi) mutable {
     a.adj() -= vi.adj() * std::sin(a.val());
   });
@@ -58,7 +58,7 @@ inline var cos(const var& a) {
  * @return Cosine of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto cos(const VarMat& a) {
+inline auto cos(const VarMat a) {
   return make_callback_var(
       a.val().array().cos().matrix(), [a](const auto& vi) mutable {
         a.adj() -= vi.adj().cwiseProduct(a.val().array().sin().matrix());

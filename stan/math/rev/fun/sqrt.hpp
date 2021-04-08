@@ -41,7 +41,7 @@ namespace math {
  * @param a Variable whose square root is taken.
  * @return Square root of variable.
  */
-inline var sqrt(const var& a) {
+inline var sqrt(const var a) {
   return make_callback_var(std::sqrt(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / (2.0 * vi.val());
   });
@@ -55,7 +55,7 @@ inline var sqrt(const var& a) {
  * @return elementwise square root of vector
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto sqrt(const T& a) {
+inline auto sqrt(const T a) {
   return make_callback_var(
       a.val().array().sqrt().matrix(), [a](auto& vi) mutable {
         a.adj().array() += vi.adj().array() / (2.0 * vi.val_op().array());

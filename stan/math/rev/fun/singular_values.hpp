@@ -20,7 +20,7 @@ namespace math {
  * @return Singular values of matrix
  */
 template <typename EigMat, require_rev_matrix_t<EigMat>* = nullptr>
-inline auto singular_values(const EigMat& m) {
+inline auto singular_values(const EigMat m) {
   using ret_type = return_var_matrix_t<Eigen::VectorXd, EigMat>;
   check_nonzero_size("singular_values", "m", m);
 

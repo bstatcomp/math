@@ -42,19 +42,19 @@ class log_sum_exp_vd_vari : public op_vd_vari {
 /**
  * Returns the log sum of exponentials.
  */
-inline var log_sum_exp(const var& a, const var& b) {
+inline var log_sum_exp(const var a, const var b) {
   return var(new internal::log_sum_exp_vv_vari(a.vi_, b.vi_));
 }
 /**
  * Returns the log sum of exponentials.
  */
-inline var log_sum_exp(const var& a, double b) {
+inline var log_sum_exp(const var a, double b) {
   return var(new internal::log_sum_exp_vd_vari(a.vi_, b));
 }
 /**
  * Returns the log sum of exponentials.
  */
-inline var log_sum_exp(double a, const var& b) {
+inline var log_sum_exp(double a, const var b) {
   return var(new internal::log_sum_exp_vd_vari(b.vi_, a));
 }
 
@@ -86,7 +86,7 @@ inline var log_sum_exp(const T& v) {
  * @param x input
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline var log_sum_exp(const T& x) {
+inline var log_sum_exp(const T x) {
   return make_callback_vari(log_sum_exp(x.val()), [x](const auto& res) mutable {
     x.adj() += res.adj() * (x.val().array().val() - res.val()).exp().matrix();
   });

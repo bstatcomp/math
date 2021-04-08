@@ -39,7 +39,7 @@ namespace math {
  * @param a Variable.
  * @return Hyperbolic tangent of variable.
  */
-inline var tanh(const var& a) {
+inline var tanh(const var a) {
   return make_callback_var(std::tanh(a.val()), [a](const auto& vi) mutable {
     const auto a_cosh = std::cosh(a.val());
     a.adj() += vi.adj_ / (a_cosh * a_cosh);
@@ -54,7 +54,7 @@ inline var tanh(const var& a) {
  * @return elementwise hyperbolic tangent of a
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto tanh(const VarMat& a) {
+inline auto tanh(const VarMat a) {
   return make_callback_var(
       a.val().array().tanh().matrix(), [a](const auto& vi) mutable {
         a.adj().array() += vi.adj_.array() / (a.val().array().cosh().square());

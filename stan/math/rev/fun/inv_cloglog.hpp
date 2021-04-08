@@ -23,7 +23,7 @@ namespace math {
  * @return The inverse complementary log-log of the specified
  * argument.
  */
-inline var inv_cloglog(const var& a) {
+inline var inv_cloglog(const var a) {
   auto precomp_exp = std::exp(a.val() - std::exp(a.val()));
   return make_callback_var(inv_cloglog(a.val()),
                            [a, precomp_exp](auto& vi) mutable {

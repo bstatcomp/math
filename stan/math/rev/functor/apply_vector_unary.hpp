@@ -25,7 +25,7 @@ struct apply_vector_unary<T, require_var_matrix_t<T>> {
    * @return object with result of applying functor to input
    */
   template <typename F>
-  static inline plain_type_t<T> apply(const T& x, const F& f) {
+  static inline plain_type_t<T> apply(const T x, const F& f) {
     return f(x);
   }
 
@@ -40,7 +40,7 @@ struct apply_vector_unary<T, require_var_matrix_t<T>> {
    * @return object with result of applying functor to input
    */
   template <typename F>
-  static inline plain_type_t<T> apply_no_holder(const T& x, const F& f) {
+  static inline plain_type_t<T> apply_no_holder(const T x, const F& f) {
     return f(x);
   }
 
@@ -56,7 +56,7 @@ struct apply_vector_unary<T, require_var_matrix_t<T>> {
    * @return scalar result of applying functor to input.
    */
   template <typename F>
-  static inline var reduce(const T& x, const F& f) {
+  static inline var reduce(const T x, const F& f) {
     return f(x);
   }
 };

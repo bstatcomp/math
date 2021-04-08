@@ -45,7 +45,7 @@ namespace math {
  * @param a Argument to function.
  * @return The Gamma function applied to the specified argument.
  */
-inline var tgamma(const var& a) {
+inline var tgamma(const var a) {
   return make_callback_var(tgamma(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() * vi.val() * digamma(a.val());
   });
@@ -59,7 +59,7 @@ inline var tgamma(const var& a) {
  * @return elementwise gamma
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto tgamma(const T& a) {
+inline auto tgamma(const T a) {
   return make_callback_var(tgamma(a.val()), [a](auto& vi) mutable {
     a.adj().array()
         += vi.adj().array() * vi.val().array() * digamma(a.val()).array();

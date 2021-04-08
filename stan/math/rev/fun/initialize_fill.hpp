@@ -23,7 +23,7 @@ namespace math {
  */
 template <typename VarMat, typename S, require_var_matrix_t<VarMat>* = nullptr,
           require_stan_scalar_t<S>* = nullptr>
-inline void initialize_fill(VarMat& x, const S& y) {
+inline void initialize_fill(VarMat x, const S y) {
   x.vi_->val_.fill(value_of(y));
 }
 

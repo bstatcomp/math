@@ -50,7 +50,7 @@ namespace math {
  * @param b Second variable operand.
  * @return Variable result of adding two variables.
  */
-inline var operator+(const var& a, const var& b) {
+inline var operator+(const var a, const var b) {
   return make_callback_vari(a.vi_->val_ + b.vi_->val_,
                             [avi = a.vi_, bvi = b.vi_](const auto& vi) mutable {
                               avi->adj_ += vi.adj_;
@@ -71,13 +71,13 @@ inline var operator+(const var& a, const var& b) {
  * @return Result of adding variable and scalar.
  */
 template <typename Arith, require_arithmetic_t<Arith>* = nullptr>
-inline var operator+(const var& a, Arith b) {
+inline var operator+(const var a, Arith b) {
   if (unlikely(b == 0.0)) {
     return a;
   }
   return make_callback_vari(
       a.vi_->val_ + b,
-      [avi = a.vi_, b](const auto& vi) mutable { avi->adj_ += vi.adj_; });
+      [avi = a.vi_](const auto& vi) mutable { avi->adj_ += vi.adj_; });
 }
 
 /**
@@ -93,7 +93,7 @@ inline var operator+(const var& a, Arith b) {
  * @return Result of adding variable and scalar.
  */
 template <typename Arith, require_arithmetic_t<Arith>* = nullptr>
-inline var operator+(Arith a, const var& b) {
+inline var operator+(Arith a, const var b) {
   return b + a;  // by symmetry
 }
 
@@ -165,7 +165,7 @@ inline auto add(const VarMat& a, const Arith& b) {
 template <typename Arith, typename VarMat,
           require_st_arithmetic<Arith>* = nullptr,
           require_rev_matrix_t<VarMat>* = nullptr>
-inline auto add(const Arith& a, const VarMat& b) {
+inline auto add(const Arith& a, const VarMat b) {
   return add(b, a);
 }
 
@@ -181,7 +181,7 @@ inline auto add(const Arith& a, const VarMat& b) {
 template <typename Var, typename EigMat,
           require_var_vt<std::is_arithmetic, Var>* = nullptr,
           require_eigen_vt<std::is_arithmetic, EigMat>* = nullptr>
-inline auto add(const Var& a, const EigMat& b) {
+inline auto add(const Var a, const EigMat& b) {
   using ret_type = return_var_matrix_t<EigMat>;
   arena_t<ret_type> ret(a.val() + b.array());
   reverse_pass_callback([ret, a]() mutable { a.adj() += ret.adj().sum(); });
@@ -200,7 +200,7 @@ inline auto add(const Var& a, const EigMat& b) {
 template <typename EigMat, typename Var,
           require_eigen_vt<std::is_arithmetic, EigMat>* = nullptr,
           require_var_vt<std::is_arithmetic, Var>* = nullptr>
-inline auto add(const EigMat& a, const Var& b) {
+inline auto add(const EigMat& a, const Var b) {
   return add(b, a);
 }
 
@@ -217,7 +217,7 @@ inline auto add(const EigMat& a, const Var& b) {
 template <typename Var, typename VarMat,
           require_var_vt<std::is_arithmetic, Var>* = nullptr,
           require_rev_matrix_t<VarMat>* = nullptr>
-inline auto add(const Var& a, const VarMat& b) {
+inline auto add(const Var a, const VarMat& b) {
   using ret_type = return_var_matrix_t<VarMat>;
   arena_t<VarMat> arena_b(b);
   arena_t<ret_type> ret(a.val() + arena_b.val().array());
@@ -246,20 +246,20 @@ inline auto add(const Var& a, const VarMat& b) {
 template <typename Var, typename VarMat,
           require_var_vt<std::is_arithmetic, Var>* = nullptr,
           require_rev_matrix_t<VarMat>* = nullptr>
-inline auto add(const VarMat& a, const Var& b) {
+inline auto add(const VarMat& a, const Var b) {
   return add(b, a);
 }
 
 template <typename T1, typename T2,
           require_any_var_vt<std::is_arithmetic, T1, T2>* = nullptr,
           require_any_arithmetic_t<T1, T2>* = nullptr>
-inline auto add(const T1& a, const T2& b) {
+inline auto add(const T1 a, const T2 b) {
   return a + b;
 }
 
 template <typename T1, typename T2,
           require_all_var_vt<std::is_arithmetic, T1, T2>* = nullptr>
-inline auto add(const T1& a, const T2& b) {
+inline auto add(const T1 a, const T2 b) {
   return a + b;
 }
 

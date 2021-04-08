@@ -18,7 +18,7 @@ namespace math {
  * @param a The variable.
  * @return The log of 1 plus the variable.
  */
-inline var log1p(const var& a) {
+inline var log1p(const var a) {
   return make_callback_var(log1p(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / (1 + a.val());
   });
@@ -32,7 +32,7 @@ inline var log1p(const var& a) {
  * @return Elementwise log(1 + x)
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto log1p(const T& x) {
+inline auto log1p(const T x) {
   check_greater_or_equal("log1p", "x", x.val(), -1.0);
   return make_callback_var(
       x.val().array().log1p().matrix(), [x](const auto& vi) {

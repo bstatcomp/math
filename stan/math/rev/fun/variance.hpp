@@ -76,7 +76,7 @@ var variance(const EigMat& m) {
  * @return sample variance of input
  */
 template <typename Mat, require_var_matrix_t<Mat>* = nullptr>
-inline var variance(const Mat& x) {
+inline var variance(const Mat x) {
   check_nonzero_size("variance", "x", x);
 
   if (x.size() == 1) {

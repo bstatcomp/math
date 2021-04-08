@@ -39,7 +39,7 @@ namespace math {
  */
 template <typename T, typename L, require_all_stan_scalar_t<T, L>* = nullptr,
           require_any_var_t<T, L>* = nullptr>
-inline auto lb_constrain(const T& x, const L& lb) {
+inline auto lb_constrain(const T x, const L lb) {
   const auto lb_val = value_of(lb);
   if (unlikely(lb_val == NEGATIVE_INFTY)) {
     return identity_constrain(x, lb);
@@ -89,7 +89,7 @@ inline auto lb_constrain(const T& x, const L& lb) {
  */
 template <typename T, typename L, require_all_stan_scalar_t<T, L>* = nullptr,
           require_any_var_t<T, L>* = nullptr>
-inline auto lb_constrain(const T& x, const L& lb, var& lp) {
+inline auto lb_constrain(const T x, const L lb, var& lp) {
   const auto lb_val = value_of(lb);
   if (unlikely(lb_val == NEGATIVE_INFTY)) {
     return identity_constrain(x, lb);
@@ -132,7 +132,7 @@ inline auto lb_constrain(const T& x, const L& lb, var& lp) {
 template <typename T, typename L, require_matrix_t<T>* = nullptr,
           require_stan_scalar_t<L>* = nullptr,
           require_any_st_var<T, L>* = nullptr>
-inline auto lb_constrain(const T& x, const L& lb) {
+inline auto lb_constrain(const T& x, const L lb) {
   using ret_type = return_var_matrix_t<T, T, L>;
   const auto lb_val = value_of(lb);
   if (unlikely(lb_val == NEGATIVE_INFTY)) {
@@ -181,7 +181,7 @@ inline auto lb_constrain(const T& x, const L& lb) {
 template <typename T, typename L, require_matrix_t<T>* = nullptr,
           require_stan_scalar_t<L>* = nullptr,
           require_any_st_var<T, L>* = nullptr>
-inline auto lb_constrain(const T& x, const L& lb, return_type_t<T, L>& lp) {
+inline auto lb_constrain(const T& x, const L lb, return_type_t<T, L>& lp) {
   using ret_type = return_var_matrix_t<T, T, L>;
   const auto lb_val = value_of(lb);
   if (unlikely(lb_val == NEGATIVE_INFTY)) {

@@ -34,7 +34,7 @@ namespace math {
  * @param a Specified variable.
  * @return Cube root of the variable.
  */
-inline var cbrt(const var& a) {
+inline var cbrt(const var a) {
   return make_callback_var(cbrt(a.val()), [a](const auto& vi) mutable {
     a.adj() += vi.adj() / (3.0 * vi.val() * vi.val());
   });
@@ -47,7 +47,7 @@ inline var cbrt(const var& a) {
  * @return Cube root of the variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto cbrt(const VarMat& a) {
+inline auto cbrt(const VarMat a) {
   return make_callback_var(
       a.val().unaryExpr([](const auto x) { return cbrt(x); }),
       [a](const auto& vi) mutable {

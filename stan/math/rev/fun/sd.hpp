@@ -66,7 +66,7 @@ var sd(const T& x) {
  * @throw domain error  size is not greater than zero.
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-var sd(const T& x) {
+var sd(const T x) {
   check_nonzero_size("sd", "x", x);
 
   if (x.size() == 1) {

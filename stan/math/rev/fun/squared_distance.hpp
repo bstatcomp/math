@@ -18,7 +18,7 @@ namespace math {
 /**
  * Returns the squared distance.
  */
-inline var squared_distance(const var& a, const var& b) {
+inline var squared_distance(const var a, const var b) {
   check_finite("squared_distance", "a", a);
   check_finite("squared_distance", "b", b);
   return make_callback_vari(std::pow(a.val() - b.val(), 2),
@@ -32,7 +32,7 @@ inline var squared_distance(const var& a, const var& b) {
 /**
  * Returns the squared distance.
  */
-inline var squared_distance(const var& a, double b) {
+inline var squared_distance(const var a, double b) {
   check_finite("squared_distance", "a", a);
   check_finite("squared_distance", "b", b);
   return make_callback_vari(std::pow(a.val() - b, 2),
@@ -44,7 +44,7 @@ inline var squared_distance(const var& a, double b) {
 /**
  * Returns the squared distance.
  */
-inline var squared_distance(double a, const var& b) {
+inline var squared_distance(double a, const var b) {
   return squared_distance(b, a);
 }
 

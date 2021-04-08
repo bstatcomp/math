@@ -39,7 +39,7 @@ namespace math {
  * @param a Specified variable.
  * @return Base 2 logarithm of the variable.
  */
-inline var log2(const var& a) {
+inline var log2(const var a) {
   return make_callback_var(log2(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() / (LOG_TWO * a.val());
   });

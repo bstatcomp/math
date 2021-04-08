@@ -97,7 +97,7 @@ auto log_softmax(const T& x) {
  * @throw std::domain_error if the input size is 0
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto log_softmax(const T& x) {
+inline auto log_softmax(const T x) {
   check_nonzero_size("log_softmax", "x", x);
 
   const auto& theta = (x.val().array() - x.val().maxCoeff()).eval();

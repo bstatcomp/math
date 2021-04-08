@@ -16,7 +16,7 @@ namespace math {
  * @return Same vector.
  */
 template <typename T, require_var_col_vector_t<T>* = nullptr>
-inline auto as_column_vector_or_scalar(T&& a) {
+inline auto as_column_vector_or_scalar(T a) {
   return std::forward<T>(a);
 }
 
@@ -29,7 +29,7 @@ inline auto as_column_vector_or_scalar(T&& a) {
  */
 template <typename T, require_var_row_vector_t<T>* = nullptr,
           require_not_var_col_vector_t<T>* = nullptr>
-inline auto as_column_vector_or_scalar(T&& a) {
+inline auto as_column_vector_or_scalar(T a) {
   return a.transpose();
 }
 

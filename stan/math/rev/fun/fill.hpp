@@ -22,7 +22,7 @@ namespace math {
  */
 template <typename VarMat, typename S, require_var_matrix_t<VarMat>* = nullptr,
           require_var_t<S>* = nullptr>
-inline void fill(VarMat& x, const S& y) {
+inline void fill(VarMat x, const S y) {
   arena_t<plain_type_t<value_type_t<VarMat>>> prev_vals = x.val().eval();
   x.vi_->val_.fill(y.val());
   reverse_pass_callback([x, y, prev_vals]() mutable {
@@ -45,7 +45,7 @@ inline void fill(VarMat& x, const S& y) {
  */
 template <typename VarMat, typename S, require_var_matrix_t<VarMat>* = nullptr,
           require_arithmetic_t<S>* = nullptr>
-inline void fill(VarMat& x, const S& y) {
+inline void fill(VarMat x, const S y) {
   arena_t<plain_type_t<value_type_t<VarMat>>> prev_vals = x.val().eval();
   x.vi_->val_.fill(y);
   reverse_pass_callback([x, prev_vals]() mutable {

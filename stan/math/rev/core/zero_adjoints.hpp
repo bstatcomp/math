@@ -14,7 +14,7 @@ template <typename T, typename... Pargs, require_st_arithmetic<T>* = nullptr>
 inline void zero_adjoints(T& x, Pargs&... args);
 
 template <typename... Pargs>
-inline void zero_adjoints(var& x, Pargs&... args);
+inline void zero_adjoints(var x, Pargs&... args);
 
 template <int R, int C, typename... Pargs>
 inline void zero_adjoints(Eigen::Matrix<var, R, C>& x, Pargs&... args);
@@ -53,7 +53,7 @@ inline void zero_adjoints(T& x, Pargs&... args) {
  * @param args rest of arguments to zero
  */
 template <typename... Pargs>
-inline void zero_adjoints(var& x, Pargs&... args) {
+inline void zero_adjoints(var x, Pargs&... args) {
   x.vi_->set_zero_adjoint();
   zero_adjoints(args...);
 }

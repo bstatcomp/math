@@ -34,7 +34,7 @@ inline auto identity_constrain(T&& x, Types&&... /* args */) {
 
 template <typename T, typename... Types, require_var_matrix_t<T>* = nullptr,
           require_any_var_matrix_t<T, Types...>* = nullptr>
-inline auto identity_constrain(T&& x, Types&&... /* args */) {
+inline auto identity_constrain(T x, Types&&... /* args */) {
   return x;
 }
 

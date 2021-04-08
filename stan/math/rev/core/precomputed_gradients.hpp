@@ -165,7 +165,7 @@ class precomputed_gradients_vari_template : public vari {
    */
   template <typename Op, typename Grad,
             require_all_not_std_vector_t<Op, Grad>* = nullptr>
-  void chain_one(Op& op, const Grad& grad) {
+  void chain_one(Op op, const Grad& grad) {
     op.vi_->adj_ = op.vi_->adj_ + this->adj_ * grad;
   }
 

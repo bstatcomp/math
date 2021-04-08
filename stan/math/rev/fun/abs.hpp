@@ -38,7 +38,7 @@ namespace math {
  * @return Absolute value of variable.
  */
 template <typename T>
-inline auto abs(const var_value<T>& a) {
+inline auto abs(const var_value<T> a) {
   return fabs(a);
 }
 

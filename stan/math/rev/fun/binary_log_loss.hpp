@@ -43,7 +43,7 @@ namespace math {
  * @param y_hat Response variable.
  * @return Log loss of response versus reference value.
  */
-inline var binary_log_loss(int y, const var& y_hat) {
+inline var binary_log_loss(int y, const var y_hat) {
   if (y == 0) {
     return make_callback_var(-log1p(-y_hat.val()), [y_hat](auto& vi) mutable {
       y_hat.adj() += vi.adj() / (1.0 - y_hat.val());

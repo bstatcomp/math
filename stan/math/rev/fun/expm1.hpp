@@ -35,7 +35,7 @@ namespace math {
  * @param a The variable.
  * @return Two to the power of the specified variable.
  */
-inline var expm1(const var& a) {
+inline var expm1(const var a) {
   return make_callback_var(expm1(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() * (vi.val() + 1.0);
   });

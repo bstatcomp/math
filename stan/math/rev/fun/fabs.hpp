@@ -47,7 +47,7 @@ namespace math {
  * @param a Input variable.
  * @return Absolute value of variable.
  */
-inline var fabs(const var& a) {
+inline var fabs(const var a) {
   if (a.val() > 0.0) {
     return a;
   } else if (a.val() < 0.0) {
@@ -68,7 +68,7 @@ inline var fabs(const var& a) {
  * @return Absolute value of variable.
  */
 template <typename VarMat, require_var_matrix_t<VarMat>* = nullptr>
-inline auto fabs(const VarMat& a) {
+inline auto fabs(const VarMat a) {
   return make_callback_var(
       a.val().unaryExpr([](const auto x) {
         if (unlikely(is_nan(x))) {

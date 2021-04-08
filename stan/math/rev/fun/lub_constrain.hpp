@@ -33,7 +33,7 @@ namespace math {
 template <typename T, typename L, typename U,
           require_all_stan_scalar_t<T, L, U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
+inline auto lub_constrain(const T x, const L lb, const U ub) {
   using std::exp;
   const auto lb_val = value_of(lb);
   const auto ub_val = value_of(ub);
@@ -102,7 +102,7 @@ inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
 template <typename T, typename L, typename U,
           require_all_stan_scalar_t<T, L, U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub,
+inline auto lub_constrain(const T x, const L lb, const U ub,
                           return_type_t<T, L, U>& lp) {
   using std::exp;
   const auto lb_val = value_of(lb);
@@ -152,7 +152,7 @@ inline auto lub_constrain(const T& x, const L& lb, const U& ub,
 template <typename T, typename L, typename U, require_matrix_t<T>* = nullptr,
           require_all_stan_scalar_t<L, U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
+inline auto lub_constrain(const T& x, const L lb, const U ub) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;
   const auto lb_val = value_of(lb);
@@ -195,7 +195,7 @@ inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
 template <typename T, typename L, typename U, require_matrix_t<T>* = nullptr,
           require_all_stan_scalar_t<L, U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub,
+inline auto lub_constrain(const T& x, const L lb, const U ub,
                           return_type_t<T, L, U>& lp) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;
@@ -253,7 +253,7 @@ template <typename T, typename L, typename U,
           require_all_matrix_t<T, L>* = nullptr,
           require_stan_scalar_t<U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
+inline auto lub_constrain(const T& x, const L& lb, const U ub) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;
   const auto ub_val = value_of(ub);
@@ -302,7 +302,7 @@ template <typename T, typename L, typename U,
           require_all_matrix_t<T, L>* = nullptr,
           require_stan_scalar_t<U>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub,
+inline auto lub_constrain(const T& x, const L& lb, const U ub,
                           std::decay_t<return_type_t<T, L, U>>& lp) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;
@@ -363,7 +363,7 @@ template <typename T, typename L, typename U,
           require_all_matrix_t<T, U>* = nullptr,
           require_stan_scalar_t<L>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub) {
+inline auto lub_constrain(const T& x, const L lb, const U& ub) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;
   const auto lb_val = value_of(lb);
@@ -414,7 +414,7 @@ template <typename T, typename L, typename U,
           require_all_matrix_t<T, U>* = nullptr,
           require_stan_scalar_t<L>* = nullptr,
           require_var_t<return_type_t<T, L, U>>* = nullptr>
-inline auto lub_constrain(const T& x, const L& lb, const U& ub,
+inline auto lub_constrain(const T& x, const L lb, const U& ub,
                           std::decay_t<return_type_t<T, L, U>>& lp) {
   using std::exp;
   using ret_type = return_var_matrix_t<T, T, L, U>;

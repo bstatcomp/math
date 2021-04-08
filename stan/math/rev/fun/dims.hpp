@@ -18,7 +18,7 @@ namespace math {
  * @param result result
  */
 template <typename T>
-inline void dims(const var_value<T>& x, std::vector<int>& result) {
+inline void dims(const var_value<T> x, std::vector<int>& result) {
   dims(*x.vi_, result);
 }
 

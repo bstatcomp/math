@@ -38,7 +38,7 @@ namespace math {
  * @param a Variable to exponentiate.
  * @return Exponentiated variable.
  */
-inline var exp(const var& a) {
+inline var exp(const var a) {
   return make_callback_var(std::exp(a.val()), [a](auto& vi) mutable {
     a.adj() += vi.adj() * vi.val();
   });
@@ -61,7 +61,7 @@ inline std::complex<var> exp(const std::complex<var>& z) {
  * @return elementwise exponentiation of x
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto exp(const T& x) {
+inline auto exp(const T x) {
   return make_callback_var(
       x.val().array().exp().matrix(), [x](const auto& vi) mutable {
         x.adj() += (vi.val().array() * vi.adj().array()).matrix();

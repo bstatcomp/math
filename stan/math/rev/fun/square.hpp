@@ -32,7 +32,7 @@ namespace math {
  * @param x Variable to square.
  * @return Square of variable.
  */
-inline var square(const var& x) {
+inline var square(const var x) {
   return make_callback_var(square(x.val()), [x](auto& vi) mutable {
     x.adj() += vi.adj() * 2.0 * x.val();
   });
@@ -46,7 +46,7 @@ inline var square(const var& x) {
  * @return elementwise square of x
  */
 template <typename T, require_var_matrix_t<T>* = nullptr>
-inline auto square(const T& x) {
+inline auto square(const T x) {
   return make_callback_var(
       (x.val().array().square()).matrix(), [x](const auto& vi) mutable {
         x.adj() += (2.0 * x.val().array() * vi.adj().array()).matrix();
